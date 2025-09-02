@@ -17,6 +17,12 @@ export interface DatabaseApplication {
     selfHeal?: boolean;
     prune?: boolean;
   };
+  awsConfig?: {
+    region?: string;
+    roleArn?: string;
+    externalId?: string;
+    sessionName?: string;
+  };
   createdAt: Date;
   updatedAt: Date;
 }

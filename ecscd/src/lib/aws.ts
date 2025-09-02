@@ -1,4 +1,5 @@
 import { ECSClient, DescribeTaskDefinitionCommand, DescribeServicesCommand, UpdateServiceCommand, ListClustersCommand, ListServicesCommand, RegisterTaskDefinitionCommand } from '@aws-sdk/client-ecs';
+import { STSClient, AssumeRoleCommand, Credentials } from '@aws-sdk/client-sts';
 import { ECSTaskDefinition, ECSService, ECSCluster } from '@/types/ecs';
 
 export interface DeploymentInfo {
@@ -14,15 +15,77 @@ export interface DeploymentInfo {
   rolloutStateReason?: string;
 }
 
+export interface AWSConfig {
+  region?: string;
+  roleArn?: string;
+  externalId?: string;
+  sessionName?: string;
+}
+
 export class AWSService {
   private ecsClient: ECSClient;
   private region: string;
+  private awsConfig?: AWSConfig;
 
-  constructor(region: string = process.env.AWS_REGION || 'us-east-1') {
-    this.region = region;
+  constructor(region: string = process.env.AWS_REGION || 'us-east-1', awsConfig?: AWSConfig) {
+    this.region = awsConfig?.region || region;
+    this.awsConfig = awsConfig;
     this.ecsClient = new ECSClient({ 
       region: this.region,
-      // Add more explicit configuration
+      maxAttempts: 3,
+      retryMode: 'standard'
+    });
+  }
+
+  async assumeRole(): Promise<Credentials | undefined> {
+    if (!this.awsConfig?.roleArn) {
+      return undefined;
+    }
+
+    try {
+      const stsClient = new STSClient({ 
+        region: this.region,
+        maxAttempts: 3,
+        retryMode: 'standard'
+      });
+
+      const command = new AssumeRoleCommand({
+        RoleArn: this.awsConfig.roleArn,
+        RoleSessionName: this.awsConfig.sessionName || `ecscd-session-${Date.now()}`,
+        ExternalId: this.awsConfig.externalId,
+        DurationSeconds: 3600 // 1 hour
+      });
+
+      const response = await stsClient.send(command);
+      
+      if (!response.Credentials) {
+        throw new Error('Failed to assume role: No credentials returned');
+      }
+
+      return response.Credentials;
+    } catch (error) {
+      console.error('Error assuming role:', error);
+      throw new Error(`Failed to assume role ${this.awsConfig.roleArn}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async getECSClient(): Promise<ECSClient> {
+    if (!this.awsConfig?.roleArn) {
+      return this.ecsClient;
+    }
+
+    const credentials = await this.assumeRole();
+    if (!credentials) {
+      return this.ecsClient;
+    }
+
+    return new ECSClient({
+      region: this.region,
+      credentials: {
+        accessKeyId: credentials.AccessKeyId!,
+        secretAccessKey: credentials.SecretAccessKey!,
+        sessionToken: credentials.SessionToken
+      },
       maxAttempts: 3,
       retryMode: 'standard'
     });
@@ -35,7 +98,8 @@ export class AWSService {
         include: ['TAGS']
       });
       
-      const response = await this.ecsClient.send(command);
+      const ecsClient = await this.getECSClient();
+      const response = await ecsClient.send(command);
       
       if (!response.taskDefinition) {
         return null;
@@ -74,7 +138,8 @@ export class AWSService {
         include: ['TAGS']
       });
 
-      const response = await this.ecsClient.send(command);
+      const ecsClient = await this.getECSClient();
+      const response = await ecsClient.send(command);
       
       if (!response.services || response.services.length === 0) {
         return null;
@@ -148,7 +213,8 @@ export class AWSService {
         placementConstraints: taskDefinition.placementConstraints
       });
 
-      const response = await this.ecsClient.send(command);
+      const ecsClient = await this.getECSClient();
+      const response = await ecsClient.send(command);
       const registeredArn = response.taskDefinition?.taskDefinitionArn || null;
       console.log('Task definition registered with ARN:', registeredArn);
       return registeredArn;
@@ -170,7 +236,8 @@ export class AWSService {
         forceNewDeployment: true
       });
 
-      const response = await this.ecsClient.send(command);
+      const ecsClient = await this.getECSClient();
+      const response = await ecsClient.send(command);
       console.log(`Service update initiated for ${serviceName} in cluster ${clusterName}`);
       
       // Return the deployment ID from the latest deployment
@@ -193,7 +260,8 @@ export class AWSService {
         include: ['TAGS']
       });
 
-      const response = await this.ecsClient.send(command);
+      const ecsClient = await this.getECSClient();
+      const response = await ecsClient.send(command);
       
       if (!response.services || response.services.length === 0) {
         return [];
@@ -275,7 +343,8 @@ export class AWSService {
   async listClusters(): Promise<string[]> {
     try {
       const command = new ListClustersCommand({});
-      const response = await this.ecsClient.send(command);
+      const ecsClient = await this.getECSClient();
+      const response = await ecsClient.send(command);
       
       // Extract cluster names from ARNs for easier comparison
       return (response.clusterArns || []).map(arn => {
@@ -294,7 +363,8 @@ export class AWSService {
         cluster: clusterName
       });
       
-      const response = await this.ecsClient.send(command);
+      const ecsClient = await this.getECSClient();
+      const response = await ecsClient.send(command);
       
       return response.serviceArns || [];
     } catch (error) {

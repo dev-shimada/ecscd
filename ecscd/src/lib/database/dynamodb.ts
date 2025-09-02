@@ -299,7 +299,7 @@ export class DynamoDBRepository implements DatabaseRepository {
       Item: {
         pk: `DEPLOY#${event.deploymentId}`,
         sk: `EVENT#${dbEvent.id}`,
-        type: 'deployment_event',
+        entity_type: 'deployment_event',
         ...dbEvent
       }
     }));

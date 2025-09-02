@@ -348,7 +348,7 @@ export default function Home() {
                 summary={diffData.summary || 'No summary available'}
                 onSync={handleSyncFromDiff}
                 isLoading={selectedApp ? deployingApps.has(selectedApp) : false}
-                error={diffData.error}
+                error={diffData.error || undefined}
               />
             ) : (
               <Card>
