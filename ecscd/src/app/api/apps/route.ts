@@ -159,7 +159,8 @@ export async function GET() {
             ecsService: dbApp.ecsService,
             taskDefinitionPath: dbApp.taskDefinitionPath,
             autoSync: dbApp.autoSync,
-            syncPolicy: dbApp.syncPolicy
+            syncPolicy: dbApp.syncPolicy,
+            awsConfig: dbApp.awsConfig
           },
           status: {
             health: appStatus?.health || 'Unknown',
@@ -294,7 +295,13 @@ export async function POST(request: NextRequest) {
           automated: false,
           selfHeal: false,
           prune: false
-        }
+        },
+        awsConfig: spec.awsConfig ? {
+          region: spec.awsConfig.region,
+          roleArn: spec.awsConfig.roleArn,
+          externalId: spec.awsConfig.externalId,
+          sessionName: spec.awsConfig.sessionName
+        } : undefined
       },
       status: {
         health: 'Unknown',
