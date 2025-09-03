@@ -134,6 +134,9 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
               targetRevision: formData.branch,
             },
             taskDefinitionPath: formData.taskDefinitionPath,
+            awsConfig: {
+              roleArn: formData.roleArn,
+            },
             project: 'default',
           },
           metadata: {

@@ -59,6 +59,9 @@ export async function PUT(
       ecsCluster: metadata.labels['ecscd.io/cluster'],
       ecsService: metadata.labels['ecscd.io/service'],
       taskDefinitionPath: spec.taskDefinitionPath,
+      awsConfig: {
+        roleArn: spec.awsConfig.roleArn,
+      },
     });
 
     if (!updated) {
