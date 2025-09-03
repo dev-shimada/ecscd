@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Application } from '@/types/ecs';
-import { DatabaseFactory } from '@/lib/database';
+import { DatabaseFactory } from '@/lib/database/factory';
 import { AWSService, DeploymentInfo } from '@/lib/aws';
 import { GitHubService } from '@/lib/github';
 import { DiffService } from '@/lib/diff';
@@ -32,19 +32,20 @@ export async function GET() {
         let latestDeployment: DeploymentInfo | null = null;
         
         try {
-          const ecsService = await awsService.getService(dbApp.ecsCluster, dbApp.ecsService);
+          const appAwsService = new AWSService(process.env.AWS_REGION || 'us-east-1', dbApp.awsConfig);
+          const ecsService = await appAwsService.getService(dbApp.ecsCluster, dbApp.ecsService);
           if (ecsService && ecsService.taskDefinition) {
             currentRevision = ecsService.taskDefinition;
             console.log(`Updated revision for ${dbApp.name} from ECS:`, currentRevision);
             
             // Get the latest deployment status from ECS
-            const deploymentInfos = await awsService.getDeploymentInfo(dbApp.ecsCluster, dbApp.ecsService);
+            const deploymentInfos = await appAwsService.getDeploymentInfo(dbApp.ecsCluster, dbApp.ecsService);
             latestDeployment = deploymentInfos.length > 0 ? deploymentInfos[0] : null;
             
             // Check diff to determine sync status
             try {
               // Get current task definition from ECS
-              const currentTaskDef = await awsService.getTaskDefinition(ecsService.taskDefinition);
+              const currentTaskDef = await appAwsService.getTaskDefinition(ecsService.taskDefinition);
               
               if (!currentTaskDef) {
                 console.error(`Failed to get current task definition for ${dbApp.name}: ${ecsService.taskDefinition}`);
@@ -158,7 +159,8 @@ export async function GET() {
             ecsService: dbApp.ecsService,
             taskDefinitionPath: dbApp.taskDefinitionPath,
             autoSync: dbApp.autoSync,
-            syncPolicy: dbApp.syncPolicy
+            syncPolicy: dbApp.syncPolicy,
+            awsConfig: dbApp.awsConfig
           },
           status: {
             health: appStatus?.health || 'Unknown',
@@ -252,7 +254,13 @@ export async function POST(request: NextRequest) {
         automated: false,
         selfHeal: false,
         prune: false
-      }
+      },
+      awsConfig: spec.awsConfig ? {
+        region: spec.awsConfig.region,
+        roleArn: spec.awsConfig.roleArn,
+        externalId: spec.awsConfig.externalId,
+        sessionName: spec.awsConfig.sessionName
+      } : undefined
     });
 
     // Create initial sync status
@@ -287,7 +295,13 @@ export async function POST(request: NextRequest) {
           automated: false,
           selfHeal: false,
           prune: false
-        }
+        },
+        awsConfig: spec.awsConfig ? {
+          region: spec.awsConfig.region,
+          roleArn: spec.awsConfig.roleArn,
+          externalId: spec.awsConfig.externalId,
+          sessionName: spec.awsConfig.sessionName
+        } : undefined
       },
       status: {
         health: 'Unknown',

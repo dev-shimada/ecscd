@@ -1,4 +1,4 @@
-export { DatabaseRepository } from './base';
+export type { DatabaseRepository } from './base';
 export { DynamoDBRepository } from './dynamodb';
 export { SQLiteRepository } from './sqlite';
 export { DatabaseFactory } from './factory';

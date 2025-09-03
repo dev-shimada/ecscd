@@ -291,6 +291,12 @@ export interface ApplicationConfig {
     selfHeal?: boolean;
     prune?: boolean;
   };
+  awsConfig?: {
+    region?: string;
+    roleArn?: string;
+    externalId?: string;
+    sessionName?: string;
+  };
 }
 
 export interface SyncStatus {

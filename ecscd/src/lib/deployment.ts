@@ -22,13 +22,20 @@ export interface DeploymentStatus {
 }
 
 export class DeploymentService {
-  private awsService: AWSService;
   private deployments: Map<string, DeploymentStatus> = new Map();
   private db: DatabaseRepository;
 
-  constructor(region?: string) {
-    this.awsService = new AWSService(region);
+  constructor() {
     this.db = DatabaseFactory.getInstance();
+  }
+
+  private async getAWSService(applicationId: string): Promise<AWSService> {
+    const application = await this.db.getApplication(applicationId);
+    if (!application) {
+      throw new Error(`Application not found: ${applicationId}`);
+    }
+    
+    return new AWSService(process.env.AWS_REGION || 'us-east-1', application.awsConfig);
   }
 
   async startDeployment(
@@ -59,7 +66,6 @@ export class DeploymentService {
 
     // Save deployment to database
     await this.db.createDeployment({
-      id: deploymentId,
       applicationId: applicationId,
       status: 'InProgress',
       message: 'Starting deployment...',
@@ -114,7 +120,6 @@ export class DeploymentService {
 
     // Save deployment to database
     await this.db.createDeployment({
-      id: deploymentId,
       applicationId: applicationId,
       status: 'InProgress',
       message: 'Starting deployment...',
@@ -176,7 +181,6 @@ export class DeploymentService {
 
     // Save deployment to database
     await this.db.createDeployment({
-      id: deploymentId,
       applicationId: applicationId,
       status: 'InProgress',
       message: 'Starting deployment...',
@@ -293,7 +297,8 @@ export class DeploymentService {
       // Step 2: Register new task definition
       await this.updateDeploymentProgress(deploymentId, 2, 'Registering new task definition...');
       
-      const registeredTaskDefArn = await this.awsService.registerTaskDefinition(taskDefinition);
+      const awsService = await this.getAWSService(applicationId);
+      const registeredTaskDefArn = await awsService.registerTaskDefinition(taskDefinition);
       if (!registeredTaskDefArn) {
         throw new Error('Failed to register task definition');
       }
@@ -308,7 +313,7 @@ export class DeploymentService {
       // Step 3: Update service
       await this.updateDeploymentProgress(deploymentId, 3, 'Updating ECS service...');
       
-      const ecsDeploymentId = await this.awsService.updateService(
+      const ecsDeploymentId = await awsService.updateService(
         clusterName,
         serviceName,
         registeredTaskDefArn
@@ -320,7 +325,7 @@ export class DeploymentService {
 
       // Step 4: Monitor deployment
       await this.updateDeploymentProgress(deploymentId, 4, 'Monitoring deployment progress...');
-      await this.monitorRealDeployment(deploymentId, clusterName, serviceName, ecsDeploymentId);
+      await this.monitorRealDeployment(deploymentId, applicationId, clusterName, serviceName, ecsDeploymentId);
 
       // Complete deployment
       const finalDeployment = this.deployments.get(deploymentId);
@@ -409,7 +414,8 @@ export class DeploymentService {
       
       let registeredTaskDefArn: string | null = null;
       try {
-        registeredTaskDefArn = await this.awsService.registerTaskDefinition(taskDefinition);
+        const awsService = await this.getAWSService(applicationId);
+        registeredTaskDefArn = await awsService.registerTaskDefinition(taskDefinition);
         console.log('Successfully registered task definition:', registeredTaskDefArn);
       } catch (error) {
         console.warn('Failed to register task definition with AWS, using fallback:', error);
@@ -434,7 +440,8 @@ export class DeploymentService {
       // Step 3: Update service
       await this.updateDeploymentProgressWithCallback(deploymentId, 3, 'Updating ECS service...', onProgress);
       
-      const ecsDeploymentId = await this.awsService.updateService(
+      const awsService2 = await this.getAWSService(applicationId);
+      const ecsDeploymentId = await awsService2.updateService(
         clusterName,
         serviceName,
         registeredTaskDefArn
@@ -446,7 +453,7 @@ export class DeploymentService {
 
       // Step 4: Monitor deployment
       await this.updateDeploymentProgressWithCallback(deploymentId, 4, 'Monitoring deployment progress...', onProgress);
-      await this.monitorRealDeploymentWithCallback(deploymentId, clusterName, serviceName, ecsDeploymentId, onProgress);
+      await this.monitorRealDeploymentWithCallback(deploymentId, applicationId, clusterName, serviceName, ecsDeploymentId, onProgress);
 
       // Complete deployment
       const finalDeployment = this.deployments.get(deploymentId);
@@ -585,6 +592,7 @@ export class DeploymentService {
 
   private async monitorDeployment(
     deploymentId: string,
+    applicationId: string,
     clusterName: string,
     serviceName: string
   ): Promise<void> {
@@ -598,7 +606,8 @@ export class DeploymentService {
       }
 
       try {
-        const service = await this.awsService.getService(clusterName, serviceName);
+        const awsService = await this.getAWSService(applicationId);
+        const service = await awsService.getService(clusterName, serviceName);
         
         if (service && service.deployments.length > 0) {
           const latestDeployment = service.deployments[0];
@@ -646,13 +655,15 @@ export class DeploymentService {
 
   private async monitorRealDeploymentWithCallback(
     deploymentId: string,
+    applicationId: string,
     clusterName: string,
     serviceName: string,
     ecsDeploymentId: string,
     onProgress: (progress: DeploymentStatus) => void
   ): Promise<void> {
     try {
-      await this.awsService.waitForDeploymentStable(
+      const awsService = await this.getAWSService(applicationId);
+      await awsService.waitForDeploymentStable(
         clusterName,
         serviceName,
         ecsDeploymentId,
@@ -689,12 +700,14 @@ export class DeploymentService {
 
   private async monitorRealDeployment(
     deploymentId: string,
+    applicationId: string,
     clusterName: string,
     serviceName: string,
     ecsDeploymentId: string
   ): Promise<void> {
     try {
-      await this.awsService.waitForDeploymentStable(
+      const awsService = await this.getAWSService(applicationId);
+      await awsService.waitForDeploymentStable(
         clusterName,
         serviceName,
         ecsDeploymentId,
@@ -728,6 +741,7 @@ export class DeploymentService {
 
   private async monitorDeploymentWithCallback(
     deploymentId: string,
+    applicationId: string,
     clusterName: string,
     serviceName: string,
     onProgress: (progress: DeploymentStatus) => void
@@ -742,7 +756,8 @@ export class DeploymentService {
       }
 
       try {
-        const service = await this.awsService.getService(clusterName, serviceName);
+        const awsService = await this.getAWSService(applicationId);
+        const service = await awsService.getService(clusterName, serviceName);
         
         if (service && service.deployments.length > 0) {
           const latestDeployment = service.deployments[0];

@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DatabaseFactory } from '@/lib/database';
+import { DatabaseFactory } from '@/lib/database/factory';
 
 const db = DatabaseFactory.getInstance();
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { name: string } }
+  { params }: { params: Promise<{ name: string }> }
 ) {
   try {
-    const { name } = params;
+    const { name } = await params;
     const body = await request.json();
     const { spec, metadata } = body;
 

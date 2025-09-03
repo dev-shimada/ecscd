@@ -39,6 +39,10 @@ export class SQLiteRepository implements DatabaseRepository {
             sync_policy_automated BOOLEAN DEFAULT FALSE,
             sync_policy_self_heal BOOLEAN DEFAULT FALSE,
             sync_policy_prune BOOLEAN DEFAULT FALSE,
+            aws_region TEXT,
+            aws_role_arn TEXT,
+            aws_external_id TEXT,
+            aws_session_name TEXT,
             created_at DATETIME NOT NULL,
             updated_at DATETIME NOT NULL
           )
@@ -125,8 +129,9 @@ export class SQLiteRepository implements DatabaseRepository {
           id, name, git_owner, git_repo, git_branch, git_path, git_token,
           ecs_cluster, ecs_service, task_definition_path, auto_sync,
           sync_policy_automated, sync_policy_self_heal, sync_policy_prune,
+          aws_region, aws_role_arn, aws_external_id, aws_session_name,
           created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         dbApplication.id,
         dbApplication.name,
@@ -142,6 +147,10 @@ export class SQLiteRepository implements DatabaseRepository {
         dbApplication.syncPolicy?.automated ? 1 : 0,
         dbApplication.syncPolicy?.selfHeal ? 1 : 0,
         dbApplication.syncPolicy?.prune ? 1 : 0,
+        dbApplication.awsConfig?.region,
+        dbApplication.awsConfig?.roleArn,
+        dbApplication.awsConfig?.externalId,
+        dbApplication.awsConfig?.sessionName,
         dbApplication.createdAt.toISOString(),
         dbApplication.updatedAt.toISOString()
       ], function(err) {
@@ -198,6 +207,7 @@ export class SQLiteRepository implements DatabaseRepository {
           name = ?, git_owner = ?, git_repo = ?, git_branch = ?, git_path = ?, git_token = ?,
           ecs_cluster = ?, ecs_service = ?, task_definition_path = ?, auto_sync = ?,
           sync_policy_automated = ?, sync_policy_self_heal = ?, sync_policy_prune = ?,
+          aws_region = ?, aws_role_arn = ?, aws_external_id = ?, aws_session_name = ?,
           updated_at = ?
         WHERE id = ?
       `, [
@@ -214,6 +224,10 @@ export class SQLiteRepository implements DatabaseRepository {
         updatedApp.syncPolicy?.automated ? 1 : 0,
         updatedApp.syncPolicy?.selfHeal ? 1 : 0,
         updatedApp.syncPolicy?.prune ? 1 : 0,
+        updatedApp.awsConfig?.region,
+        updatedApp.awsConfig?.roleArn,
+        updatedApp.awsConfig?.externalId,
+        updatedApp.awsConfig?.sessionName,
         updatedApp.updatedAt.toISOString(),
         id
       ], function(err) {
@@ -608,6 +622,12 @@ export class SQLiteRepository implements DatabaseRepository {
         selfHeal: Boolean(row.sync_policy_self_heal),
         prune: Boolean(row.sync_policy_prune)
       },
+      awsConfig: (row.aws_region || row.aws_role_arn || row.aws_external_id || row.aws_session_name) ? {
+        region: row.aws_region,
+        roleArn: row.aws_role_arn,
+        externalId: row.aws_external_id,
+        sessionName: row.aws_session_name
+      } : undefined,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at)
     };

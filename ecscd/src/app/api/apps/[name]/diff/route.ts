@@ -30,7 +30,7 @@ export async function GET(
     const ecsService = application.ecsService;
 
     // Get current task definition from ECS
-    const awsService = new AWSService();
+    const awsService = new AWSService(process.env.AWS_REGION || 'us-east-1', application.awsConfig);
     let service;
     let currentTaskDef: ECSTaskDefinition | null = null;
     

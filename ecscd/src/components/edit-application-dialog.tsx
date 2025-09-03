@@ -29,6 +29,10 @@ interface ApplicationFormData {
   repository: string;
   branch: string;
   taskDefinitionPath: string;
+  roleArn: string;
+  externalId: string;
+  region?: string;
+  sessionName?: string;
 }
 
 export function EditApplicationDialog({ open, onOpenChange, application, onSuccess }: EditApplicationDialogProps) {
@@ -39,6 +43,10 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
     repository: '',
     branch: 'main',
     taskDefinitionPath: 'task-definition.json',
+    roleArn: '',
+    externalId: Math.random().toString(36).substring(2, 15),
+    region: 'ap-northeast-1',
+    sessionName: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<ApplicationFormData>>({});
@@ -54,6 +62,10 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
         repository: repoUrl,
         branch: application.spec.gitRepository.branch || 'main',
         taskDefinitionPath: application.spec.taskDefinitionPath,
+        roleArn: application.spec.awsConfig?.roleArn || '',
+        externalId: application.spec.awsConfig?.externalId || Math.random().toString(36).substring(2, 15),
+        region: application.spec.awsConfig?.region || 'ap-northeast-1',
+        sessionName: application.spec.awsConfig?.sessionName || '',
       });
     }
   }, [application]);
@@ -250,6 +262,34 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
               />
               {errors.taskDefinitionPath && (
                 <p className="text-sm text-red-600">{errors.taskDefinitionPath}</p>
+              )}
+            </div>
+          
+            <div className="space-y-2">
+              <Label htmlFor="roleArn">Role arn</Label>
+              <Input
+                id="roleArn"
+                value={formData.roleArn}
+                onChange={(e) => handleInputChange('roleArn', e.target.value)}
+                placeholder="arn:aws:iam::123456789012:role/service-role"
+                disabled={isSubmitting}
+              />
+              {errors.roleArn && (
+                <p className="text-sm text-red-600">{errors.roleArn}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="externalId">External ID</Label>
+              <Input
+                id="externalId"
+                value={formData.externalId}
+                readOnly={true}
+                placeholder="external-id"
+                disabled={true}
+              />
+              {errors.externalId && (
+                <p className="text-sm text-red-600">{errors.externalId}</p>
               )}
             </div>
           </div>

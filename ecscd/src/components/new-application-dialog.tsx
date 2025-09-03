@@ -13,6 +13,7 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Plus, Loader2 } from 'lucide-react';
+import { AWSService } from '@/lib/aws';
 
 interface NewApplicationDialogProps {
   open: boolean;
@@ -27,6 +28,10 @@ interface ApplicationFormData {
   repository: string;
   branch: string;
   taskDefinitionPath: string;
+  roleArn: string;
+  externalId: string;
+  region?: string;
+  sessionName?: string;
 }
 
 export function NewApplicationDialog({ open, onOpenChange, onSuccess }: NewApplicationDialogProps) {
@@ -37,6 +42,10 @@ export function NewApplicationDialog({ open, onOpenChange, onSuccess }: NewAppli
     repository: '',
     branch: 'main',
     taskDefinitionPath: 'task-definition.json',
+    roleArn: '',
+    externalId: Math.random().toString(36).substring(2, 15),
+    region: 'ap-northeast-1',
+    sessionName: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<ApplicationFormData>>({});
@@ -113,6 +122,12 @@ export function NewApplicationDialog({ open, onOpenChange, onSuccess }: NewAppli
             },
             taskDefinitionPath: formData.taskDefinitionPath,
             project: 'default',
+            awsConfig: {
+              region: formData.region,
+              roleArn: formData.roleArn,
+              externalId: formData.externalId,
+              sessionName: formData.sessionName,
+            },
           },
           metadata: {
             name: formData.name,
@@ -138,6 +153,10 @@ export function NewApplicationDialog({ open, onOpenChange, onSuccess }: NewAppli
         repository: '',
         branch: 'main',
         taskDefinitionPath: 'task-definition.json',
+        roleArn: '',
+        externalId: Math.random().toString(36).substring(2, 15),
+        region: 'ap-northeast-1',
+        sessionName: '',
       });
       
       onOpenChange(false);
@@ -253,6 +272,35 @@ export function NewApplicationDialog({ open, onOpenChange, onSuccess }: NewAppli
               />
               {errors.taskDefinitionPath && (
                 <p className="text-sm text-red-600">{errors.taskDefinitionPath}</p>
+              )}
+            </div>
+          
+            <div className="space-y-2">
+              <Label htmlFor="roleArn">Role arn</Label>
+              <Input
+                id="roleArn"
+                value={formData.roleArn}
+                onChange={(e) => handleInputChange('roleArn', e.target.value)}
+                placeholder="arn:aws:iam::123456789012:role/service-role"
+                disabled={isSubmitting}
+              />
+              {errors.roleArn && (
+                <p className="text-sm text-red-600">{errors.roleArn}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="externalId">External ID</Label>
+              <Input
+                id="externalId"
+                value={formData.externalId}
+                // onChange={(e) => handleInputChange('awsConfig', e.target.value)}
+                readOnly={true}
+                placeholder="external-id"
+                disabled={true}
+              />
+              {errors.externalId && (
+                <p className="text-sm text-red-600">{errors.externalId}</p>
               )}
             </div>
           </div>
