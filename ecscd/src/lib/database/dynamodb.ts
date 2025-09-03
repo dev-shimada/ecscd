@@ -26,7 +26,8 @@ export class DynamoDBRepository implements DatabaseRepository {
     const dynamoClient = new DynamoDBClient({ region });
     this.client = DynamoDBDocumentClient.from(dynamoClient, {
       marshallOptions: {
-        convertClassInstanceToMap: true
+        convertClassInstanceToMap: true,
+        removeUndefinedValues: true,
       }
     });
     this.tableName = tableName;
