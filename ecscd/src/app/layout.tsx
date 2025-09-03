@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ecscd - ECS Continuous Deployment",
   description: "ECS Continuous Deployment tool for managing container deployments",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
