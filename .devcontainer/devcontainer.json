@@ -1,0 +1,28 @@
+{
+	"name": "ecscd-private",
+	"build": {
+		"context": ".",
+		"dockerfile": "Dockerfile"
+	},
+	"workspaceFolder": "/workspace",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-vscode.vscode-typescript-next",
+				"bradlc.vscode-tailwindcss",
+				"ms-vscode.vscode-json",
+				"ms-vscode.vscode-eslint",
+				"esbenp.prettier-vscode",
+				"GitHub.copilot"
+			]
+		}
+	},
+	"mounts": [
+		"source=${localWorkspaceFolder},target=/workspace,type=bind",
+		"source=${env:HOME}/.aws,target=/root/.aws,type=bind,readonly",
+		"source=${env:HOME}/.claude,target=/root/.claude,type=bind"
+	],
+	"forwardPorts": [],
+	"remoteUser": "root",
+	"postCreateCommand": "/bin/bash .devcontainer/post_created.sh"
+}
