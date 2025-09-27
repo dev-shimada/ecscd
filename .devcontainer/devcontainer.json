@@ -1,5 +1,5 @@
 {
-	"name": "ecscd-private",
+	"name": "ecscd",
 	"build": {
 		"context": ".",
 		"dockerfile": "Dockerfile"
