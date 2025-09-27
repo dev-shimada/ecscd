@@ -23,6 +23,5 @@
 		"source=${env:HOME}/.claude,target=/root/.claude,type=bind"
 	],
 	"forwardPorts": [],
-	"remoteUser": "root",
-	"postCreateCommand": "/bin/bash .devcontainer/post_created.sh"
+	"remoteUser": "root"
 }
