@@ -9,11 +9,10 @@ permissions:
   packages: write
 
 jobs:
-  runner:
+  build:
     strategy:
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm]
-  build:
+        runs-on: [ubuntu-latest, ubuntu-24.04-arm]
     timeout-minutes: 30
     runs-on: {{ matrix.os }}
     steps:
