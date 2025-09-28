@@ -7,6 +7,7 @@ on:
 
 permissions:
   packages: write
+  contents: write
 
 jobs:
   build:
@@ -39,3 +40,62 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/ecscd:${{ github.ref_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if prerelease
+        id: prerelease
+        run: |
+          if [[ "${{ github.ref_name }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-(alpha|beta|rc) ]]; then
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate release notes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: tags } = await github.rest.repos.listTags({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            
+            const currentTag = context.ref.replace('refs/tags/', '');
+            const currentTagIndex = tags.findIndex(tag => tag.name === currentTag);
+            const previousTag = currentTagIndex < tags.length - 1 ? tags[currentTagIndex + 1].name : null;
+            
+            let body = '';
+            if (previousTag) {
+              const { data: comparison } = await github.rest.repos.compareCommits({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                base: previousTag,
+                head: currentTag
+              });
+              
+              body = comparison.commits.map(commit => 
+                `- ${commit.commit.message.split('\n')[0]} (${commit.sha.substring(0, 7)})`
+              ).join('\n');
+            } else {
+              body = 'Initial release';
+            }
+            
+            const { data: release } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: currentTag,
+              name: currentTag,
+              body: body,
+              prerelease: ${{ steps.prerelease.outputs.prerelease }},
+              generate_release_notes: true
+            });
+            
+            console.log(`Created release: ${release.html_url}`);
