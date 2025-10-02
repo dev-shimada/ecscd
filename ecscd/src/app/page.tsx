@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 import { ApplicationCard } from '@/components/application-card';
 import { DiffViewer } from '@/components/diff-viewer';
 import { NewApplicationDialog } from '@/components/new-application-dialog';
@@ -126,12 +127,17 @@ export default function Home() {
       loadApplications();
     } catch (error) {
       console.error('Failed to start sync:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Sync failed for ${appName}`, {
+        description: errorMessage,
+      });
       // Remove from deploying state on error
       setDeployingApps(prev => {
         const newSet = new Set(prev);
         newSet.delete(appName);
         return newSet;
       });
+      loadApplications();
     }
   };
 
@@ -173,6 +179,10 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Failed to start sync:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Sync failed for ${selectedApp}`, {
+        description: errorMessage,
+      });
       // Remove from deploying state on error
       setDeployingApps(prev => {
         const newSet = new Set(prev);
