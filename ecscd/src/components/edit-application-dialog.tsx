@@ -13,8 +13,9 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Edit, Loader2 } from 'lucide-react';
-// import { Application } from '@/types/ecs';
+import { APPLICATION_DEFAULT_REGION } from '@/lib/constants';
 import { ApplicationDomain } from '@/lib/domain/application';
+
 
 interface EditApplicationDialogProps {
   open: boolean;
@@ -32,7 +33,7 @@ interface ApplicationFormData {
   taskDefinitionPath: string;
   roleArn: string;
   externalId: string;
-  region?: string;
+  region: string;
   sessionName?: string;
 }
 
@@ -46,7 +47,7 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
     taskDefinitionPath: 'task-definition.json',
     roleArn: '',
     externalId: Math.random().toString(36).substring(2, 15),
-    region: 'ap-northeast-1',
+    region: APPLICATION_DEFAULT_REGION,
     sessionName: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,7 +65,7 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
         taskDefinitionPath: application.gitConfig.path || 'task-definition.json',
         roleArn: application.awsConfig.roleArn || '',
         externalId: application.awsConfig.externalId || Math.random().toString(36).substring(2, 15),
-        region: application.awsConfig?.region || 'ap-northeast-1',
+        region: application.awsConfig?.region || APPLICATION_DEFAULT_REGION,
       });
     }
   }, [application]);
@@ -215,6 +216,20 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
               />
               {errors.serviceName && (
                 <p className="text-sm text-red-600">{errors.serviceName}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="serviceRegion">ECS Service Region</Label>
+              <Input
+                id="serviceRegion"
+                value={formData.region}
+                onChange={(e) => handleInputChange('region', e.target.value)}
+                placeholder={APPLICATION_DEFAULT_REGION}
+                disabled={isSubmitting}
+              />
+              {errors.region && (
+                <p className="text-sm text-red-600">{errors.region}</p>
               )}
             </div>
           </div>

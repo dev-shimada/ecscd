@@ -1,0 +1,2 @@
+export const APPLICATION_DEFAULT_REGION =
+  process.env.NEXT_PUBLIC_APPLICATION_DEFAULT_REGION || "ap-northeast-1";

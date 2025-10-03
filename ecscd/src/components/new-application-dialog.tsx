@@ -13,7 +13,7 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Plus, Loader2 } from 'lucide-react';
-// import { AWSService } from '@/lib/infrastructure/aws';
+import { APPLICATION_DEFAULT_REGION } from '@/lib/constants';
 
 interface NewApplicationDialogProps {
   open: boolean;
@@ -30,7 +30,7 @@ interface ApplicationFormData {
   taskDefinitionPath: string;
   roleArn: string;
   externalId: string;
-  region?: string;
+  region: string;
   sessionName?: string;
 }
 
@@ -44,7 +44,7 @@ export function NewApplicationDialog({ open, onOpenChange, onSuccess }: NewAppli
     taskDefinitionPath: 'task-definition.json',
     roleArn: '',
     externalId: Math.random().toString(36).substring(2, 15),
-    region: 'ap-northeast-1',
+    region: APPLICATION_DEFAULT_REGION,
     sessionName: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -148,7 +148,7 @@ export function NewApplicationDialog({ open, onOpenChange, onSuccess }: NewAppli
         taskDefinitionPath: 'task-definition.json',
         roleArn: '',
         externalId: Math.random().toString(36).substring(2, 15),
-        region: 'ap-northeast-1',
+        region: APPLICATION_DEFAULT_REGION,
         sessionName: '',
       });
       
@@ -221,6 +221,20 @@ export function NewApplicationDialog({ open, onOpenChange, onSuccess }: NewAppli
               />
               {errors.serviceName && (
                 <p className="text-sm text-red-600">{errors.serviceName}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="region">ECS Service Region</Label>
+              <Input
+                id="region"
+                value={formData.region}
+                onChange={(e) => handleInputChange('region', e.target.value)}
+                placeholder={APPLICATION_DEFAULT_REGION}
+                disabled={isSubmitting}
+              />
+              {errors.region && (
+                <p className="text-sm text-red-600">{errors.region}</p>
               )}
             </div>
           </div>

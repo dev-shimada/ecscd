@@ -37,14 +37,15 @@ docker pull ghcr.io/dev-shimada/ecscd:latest
 
 ## 環境変数
 
-| 変数名                | 説明                              | デフォルト値                    |
-| --------------------- | --------------------------------- | ------------------------------- |
-| `NODE_ENV`            | 実行環境                          | `production`                    |
-| `DATABASE_TYPE`       | sqlite or dynamodb                | `sqlite`                        |
-| `DYNAMODB_TABLE_NAME` | dynamodb table name               | `ECSCD`                         |
-| `AWS_REGION`          | AWS リージョン                    | `us-east-1`                     |
-| `SQLITE_DB_PATH`      | SQLite データベースファイルのパス | `/tmp/ecscd.db` or `./ecscd.db` |
-| `GITHUB_TOKEN`        | GitHub Personal Access Token      | -                               |
+| 変数名                                   | 説明                                        | デフォルト値                    |
+| ---------------------------------------- | ------------------------------------------- | ------------------------------- |
+| `NODE_ENV`                               | 実行環境                                    | `production`                    |
+| `DATABASE_TYPE`                          | sqlite or dynamodb                          | `sqlite`                        |
+| `DYNAMODB_TABLE_NAME`                    | dynamodb table name                         | `ECSCD`                         |
+| `AWS_REGION`                             | AWS リージョン                              | `us-east-1`                     |
+| `SQLITE_DB_PATH`                         | SQLite データベースファイルのパス           | `/tmp/ecscd.db` or `./ecscd.db` |
+| `GITHUB_TOKEN`                           | GitHub Personal Access Token                | -                               |
+| `NEXT_PUBLIC_APPLICATION_DEFAULT_REGION` | アプリケーションのデフォルト AWS リージョン | `ap-northeast-1`                |
 
 ## 起動方法
 
