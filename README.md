@@ -39,7 +39,6 @@ docker pull ghcr.io/dev-shimada/ecscd:latest
 
 | 変数名                                   | 説明                                        | デフォルト値                    |
 | ---------------------------------------- | ------------------------------------------- | ------------------------------- |
-| `NODE_ENV`                               | 実行環境                                    | `production`                    |
 | `DATABASE_TYPE`                          | sqlite or dynamodb                          | `sqlite`                        |
 | `DYNAMODB_TABLE_NAME`                    | dynamodb table name                         | `ECSCD`                         |
 | `AWS_REGION`                             | AWS リージョン                              | `us-east-1`                     |

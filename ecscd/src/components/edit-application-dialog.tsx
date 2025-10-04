@@ -114,13 +114,13 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm() || !application) {
       return;
     }
 
     setIsSubmitting(true);
-    
+
     try {
       const response = await fetch(`/api/apps/${application.name}`, {
         method: 'PUT',
@@ -220,9 +220,9 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="serviceRegion">ECS Service Region</Label>
+              <Label htmlFor="region">ECS Service Region</Label>
               <Input
-                id="serviceRegion"
+                id="region"
                 value={formData.region}
                 onChange={(e) => handleInputChange('region', e.target.value)}
                 placeholder={APPLICATION_DEFAULT_REGION}
@@ -276,7 +276,7 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
                 <p className="text-sm text-red-600">{errors.taskDefinitionPath}</p>
               )}
             </div>
-          
+
             <div className="space-y-2">
               <Label htmlFor="roleArn">Role arn</Label>
               <Input
