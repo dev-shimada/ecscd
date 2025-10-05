@@ -97,7 +97,7 @@ export default function Home() {
   const handleSync = async (appName: string) => {
     // Add the app to deploying state immediately
     setDeployingApps(prev => new Set(prev).add(appName));
-    
+
     try {
       const response = await fetch(`/api/apps/${appName}/sync`, {
         method: 'POST',
@@ -108,21 +108,21 @@ export default function Home() {
           dryRun: false
         }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         throw new Error(errorData.error || 'Sync failed');
       }
-      
+
       await response.json();
-      
+
       // Since the sync API is synchronous, handle completion immediately
       setDeployingApps(prev => {
         const newSet = new Set(prev);
         newSet.delete(appName);
         return newSet;
       });
-      
+
       // Refresh applications after successful sync
       loadApplications();
     } catch (error) {
@@ -143,10 +143,10 @@ export default function Home() {
 
   const handleSyncFromDiff = async () => {
     if (!selectedApp) return;
-    
+
     // Add the app to deploying state immediately
     setDeployingApps(prev => new Set(prev).add(selectedApp));
-    
+
     try {
       const response = await fetch(`/api/apps/${selectedApp}/sync`, {
         method: 'POST',
@@ -157,21 +157,21 @@ export default function Home() {
           dryRun: false
         }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         throw new Error(errorData.error || 'Sync failed');
       }
-      
+
       await response.json();
-      
+
       // Since the sync API is synchronous, handle completion immediately
       setDeployingApps(prev => {
         const newSet = new Set(prev);
         newSet.delete(selectedApp);
         return newSet;
       });
-      
+
       // Refresh applications and diff after successful sync
       loadApplications();
       if (selectedApp) {
@@ -234,7 +234,7 @@ export default function Home() {
       newSet.delete(appName);
       return newSet;
     });
-    
+
     // Refresh applications and diff after deployment completes
     loadApplications();
     if (selectedApp === appName) {
@@ -244,10 +244,10 @@ export default function Home() {
 
   const getOverallStatus = () => {
     if (applications.length === 0) return { active: 0, synced: 0, total: 0 };
-    
-    const active = applications.filter(app => app.service?.status === 'Active').length;
+
+    const active = applications.filter(app => app.service?.status === 'ACTIVE').length;
     const synced = applications.filter(app => app.sync.status === 'Synced').length;
-    
+
     return { active, synced, total: applications.length };
   };
 
@@ -289,7 +289,7 @@ export default function Home() {
               <div className="text-2xl font-bold">{status.total}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600">
@@ -305,7 +305,7 @@ export default function Home() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600">
