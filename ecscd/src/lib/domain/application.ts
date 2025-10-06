@@ -1,7 +1,7 @@
 export interface ApplicationDomain {
   name: string;
   sync: {
-    status: "Synced" | "OutOfSync" | "Error";
+    status: "InSync" | "OutOfSync" | "Error";
     lastSyncedAt?: Date;
   };
   gitConfig: {

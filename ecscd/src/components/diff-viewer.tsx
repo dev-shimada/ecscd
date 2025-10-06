@@ -83,7 +83,7 @@ export function DiffViewer({ diffs, summary, onSync, isLoading, error }: DiffVie
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Badge variant="success">Synced</Badge>
+            <Badge variant="success">In Sync</Badge>
             No Changes Detected
           </CardTitle>
         </CardHeader>
@@ -104,7 +104,7 @@ export function DiffViewer({ diffs, summary, onSync, isLoading, error }: DiffVie
             <Badge variant="warning">Out of Sync</Badge>
             Configuration Diff
           </CardTitle>
-          <Button 
+          <Button
             onClick={onSync}
             disabled={isLoading}
             className="flex items-center gap-2"
@@ -120,7 +120,7 @@ export function DiffViewer({ diffs, summary, onSync, isLoading, error }: DiffVie
         <div className="space-y-4">
           {diffs?.map((diff, index) => (
             <div key={index} className={`border rounded-lg p-4 ${getDiffColor(diff.type)}`}>
-              <div 
+              <div
                 className="flex items-center gap-2 cursor-pointer"
                 onClick={() => toggleExpanded(`${index}-${diff.path}`)}
               >

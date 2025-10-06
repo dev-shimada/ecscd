@@ -17,9 +17,9 @@ interface ApplicationCardProps {
   onDeploymentComplete?: () => void;
 }
 
-export function ApplicationCard({ 
-  application, 
-  onSync, 
+export function ApplicationCard({
+  application,
+  onSync,
   onViewDiff,
   onEdit,
   onDelete,
@@ -35,7 +35,7 @@ export function ApplicationCard({
 
   const getSyncStatusColor = (status: string) => {
     switch (status) {
-      case 'Synced':
+      case 'InSync':
         return 'success';
       case 'OutOfSync':
         return 'warning';
@@ -99,7 +99,7 @@ export function ApplicationCard({
 
   const formatLastSyncTime = (date?: Date) => {
     if (!date) return 'Never';
-    
+
     const now = new Date();
     const dateObj = date instanceof Date ? date : new Date(date);
     const diff = now.getTime() - dateObj.getTime();
@@ -115,9 +115,9 @@ export function ApplicationCard({
 
   const extractRevisionFromArn = (revision?: string) => {
     console.log('extractRevisionFromArn input:', revision);
-    
+
     if (!revision) return null;
-    
+
     // If it's a task definition ARN, extract the revision number
     if (revision.includes(':task-definition/')) {
       const parts = revision.split(':');
@@ -127,14 +127,14 @@ export function ApplicationCard({
       console.log('Extracted from task definition ARN:', result);
       return result;
     }
-    
+
     // If it starts with "deployment-", show first 8 characters
     if (revision.startsWith('deployment-')) {
       const result = revision.substring(0, 8);
       console.log('Extracted from deployment ID:', result);
       return result;
     }
-    
+
     // Otherwise, show first 8 characters
     const result = revision.substring(0, 8);
     console.log('Extracted fallback:', result);
@@ -201,7 +201,7 @@ export function ApplicationCard({
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-gray-500">Status:</span>
-                  <Badge 
+                  <Badge
                     variant={getDeploymentStatusColor(application.service?.deployments.filter(d => d.status === "PRIMARY")[0].status || 'Unknown')}
                     className="ml-2"
                   >
@@ -219,7 +219,7 @@ export function ApplicationCard({
               {application.service?.deployments.some(d => d.status === "PRIMARY") && (
                 <div className="text-sm">
                   <span className="text-gray-500">Rollout:</span>
-                  <Badge 
+                  <Badge
                     variant={getRolloutStateColor(application.service?.deployments.filter(d => d.status === "PRIMARY")[0].rolloutState)}
                     className="ml-2"
                   >
@@ -271,7 +271,7 @@ export function ApplicationCard({
           <ExternalLink className="h-4 w-4" />
           View Diff
         </Button>
-        
+
         <Button
           size="sm"
           onClick={handleSync}
