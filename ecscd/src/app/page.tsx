@@ -243,12 +243,12 @@ export default function Home() {
   };
 
   const getOverallStatus = () => {
-    if (applications.length === 0) return { active: 0, synced: 0, total: 0 };
+    if (applications.length === 0) return { active: 0, inSync: 0, total: 0 };
 
     const active = applications.filter(app => app.service?.status === 'ACTIVE').length;
-    const synced = applications.filter(app => app.sync.status === 'Synced').length;
+    const inSync = applications.filter(app => app.sync.status === 'InSync').length;
 
-    return { active, synced, total: applications.length };
+    return { active, inSync, total: applications.length };
   };
 
   const status = getOverallStatus();
@@ -309,14 +309,14 @@ export default function Home() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600">
-                Synced
+                In Sync
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2">
-                <div className="text-2xl font-bold">{status.synced}</div>
-                <Badge variant={status.synced === status.total ? 'success' : 'warning'}>
-                  {status.total > 0 ? Math.round((status.synced / status.total) * 100) : 0}%
+                <div className="text-2xl font-bold">{status.inSync}</div>
+                <Badge variant={status.inSync === status.total ? 'success' : 'warning'}>
+                  {status.total > 0 ? Math.round((status.inSync / status.total) * 100) : 0}%
                 </Badge>
               </div>
             </CardContent>

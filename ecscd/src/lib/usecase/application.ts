@@ -25,7 +25,7 @@ export class ApplicationUsecase implements IApplicationUsecase {
         if (deployments.length > 0) {
           app.sync.status = "OutOfSync";
         } else if (app.sync.status !== "Error") {
-          app.sync.status = "Synced";
+          app.sync.status = "InSync";
         }
       } catch {
         app.sync.status = "Error"
