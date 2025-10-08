@@ -141,6 +141,43 @@ export default function Home() {
     }
   };
 
+  const handleRollback = async (appName: string) => {
+    try {
+      const response = await fetch(`/api/apps/${appName}/rollback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dryRun: false
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || 'Rollback failed');
+      }
+
+      await response.json();
+
+      // Refresh applications after successful rollback
+      loadApplications();
+    } catch (error) {
+      console.error('Failed to start rollback:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Rollback failed for ${appName}`, {
+        description: errorMessage,
+      });
+      // Remove from deploying state on error
+      setDeployingApps(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(appName);
+        return newSet;
+      });
+      loadApplications();
+    }
+  };
+
   const handleSyncFromDiff = async () => {
     if (!selectedApp) return;
 
