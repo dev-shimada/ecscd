@@ -55,11 +55,9 @@ export function ApplicationCard({
     false;
 
   const hasRollbackDeployment =
-    isDeploymentActive ||
     application.service?.deployments.some((d) =>
       d.rolloutStateReason.includes("rolling back to")
-    ) ||
-    false;
+    ) || false;
 
   const getSyncStatusColor = (status: string) => {
     switch (status) {
