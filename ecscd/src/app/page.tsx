@@ -398,6 +398,7 @@ export default function Home() {
                     onViewDiff={handleViewDiff}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    onRollback={handleRollback}
                     isDeploymentActive={deployingApps.has(app.name) ||
                       app.service?.deployments.some(d => d.rolloutState === "IN_PROGRESS") ||
                       false}

@@ -1,11 +1,27 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ApplicationDomain } from '@/lib/domain/application';
-import { GitBranch, RefreshCw, Play, ExternalLink, Clock, Trash2, Edit } from 'lucide-react';
+import { useState } from "react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ApplicationDomain } from "@/lib/domain/application";
+import {
+  GitBranch,
+  RefreshCw,
+  Play,
+  ExternalLink,
+  Clock,
+  Trash2,
+  Edit,
+  Undo2,
+} from "lucide-react";
 
 interface ApplicationCardProps {
   application: ApplicationDomain;
@@ -13,6 +29,7 @@ interface ApplicationCardProps {
   onViewDiff?: (appName: string) => void;
   onEdit?: (appName: string) => void;
   onDelete?: (appName: string) => void;
+  onRollback?: (appName: string) => void;
   isDeploymentActive?: boolean;
   onDeploymentComplete?: () => void;
 }
@@ -23,67 +40,78 @@ export function ApplicationCard({
   onViewDiff,
   onEdit,
   onDelete,
-  isDeploymentActive = false
+  onRollback,
+  isDeploymentActive = false,
 }: ApplicationCardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Check for active deployment from both props and service state
-  const hasActiveDeployment = isDeploymentActive ||
-    application.service?.deployments.some(d => d.rolloutState === "IN_PROGRESS") ||
+  const hasActiveDeployment =
+    isDeploymentActive ||
+    application.service?.deployments.some(
+      (d) => d.rolloutState === "IN_PROGRESS"
+    ) ||
+    false;
+
+  const hasRollbackDeployment =
+    isDeploymentActive ||
+    application.service?.deployments.some((d) =>
+      d.rolloutStateReason.includes("rolling back to")
+    ) ||
     false;
 
   const getSyncStatusColor = (status: string) => {
     switch (status) {
-      case 'InSync':
-        return 'success';
-      case 'OutOfSync':
-        return 'warning';
-      case 'Error':
-        return 'destructive';
+      case "InSync":
+        return "success";
+      case "OutOfSync":
+        return "warning";
+      case "Error":
+        return "destructive";
       default:
-        return 'secondary';
+        return "secondary";
     }
   };
 
   const getServiceStatusColor = (status: string) => {
     switch (status) {
-      case 'Active':
-        return 'success';
+      case "Active":
+        return "success";
       default:
-        return 'secondary';
+        return "secondary";
     }
   };
 
   const getDeploymentStatusColor = (status: string) => {
     switch (status) {
-      case 'PRIMARY':
-        return 'success';
-      case 'ACTIVE':
-        return 'success';
-      case 'PENDING':
-      case 'RUNNING':
-        return 'warning';
-      case 'DRAINING':
-        return 'warning';
-      case 'INACTIVE':
-      case 'STOPPED':
-        return 'destructive';
+      case "PRIMARY":
+        return "success";
+      case "ACTIVE":
+        return "success";
+      case "PENDING":
+      case "RUNNING":
+        return "warning";
+      case "DRAINING":
+        return "warning";
+      case "INACTIVE":
+      case "STOPPED":
+        return "destructive";
       default:
-        return 'secondary';
+        return "secondary";
     }
   };
 
   const getRolloutStateColor = (rolloutState: string) => {
     switch (rolloutState) {
-      case 'COMPLETED':
-        return 'success';
-      case 'IN_PROGRESS':
-        return 'warning';
-      case 'FAILED':
-        return 'destructive';
+      case "COMPLETED":
+        return "success";
+      case "IN_PROGRESS":
+        return "warning";
+      case "FAILED":
+        return "destructive";
       default:
-        return 'secondary';
+        return "secondary";
     }
   };
 
@@ -97,8 +125,13 @@ export function ApplicationCard({
     onDelete?.(application.name);
   };
 
+  const handleRollback = () => {
+    setIsLoading(true);
+    onRollback?.(application.name);
+  };
+
   const formatLastSyncTime = (date?: Date) => {
-    if (!date) return 'Never';
+    if (!date) return "Never";
 
     const now = new Date();
     const dateObj = date instanceof Date ? date : new Date(date);
@@ -110,34 +143,34 @@ export function ApplicationCard({
     if (days > 0) return `${days}d ago`;
     if (hours > 0) return `${hours}h ago`;
     if (minutes > 0) return `${minutes}m ago`;
-    return 'Just now';
+    return "Just now";
   };
 
   const extractRevisionFromArn = (revision?: string) => {
-    console.log('extractRevisionFromArn input:', revision);
+    console.log("extractRevisionFromArn input:", revision);
 
     if (!revision) return null;
 
     // If it's a task definition ARN, extract the revision number
-    if (revision.includes(':task-definition/')) {
-      const parts = revision.split(':');
+    if (revision.includes(":task-definition/")) {
+      const parts = revision.split(":");
       const familyAndRevision = parts[parts.length - 1]; // e.g., "my-task:123"
-      const revisionPart = familyAndRevision.split(':')[1]; // e.g., "123"
+      const revisionPart = familyAndRevision.split(":")[1]; // e.g., "123"
       const result = revisionPart || familyAndRevision;
-      console.log('Extracted from task definition ARN:', result);
+      console.log("Extracted from task definition ARN:", result);
       return result;
     }
 
     // If it starts with "deployment-", show first 8 characters
-    if (revision.startsWith('deployment-')) {
+    if (revision.startsWith("deployment-")) {
       const result = revision.substring(0, 8);
-      console.log('Extracted from deployment ID:', result);
+      console.log("Extracted from deployment ID:", result);
       return result;
     }
 
     // Otherwise, show first 8 characters
     const result = revision.substring(0, 8);
-    console.log('Extracted fallback:', result);
+    console.log("Extracted fallback:", result);
     return result;
   };
 
@@ -149,11 +182,17 @@ export function ApplicationCard({
             {application.name}
           </CardTitle>
           <div className="flex gap-2">
-            <Badge variant={getServiceStatusColor(application.service?.status || 'Unknown')}>
-              {application.service?.status || 'Unknown'}
+            <Badge
+              variant={getServiceStatusColor(
+                application.service?.status || "Unknown"
+              )}
+            >
+              {application.service?.status || "Unknown"}
             </Badge>
-            <Badge variant={getSyncStatusColor(application.sync.status || 'Unknown')}>
-              {application.sync.status || 'Unknown'}
+            <Badge
+              variant={getSyncStatusColor(application.sync.status || "Unknown")}
+            >
+              {application.sync.status || "Unknown"}
             </Badge>
           </div>
         </div>
@@ -195,17 +234,29 @@ export function ApplicationCard({
             </div>
           )}
 
-          {application.service?.deployments.some(d => d.status === "PRIMARY") && (
+          {application.service?.deployments.some(
+            (d) => d.status === "PRIMARY"
+          ) && (
             <div className="space-y-2">
-              <div className="text-sm font-medium text-gray-600">Latest Deployment</div>
+              <div className="text-sm font-medium text-gray-600">
+                Latest Deployment
+              </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-gray-500">Status:</span>
                   <Badge
-                    variant={getDeploymentStatusColor(application.service?.deployments.filter(d => d.status === "PRIMARY")[0].status || 'Unknown')}
+                    variant={getDeploymentStatusColor(
+                      application.service?.deployments.filter(
+                        (d) => d.status === "PRIMARY"
+                      )[0].status || "Unknown"
+                    )}
                     className="ml-2"
                   >
-                    {application.service?.deployments.filter(d => d.status === "PRIMARY")[0].status}
+                    {
+                      application.service?.deployments.filter(
+                        (d) => d.status === "PRIMARY"
+                      )[0].status
+                    }
                   </Badge>
                 </div>
                 <div>
@@ -216,28 +267,54 @@ export function ApplicationCard({
                   </span>
                 </div>
               </div>
-              {application.service?.deployments.some(d => d.status === "PRIMARY") && (
+              {application.service?.deployments.some(
+                (d) => d.status === "PRIMARY"
+              ) && (
                 <div className="text-sm">
                   <span className="text-gray-500">Rollout:</span>
                   <Badge
-                    variant={getRolloutStateColor(application.service?.deployments.filter(d => d.status === "PRIMARY")[0].rolloutState)}
+                    variant={getRolloutStateColor(
+                      application.service?.deployments.filter(
+                        (d) => d.status === "PRIMARY"
+                      )[0].rolloutState
+                    )}
                     className="ml-2"
                   >
-                    {application.service?.deployments.filter(d => d.status === "PRIMARY")[0].rolloutState}
+                    {
+                      application.service?.deployments.filter(
+                        (d) => d.status === "PRIMARY"
+                      )[0].rolloutState
+                    }
                   </Badge>
-                  {application.service?.deployments.some(d => d.status === "PRIMARY") && (
+                  {application.service?.deployments.some(
+                    (d) => d.status === "PRIMARY"
+                  ) && (
                     <div className="text-xs text-gray-500 mt-1">
-                      {application.service?.deployments.filter(d => d.status === "PRIMARY")[0].rolloutStateReason}
+                      {
+                        application.service?.deployments.filter(
+                          (d) => d.status === "PRIMARY"
+                        )[0].rolloutStateReason
+                      }
                     </div>
                   )}
                 </div>
               )}
               <div className="text-xs text-gray-500">
                 <div>
-                  Created: {formatLastSyncTime(application.service?.deployments.filter(d => d.status === "PRIMARY")[0].createdAt)}
+                  Created:{" "}
+                  {formatLastSyncTime(
+                    application.service?.deployments.filter(
+                      (d) => d.status === "PRIMARY"
+                    )[0].createdAt
+                  )}
                 </div>
                 <div>
-                  Updated: {formatLastSyncTime(application.service?.deployments.filter(d => d.status === "PRIMARY")[0].updatedAt)}
+                  Updated:{" "}
+                  {formatLastSyncTime(
+                    application.service?.deployments.filter(
+                      (d) => d.status === "PRIMARY"
+                    )[0].updatedAt
+                  )}
                 </div>
               </div>
             </div>
@@ -248,12 +325,20 @@ export function ApplicationCard({
               <div className="flex items-center gap-2">
                 <RefreshCw className="h-4 w-4 animate-spin" />
                 <span className="font-medium">
-                  {application.service?.deployments.filter(d => d.status === "PRIMARY")[0]?.rolloutState || 'Deploying...'}
+                  {application.service?.deployments.filter(
+                    (d) => d.status === "PRIMARY"
+                  )[0]?.rolloutState || "Deploying..."}
                 </span>
               </div>
-              {application.service?.deployments.some(d => d.status === "PRIMARY") && (
+              {application.service?.deployments.some(
+                (d) => d.status === "PRIMARY"
+              ) && (
                 <p className="text-sm text-gray-600 mt-1">
-                  {application.service?.deployments.filter(d => d.status === "PRIMARY")[0].rolloutStateReason}
+                  {
+                    application.service?.deployments.filter(
+                      (d) => d.status === "PRIMARY"
+                    )[0].rolloutStateReason
+                  }
                 </p>
               )}
             </div>
@@ -278,8 +363,14 @@ export function ApplicationCard({
           disabled={isLoading || hasActiveDeployment}
           className="flex items-center gap-2"
         >
-          <Play className={`h-4 w-4 ${hasActiveDeployment ? 'animate-spin' : ''}`} />
-          {hasActiveDeployment ? 'Deploying...' : isLoading ? 'Starting...' : 'Sync'}
+          <Play
+            className={`h-4 w-4 ${hasActiveDeployment ? "animate-spin" : ""}`}
+          />
+          {hasActiveDeployment
+            ? "Deploying..."
+            : isLoading
+            ? "Starting..."
+            : "Sync"}
         </Button>
 
         {onEdit && (
@@ -307,6 +398,17 @@ export function ApplicationCard({
             Delete
           </Button>
         )}
+        {hasActiveDeployment && onRollback && (
+          <Button
+            variant="outline"
+            onClick={handleRollback}
+            disabled={isLoading || hasRollbackDeployment}
+            className="flex items-center gap-2"
+          >
+            <Undo2 className="h-4 w-4" />
+            Rollback
+          </Button>
+        )}
       </CardFooter>
 
       {/* Delete Confirmation Dialog */}
@@ -315,7 +417,8 @@ export function ApplicationCard({
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold mb-2">Delete Application</h3>
             <p className="text-gray-600 mb-4">
-              Are you sure you want to delete &quot;{application.name}&quot;? This action cannot be undone.
+              Are you sure you want to delete &quot;{application.name}&quot;?
+              This action cannot be undone.
             </p>
             <div className="flex gap-2 justify-end">
               <Button
