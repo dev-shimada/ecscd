@@ -23,4 +23,8 @@ export interface IAws {
     client: ECSClient,
     taskDefinitionArn: string
   ): Promise<RegisterTaskDefinitionCommandInput | undefined>;
+  stopServiceDeployment(
+    client: ECSClient,
+    ecsConfig: ApplicationDomain["ecsConfig"]
+  ): Promise<void>;
 }

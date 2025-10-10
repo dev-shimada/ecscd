@@ -22,6 +22,12 @@ export class Deployment implements DeploymentRepository {
       taskDefinitionArn
     );
   }
+
+  async rollback(application: ApplicationDomain): Promise<void> {
+    const client = await this.aws.createECSClient(application.awsConfig);
+    await this.aws.stopServiceDeployment(client, application.ecsConfig);
+  }
+
   async diff(application: ApplicationDomain): Promise<DiffDomain[]> {
     const taskDefinition = await this.github.getFileContent(application);
     if (!taskDefinition) {
@@ -65,7 +71,7 @@ export class Deployment implements DeploymentRepository {
         path: "family",
         current: current.family,
         target: target.family,
-        type: "Modified"
+        type: "Modified",
       });
     }
 
@@ -75,7 +81,7 @@ export class Deployment implements DeploymentRepository {
         path: "cpu",
         current: current.cpu,
         target: target.cpu,
-        type: "Modified"
+        type: "Modified",
       });
     }
 
@@ -85,7 +91,7 @@ export class Deployment implements DeploymentRepository {
         path: "memory",
         current: current.memory,
         target: target.memory,
-        type: "Modified"
+        type: "Modified",
       });
     }
 
@@ -95,7 +101,7 @@ export class Deployment implements DeploymentRepository {
         path: "networkMode",
         current: current.networkMode,
         target: target.networkMode,
-        type: "Modified"
+        type: "Modified",
       });
     }
 
@@ -105,7 +111,7 @@ export class Deployment implements DeploymentRepository {
         path: "executionRoleArn",
         current: current.executionRoleArn,
         target: target.executionRoleArn,
-        type: "Modified"
+        type: "Modified",
       });
     }
 
@@ -115,7 +121,7 @@ export class Deployment implements DeploymentRepository {
         path: "taskRoleArn",
         current: current.taskRoleArn,
         target: target.taskRoleArn,
-        type: "Modified"
+        type: "Modified",
       });
     }
 
@@ -125,33 +131,39 @@ export class Deployment implements DeploymentRepository {
 
     // Find containers that exist in current but not in target (removed)
     for (const currentContainer of currentContainers) {
-      const targetContainer = targetContainers.find(c => c.name === currentContainer.name);
+      const targetContainer = targetContainers.find(
+        (c) => c.name === currentContainer.name
+      );
       if (!targetContainer) {
         diffs.push({
           path: `containerDefinitions[${currentContainer.name}]`,
           current: JSON.stringify(currentContainer),
           target: undefined,
-          type: "Removed"
+          type: "Removed",
         });
       }
     }
 
     // Find containers that exist in target but not in current (added)
     for (const targetContainer of targetContainers) {
-      const currentContainer = currentContainers.find(c => c.name === targetContainer.name);
+      const currentContainer = currentContainers.find(
+        (c) => c.name === targetContainer.name
+      );
       if (!currentContainer) {
         diffs.push({
           path: `containerDefinitions[${targetContainer.name}]`,
           current: undefined,
           target: JSON.stringify(targetContainer),
-          type: "Added"
+          type: "Added",
         });
       }
     }
 
     // Compare existing containers
     for (const currentContainer of currentContainers) {
-      const targetContainer = targetContainers.find(c => c.name === currentContainer.name);
+      const targetContainer = targetContainers.find(
+        (c) => c.name === currentContainer.name
+      );
       if (targetContainer) {
         // Compare image
         if (currentContainer.image !== targetContainer.image) {
@@ -159,7 +171,7 @@ export class Deployment implements DeploymentRepository {
             path: `containerDefinitions[${currentContainer.name}].image`,
             current: currentContainer.image,
             target: targetContainer.image,
-            type: "Modified"
+            type: "Modified",
           });
         }
 
@@ -169,7 +181,7 @@ export class Deployment implements DeploymentRepository {
             path: `containerDefinitions[${currentContainer.name}].cpu`,
             current: currentContainer.cpu?.toString(),
             target: targetContainer.cpu?.toString(),
-            type: "Modified"
+            type: "Modified",
           });
         }
 
@@ -179,17 +191,20 @@ export class Deployment implements DeploymentRepository {
             path: `containerDefinitions[${currentContainer.name}].memory`,
             current: currentContainer.memory?.toString(),
             target: targetContainer.memory?.toString(),
-            type: "Modified"
+            type: "Modified",
           });
         }
 
         // Compare memory reservation
-        if (currentContainer.memoryReservation !== targetContainer.memoryReservation) {
+        if (
+          currentContainer.memoryReservation !==
+          targetContainer.memoryReservation
+        ) {
           diffs.push({
             path: `containerDefinitions[${currentContainer.name}].memoryReservation`,
             current: currentContainer.memoryReservation?.toString(),
             target: targetContainer.memoryReservation?.toString(),
-            type: "Modified"
+            type: "Modified",
           });
         }
 
@@ -199,16 +214,16 @@ export class Deployment implements DeploymentRepository {
             path: `containerDefinitions[${currentContainer.name}].essential`,
             current: currentContainer.essential?.toString(),
             target: targetContainer.essential?.toString(),
-            type: "Modified"
+            type: "Modified",
           });
         }
 
         // Compare environment variables
         const currentEnv = currentContainer.environment || [];
         const targetEnv = targetContainer.environment || [];
-        
-        const currentEnvMap = new Map(currentEnv.map(e => [e.name, e.value]));
-        const targetEnvMap = new Map(targetEnv.map(e => [e.name, e.value]));
+
+        const currentEnvMap = new Map(currentEnv.map((e) => [e.name, e.value]));
+        const targetEnvMap = new Map(targetEnv.map((e) => [e.name, e.value]));
 
         // Find removed environment variables
         for (const [name, value] of currentEnvMap) {
@@ -217,7 +232,7 @@ export class Deployment implements DeploymentRepository {
               path: `containerDefinitions[${currentContainer.name}].environment[${name}]`,
               current: value,
               target: undefined,
-              type: "Removed"
+              type: "Removed",
             });
           }
         }
@@ -229,14 +244,14 @@ export class Deployment implements DeploymentRepository {
               path: `containerDefinitions[${currentContainer.name}].environment[${name}]`,
               current: undefined,
               target: value,
-              type: "Added"
+              type: "Added",
             });
           } else if (currentEnvMap.get(name) !== value) {
             diffs.push({
               path: `containerDefinitions[${currentContainer.name}].environment[${name}]`,
               current: currentEnvMap.get(name),
               target: value,
-              type: "Modified"
+              type: "Modified",
             });
           }
         }
@@ -250,7 +265,7 @@ export class Deployment implements DeploymentRepository {
             path: `containerDefinitions[${currentContainer.name}].portMappings`,
             current: JSON.stringify(currentPorts),
             target: JSON.stringify(targetPorts),
-            type: "Modified"
+            type: "Modified",
           });
         }
       }

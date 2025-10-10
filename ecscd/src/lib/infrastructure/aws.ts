@@ -9,6 +9,8 @@ import {
   RegisterTaskDefinitionCommandInput,
   DescribeTaskDefinitionCommand,
   UpdateServiceCommand,
+  ListServiceDeploymentsCommand,
+  StopServiceDeploymentCommand,
 } from "@aws-sdk/client-ecs";
 import { IAws } from "./interface/aws";
 
@@ -142,6 +144,34 @@ export class AWS implements IAws {
     const response = await client.send(command);
     if (!response.service) {
       throw new Error("Failed to update service");
+    }
+    return;
+  }
+
+  async stopServiceDeployment(
+    client: ECSClient,
+    ecsConfig: ApplicationDomain["ecsConfig"]
+  ): Promise<void> {
+    const listCommand = new ListServiceDeploymentsCommand({
+      cluster: ecsConfig.cluster,
+      service: ecsConfig.service,
+    });
+    const listResponse = await client.send(listCommand);
+    const deployment = listResponse.serviceDeployments?.find(
+      (d) => d.status === "IN_PROGRESS"
+    );
+    if (!deployment) {
+      throw new Error(
+        `No in-progress deployment found for service ${ecsConfig.service}`
+      );
+    }
+    const command = new StopServiceDeploymentCommand({
+      serviceDeploymentArn: deployment.serviceDeploymentArn,
+      stopType: "ROLLBACK",
+    });
+    const response = await client.send(command);
+    if (!response.serviceDeploymentArn) {
+      throw new Error("Failed to stop service deployment");
     }
     return;
   }

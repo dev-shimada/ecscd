@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { toast } from 'sonner';
-import { ApplicationCard } from '@/components/application-card';
-import { DiffViewer } from '@/components/diff-viewer';
-import { NewApplicationDialog } from '@/components/new-application-dialog';
-import { EditApplicationDialog } from '@/components/edit-application-dialog';
-import { ApplicationDomain, DiffDomain } from '@/lib/domain/application';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Plus, RefreshCw, GitBranch } from 'lucide-react';
+import { useState, useEffect, useRef } from "react";
+import { toast } from "sonner";
+import { ApplicationCard } from "@/components/application-card";
+import { DiffViewer } from "@/components/diff-viewer";
+import { NewApplicationDialog } from "@/components/new-application-dialog";
+import { EditApplicationDialog } from "@/components/edit-application-dialog";
+import { ApplicationDomain, DiffDomain } from "@/lib/domain/application";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Plus, RefreshCw, GitBranch } from "lucide-react";
 
 export default function Home() {
   const [applications, setApplications] = useState<ApplicationDomain[]>([]);
@@ -36,8 +36,8 @@ export default function Home() {
 
   // Poll for deployment status every 5 seconds when any app has IN_PROGRESS rolloutState
   useEffect(() => {
-    const hasInProgressDeployment = applications.some(app =>
-      app.service?.deployments.some(d => d.rolloutState === "IN_PROGRESS")
+    const hasInProgressDeployment = applications.some((app) =>
+      app.service?.deployments.some((d) => d.rolloutState === "IN_PROGRESS")
     );
 
     if (!hasInProgressDeployment) {
@@ -46,19 +46,21 @@ export default function Home() {
 
     const interval = setInterval(async () => {
       try {
-        const response = await fetch('/api/apps');
+        const response = await fetch("/api/apps");
         const data = await response.json();
         const newApplications = data.applications || [];
 
         // Compare with previous state to only update if there are actual changes
-        const hasChanges = JSON.stringify(newApplications) !== JSON.stringify(previousApplicationsRef.current);
+        const hasChanges =
+          JSON.stringify(newApplications) !==
+          JSON.stringify(previousApplicationsRef.current);
 
         if (hasChanges) {
           previousApplicationsRef.current = newApplications;
           setApplications(newApplications);
         }
       } catch (error) {
-        console.error('Failed to poll applications:', error);
+        console.error("Failed to poll applications:", error);
       }
     }, 5000);
 
@@ -68,13 +70,13 @@ export default function Home() {
   const loadApplications = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/apps');
+      const response = await fetch("/api/apps");
       const data = await response.json();
       const newApplications = data.applications || [];
       previousApplicationsRef.current = newApplications;
       setApplications(newApplications);
     } catch (error) {
-      console.error('Failed to load applications:', error);
+      console.error("Failed to load applications:", error);
     } finally {
       setIsLoading(false);
     }
@@ -88,7 +90,7 @@ export default function Home() {
       const data = await response.json();
       setDiffData(data);
     } catch (error) {
-      console.error('Failed to load diff:', error);
+      console.error("Failed to load diff:", error);
     } finally {
       setIsDiffLoading(false);
     }
@@ -96,28 +98,30 @@ export default function Home() {
 
   const handleSync = async (appName: string) => {
     // Add the app to deploying state immediately
-    setDeployingApps(prev => new Set(prev).add(appName));
+    setDeployingApps((prev) => new Set(prev).add(appName));
 
     try {
       const response = await fetch(`/api/apps/${appName}/sync`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          dryRun: false
+          dryRun: false,
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || 'Sync failed');
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Unknown error" }));
+        throw new Error(errorData.error || "Sync failed");
       }
 
       await response.json();
 
       // Since the sync API is synchronous, handle completion immediately
-      setDeployingApps(prev => {
+      setDeployingApps((prev) => {
         const newSet = new Set(prev);
         newSet.delete(appName);
         return newSet;
@@ -126,13 +130,54 @@ export default function Home() {
       // Refresh applications after successful sync
       loadApplications();
     } catch (error) {
-      console.error('Failed to start sync:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error("Failed to start sync:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
       toast.error(`Sync failed for ${appName}`, {
         description: errorMessage,
       });
       // Remove from deploying state on error
-      setDeployingApps(prev => {
+      setDeployingApps((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(appName);
+        return newSet;
+      });
+      loadApplications();
+    }
+  };
+
+  const handleRollback = async (appName: string) => {
+    try {
+      const response = await fetch(`/api/apps/${appName}/rollback`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          dryRun: false,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Unknown error" }));
+        throw new Error(errorData.error || "Rollback failed");
+      }
+
+      await response.json();
+
+      // Refresh applications after successful rollback
+      loadApplications();
+    } catch (error) {
+      console.error("Failed to start rollback:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
+      toast.error(`Rollback failed for ${appName}`, {
+        description: errorMessage,
+      });
+      // Remove from deploying state on error
+      setDeployingApps((prev) => {
         const newSet = new Set(prev);
         newSet.delete(appName);
         return newSet;
@@ -145,28 +190,30 @@ export default function Home() {
     if (!selectedApp) return;
 
     // Add the app to deploying state immediately
-    setDeployingApps(prev => new Set(prev).add(selectedApp));
+    setDeployingApps((prev) => new Set(prev).add(selectedApp));
 
     try {
       const response = await fetch(`/api/apps/${selectedApp}/sync`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          dryRun: false
+          dryRun: false,
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || 'Sync failed');
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Unknown error" }));
+        throw new Error(errorData.error || "Sync failed");
       }
 
       await response.json();
 
       // Since the sync API is synchronous, handle completion immediately
-      setDeployingApps(prev => {
+      setDeployingApps((prev) => {
         const newSet = new Set(prev);
         newSet.delete(selectedApp);
         return newSet;
@@ -178,13 +225,14 @@ export default function Home() {
         handleViewDiff(selectedApp);
       }
     } catch (error) {
-      console.error('Failed to start sync:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error("Failed to start sync:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
       toast.error(`Sync failed for ${selectedApp}`, {
         description: errorMessage,
       });
       // Remove from deploying state on error
-      setDeployingApps(prev => {
+      setDeployingApps((prev) => {
         const newSet = new Set(prev);
         newSet.delete(selectedApp);
         return newSet;
@@ -193,7 +241,7 @@ export default function Home() {
   };
 
   const handleEdit = (appName: string) => {
-    const app = applications.find(a => a.name === appName);
+    const app = applications.find((a) => a.name === appName);
     if (app) {
       setEditingApp(app);
       setShowEditAppDialog(true);
@@ -203,15 +251,17 @@ export default function Home() {
   const handleDelete = async (appName: string) => {
     try {
       const response = await fetch(`/api/apps/${encodeURIComponent(appName)}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || 'Delete failed');
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Unknown error" }));
+        throw new Error(errorData.error || "Delete failed");
       }
 
       // If the deleted app was selected, clear the selection
@@ -223,13 +273,13 @@ export default function Home() {
       // Refresh applications list
       loadApplications();
     } catch (error) {
-      console.error('Failed to delete application:', error);
+      console.error("Failed to delete application:", error);
       // You could add toast notification here
     }
   };
 
   const handleDeploymentComplete = (appName: string) => () => {
-    setDeployingApps(prev => {
+    setDeployingApps((prev) => {
       const newSet = new Set(prev);
       newSet.delete(appName);
       return newSet;
@@ -245,8 +295,12 @@ export default function Home() {
   const getOverallStatus = () => {
     if (applications.length === 0) return { active: 0, inSync: 0, total: 0 };
 
-    const active = applications.filter(app => app.service?.status === 'ACTIVE').length;
-    const inSync = applications.filter(app => app.sync.status === 'InSync').length;
+    const active = applications.filter(
+      (app) => app.service?.status === "ACTIVE"
+    ).length;
+    const inSync = applications.filter(
+      (app) => app.sync.status === "InSync"
+    ).length;
 
     return { active, inSync, total: applications.length };
   };
@@ -263,8 +317,15 @@ export default function Home() {
               <h1 className="text-2xl font-bold text-gray-900">ecscd</h1>
             </div>
             <div className="flex items-center gap-4">
-              <Button variant="outline" size="sm" onClick={loadApplications} disabled={isLoading}>
-                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadApplications}
+                disabled={isLoading}
+              >
+                <RefreshCw
+                  className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
+                />
                 Refresh
               </Button>
               <Button size="sm" onClick={() => setShowNewAppDialog(true)}>
@@ -299,8 +360,15 @@ export default function Home() {
             <CardContent>
               <div className="flex items-center gap-2">
                 <div className="text-2xl font-bold">{status.active}</div>
-                <Badge variant={status.active === status.total ? 'success' : 'secondary'}>
-                  {status.total > 0 ? Math.round((status.active / status.total) * 100) : 0}%
+                <Badge
+                  variant={
+                    status.active === status.total ? "success" : "secondary"
+                  }
+                >
+                  {status.total > 0
+                    ? Math.round((status.active / status.total) * 100)
+                    : 0}
+                  %
                 </Badge>
               </div>
             </CardContent>
@@ -315,8 +383,15 @@ export default function Home() {
             <CardContent>
               <div className="flex items-center gap-2">
                 <div className="text-2xl font-bold">{status.inSync}</div>
-                <Badge variant={status.inSync === status.total ? 'success' : 'warning'}>
-                  {status.total > 0 ? Math.round((status.inSync / status.total) * 100) : 0}%
+                <Badge
+                  variant={
+                    status.inSync === status.total ? "success" : "warning"
+                  }
+                >
+                  {status.total > 0
+                    ? Math.round((status.inSync / status.total) * 100)
+                    : 0}
+                  %
                 </Badge>
               </div>
             </CardContent>
@@ -330,7 +405,8 @@ export default function Home() {
               <h2 className="text-xl font-semibold">Applications</h2>
               {applications.length > 0 && (
                 <span className="text-sm text-gray-600">
-                  {applications.length} application{applications.length !== 1 ? 's' : ''}
+                  {applications.length} application
+                  {applications.length !== 1 ? "s" : ""}
                 </span>
               )}
             </div>
@@ -361,9 +437,14 @@ export default function Home() {
                     onViewDiff={handleViewDiff}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
-                    isDeploymentActive={deployingApps.has(app.name) ||
-                      app.service?.deployments.some(d => d.rolloutState === "IN_PROGRESS") ||
-                      false}
+                    onRollback={handleRollback}
+                    isDeploymentActive={
+                      deployingApps.has(app.name) ||
+                      app.service?.deployments.some(
+                        (d) => d.rolloutState === "IN_PROGRESS"
+                      ) ||
+                      false
+                    }
                     onDeploymentComplete={handleDeploymentComplete(app.name)}
                   />
                 ))}
@@ -374,7 +455,7 @@ export default function Home() {
           {/* Diff Viewer */}
           <div className="space-y-6">
             <h2 className="text-xl font-semibold">
-              {selectedApp ? `Diff: ${selectedApp}` : 'Configuration Diff'}
+              {selectedApp ? `Diff: ${selectedApp}` : "Configuration Diff"}
             </h2>
 
             {!selectedApp ? (
@@ -395,18 +476,24 @@ export default function Home() {
             ) : diffData ? (
               <DiffViewer
                 diffs={diffData.diffs || []}
-                summary={diffData.summary || 'No summary available'}
+                summary={diffData.summary || "No summary available"}
                 onSync={handleSyncFromDiff}
-                isLoading={selectedApp ? (deployingApps.has(selectedApp) ||
-                  applications.find(app => app.name === selectedApp)?.service?.deployments.some(d => d.rolloutState === "IN_PROGRESS")) : false}
+                isLoading={
+                  selectedApp
+                    ? deployingApps.has(selectedApp) ||
+                      applications
+                        .find((app) => app.name === selectedApp)
+                        ?.service?.deployments.some(
+                          (d) => d.rolloutState === "IN_PROGRESS"
+                        )
+                    : false
+                }
                 error={diffData.error || undefined}
               />
             ) : (
               <Card>
                 <CardContent className="py-12 text-center">
-                  <div className="text-gray-600">
-                    Failed to load diff data
-                  </div>
+                  <div className="text-gray-600">Failed to load diff data</div>
                 </CardContent>
               </Card>
             )}
