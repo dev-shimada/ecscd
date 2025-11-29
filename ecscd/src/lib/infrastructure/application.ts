@@ -12,22 +12,25 @@ export class Application implements ApplicationRepository {
   async getApplications(): Promise<ApplicationDomain[]> {
     const applications = await this.db.getApplications();
 
-    for (const app of applications) {
-      try {
-        const aws = new AWS();
-        const ecsResponse = await aws.describeServices(
-          await aws.createECSClient(app.awsConfig),
-          {
-            cluster: app.ecsConfig.cluster,
-            service: app.ecsConfig.service,
-          }
-        );
-        app.service = ecsResponse;
-      } catch (error) {
-        console.warn("Error fetching ECS service:", error);
-        app.sync.status = "Error";
-      }
-    }
+    // 並列でECSサービス情報を取得
+    await Promise.all(
+      applications.map(async (app) => {
+        try {
+          const aws = new AWS();
+          const ecsResponse = await aws.describeServices(
+            await aws.createECSClient(app.awsConfig),
+            {
+              cluster: app.ecsConfig.cluster,
+              service: app.ecsConfig.service,
+            }
+          );
+          app.service = ecsResponse;
+        } catch (error) {
+          console.warn(`Error fetching ECS service for ${app.name}:`, error);
+          app.sync.status = "Error";
+        }
+      })
+    );
     return applications;
   }
   async getService(
