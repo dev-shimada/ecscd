@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { au } from "@/lib/di";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const namesOnly = searchParams.get("namesOnly") === "true";
+
+    if (namesOnly) {
+      const names = await au.getApplicationNames();
+      return NextResponse.json({ names });
+    }
+
     const applications = await au.getApplications();
     return NextResponse.json({ applications });
   } catch (error) {

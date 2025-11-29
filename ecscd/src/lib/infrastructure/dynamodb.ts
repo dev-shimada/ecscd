@@ -57,6 +57,32 @@ export class DynamoDB implements IDatabase {
     }
   }
 
+  async getApplicationNames(): Promise<string[]> {
+    try {
+      const command = new ScanCommand({
+        TableName: this.tableName,
+        ProjectionExpression: "#name, created_at",
+        ExpressionAttributeNames: {
+          "#name": "name",
+        },
+      });
+
+      const response = await this.client.send(command);
+      const items = response.Items || [];
+
+      // Sort by created_at descending and return names
+      return items
+        .sort((a, b) => {
+          const dateA = new Date(a.created_at as string).getTime();
+          const dateB = new Date(b.created_at as string).getTime();
+          return dateB - dateA;
+        })
+        .map((item) => item.name as string);
+    } catch (error) {
+      throw new Error(`Failed to get application names: ${error}`);
+    }
+  }
+
   async createApplication(application: ApplicationDomain): Promise<void> {
     try {
       const command = new PutCommand({
@@ -82,7 +108,10 @@ export class DynamoDB implements IDatabase {
 
       await this.client.send(command);
     } catch (error) {
-      if (error instanceof Error && error.name === "ConditionalCheckFailedException") {
+      if (
+        error instanceof Error &&
+        error.name === "ConditionalCheckFailedException"
+      ) {
         throw new Error(
           `Application with name '${application.name}' already exists`
         );
@@ -125,7 +154,10 @@ export class DynamoDB implements IDatabase {
 
       await this.client.send(command);
     } catch (error) {
-      if (error instanceof Error && error.name === "ConditionalCheckFailedException") {
+      if (
+        error instanceof Error &&
+        error.name === "ConditionalCheckFailedException"
+      ) {
         throw new Error(
           `Application with name '${application.name}' does not exist`
         );
@@ -149,7 +181,10 @@ export class DynamoDB implements IDatabase {
 
       await this.client.send(command);
     } catch (error) {
-      if (error instanceof Error && error.name === "ConditionalCheckFailedException") {
+      if (
+        error instanceof Error &&
+        error.name === "ConditionalCheckFailedException"
+      ) {
         throw new Error(`Application with name '${name}' does not exist`);
       }
       throw new Error(`Failed to delete application: ${error}`);

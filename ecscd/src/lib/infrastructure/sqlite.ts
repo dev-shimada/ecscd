@@ -77,6 +77,21 @@ export class SQLite implements IDatabase {
       );
     });
   }
+
+  async getApplicationNames(): Promise<string[]> {
+    return new Promise((resolve, reject) => {
+      this.db.all(
+        `SELECT name FROM applications ORDER BY created_at DESC`,
+        (err: Error | null, rows: { name: string }[]) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve(rows.map((row) => row.name));
+        }
+      );
+    });
+  }
+
   async createApplication(application: ApplicationDomain): Promise<void> {
     return new Promise((resolve, reject) => {
       this.db.run(
