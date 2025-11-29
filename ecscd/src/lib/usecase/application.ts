@@ -19,18 +19,26 @@ export class ApplicationUsecase implements IApplicationUsecase {
 
   async getApplications(): Promise<ApplicationDomain[]> {
     const applications = await this.applicationRepository.getApplications();
-    for (const app of applications) {
-      try {
-        const deployments = await this.deploymentRepository.diff(app);
-        if (deployments.length > 0) {
-          app.sync.status = "OutOfSync";
-        } else if (app.sync.status !== "Error") {
-          app.sync.status = "InSync";
+
+    // 並列でdiff（同期状態）を取得
+    // 既にErrorステータスのアプリはスキップ
+    await Promise.all(
+      applications.map(async (app) => {
+        if (app.sync.status === "Error") {
+          return;
         }
-      } catch {
-        app.sync.status = "Error"
-      }
-    }
+        try {
+          const deployments = await this.deploymentRepository.diff(app);
+          if (deployments.length > 0) {
+            app.sync.status = "OutOfSync";
+          } else {
+            app.sync.status = "InSync";
+          }
+        } catch {
+          app.sync.status = "Error";
+        }
+      })
+    );
     return applications;
   }
   async createApplication(application: ApplicationDomain): Promise<void> {
