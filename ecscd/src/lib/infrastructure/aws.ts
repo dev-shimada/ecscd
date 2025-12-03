@@ -119,8 +119,14 @@ export class AWS implements IAws {
     client: ECSClient,
     taskDef: RegisterTaskDefinitionCommandInput
   ): Promise<string> {
+    // Remove tags if empty to avoid "Tags can not be empty" error
+    const taskDefInput = { ...taskDef };
+    if (taskDefInput.tags && taskDefInput.tags.length === 0) {
+      delete taskDefInput.tags;
+    }
+
     const response = await client.send(
-      new RegisterTaskDefinitionCommand(taskDef)
+      new RegisterTaskDefinitionCommand(taskDefInput)
     );
     if (
       !response.taskDefinition ||
