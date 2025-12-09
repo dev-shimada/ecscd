@@ -11,28 +11,111 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, RefreshCw, GitBranch } from "lucide-react";
+import { TabBar, Tab } from "@/components/tab-bar";
 
-export default function Home() {
-  const [applications, setApplications] = useState<ApplicationDomain[]>([]);
-  const [selectedApp, setSelectedApp] = useState<string | null>(null);
-  const [diffData, setDiffData] = useState<{
+interface TabData {
+  applications: ApplicationDomain[];
+  selectedApp: string | null;
+  diffData: {
     error: undefined;
     diffs: DiffDomain[];
     summary: string;
     current: unknown;
     target: unknown;
-  } | null>(null);
+  } | null;
+  deployingApps: Set<string>;
+}
+
+export default function Home() {
+  // Tab management
+  const [tabs, setTabs] = useState<Tab[]>([]);
+  const [activeTabId, setActiveTabId] = useState<string>("");
+  const [tabDataMap, setTabDataMap] = useState<Record<string, TabData>>({});
+
+  // UI state
   const [isLoading, setIsLoading] = useState(false);
   const [isDiffLoading, setIsDiffLoading] = useState(false);
   const [showNewAppDialog, setShowNewAppDialog] = useState(false);
   const [showEditAppDialog, setShowEditAppDialog] = useState(false);
   const [editingApp, setEditingApp] = useState<ApplicationDomain | null>(null);
-  const [deployingApps, setDeployingApps] = useState<Set<string>>(new Set());
   const previousApplicationsRef = useRef<ApplicationDomain[]>([]);
 
+  // Get current tab data
+  const currentTabData = tabDataMap[activeTabId] || {
+    applications: [],
+    selectedApp: null,
+    diffData: null,
+    deployingApps: new Set<string>(),
+  };
+
+  const applications = currentTabData.applications;
+  const selectedApp = currentTabData.selectedApp;
+  const diffData = currentTabData.diffData;
+  const deployingApps = currentTabData.deployingApps;
+
+  // Initialize tabs from localStorage
   useEffect(() => {
-    loadApplications();
+    const savedTabs = localStorage.getItem("ecscd-tabs");
+    const savedActiveTabId = localStorage.getItem("ecscd-active-tab");
+    const savedTabData = localStorage.getItem("ecscd-tab-data");
+
+    if (savedTabs && savedActiveTabId && savedTabData) {
+      const parsedTabs = JSON.parse(savedTabs);
+      const parsedTabData = JSON.parse(savedTabData);
+      // Convert deployingApps arrays back to Sets
+      Object.keys(parsedTabData).forEach((tabId) => {
+        parsedTabData[tabId].deployingApps = new Set(
+          parsedTabData[tabId].deployingApps || []
+        );
+      });
+      setTabs(parsedTabs);
+      setActiveTabId(savedActiveTabId);
+      setTabDataMap(parsedTabData);
+    } else {
+      // Create default tab
+      const defaultTab: Tab = {
+        id: crypto.randomUUID(),
+        name: "デフォルト",
+      };
+      setTabs([defaultTab]);
+      setActiveTabId(defaultTab.id);
+      setTabDataMap({
+        [defaultTab.id]: {
+          applications: [],
+          selectedApp: null,
+          diffData: null,
+          deployingApps: new Set(),
+        },
+      });
+    }
   }, []);
+
+  // Save tabs to localStorage
+  useEffect(() => {
+    if (tabs.length > 0 && activeTabId) {
+      localStorage.setItem("ecscd-tabs", JSON.stringify(tabs));
+      localStorage.setItem("ecscd-active-tab", activeTabId);
+      // Convert Sets to arrays for JSON serialization
+      const serializableTabData = Object.entries(tabDataMap).reduce(
+        (acc, [tabId, data]) => {
+          acc[tabId] = {
+            ...data,
+            deployingApps: Array.from(data.deployingApps),
+          };
+          return acc;
+        },
+        {} as Record<string, unknown>
+      );
+      localStorage.setItem("ecscd-tab-data", JSON.stringify(serializableTabData));
+    }
+  }, [tabs, activeTabId, tabDataMap]);
+
+  // Load applications for current tab
+  useEffect(() => {
+    if (activeTabId) {
+      loadApplications();
+    }
+  }, [activeTabId]);
 
   // Poll for deployment status every 5 seconds when any app has IN_PROGRESS rolloutState
   useEffect(() => {
@@ -67,6 +150,52 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [applications]);
 
+  // Helper function to update current tab data
+  const updateCurrentTabData = (updates: Partial<TabData>) => {
+    setTabDataMap((prev) => ({
+      ...prev,
+      [activeTabId]: {
+        ...prev[activeTabId],
+        ...updates,
+      },
+    }));
+  };
+
+  // Tab operations
+  const handleTabCreate = (name: string) => {
+    const newTab: Tab = {
+      id: crypto.randomUUID(),
+      name,
+    };
+    setTabs((prev) => [...prev, newTab]);
+    setTabDataMap((prev) => ({
+      ...prev,
+      [newTab.id]: {
+        applications: [],
+        selectedApp: null,
+        diffData: null,
+        deployingApps: new Set(),
+      },
+    }));
+    setActiveTabId(newTab.id);
+  };
+
+  const handleTabDelete = (tabId: string) => {
+    if (tabs.length <= 1) return;
+
+    setTabs((prev) => prev.filter((tab) => tab.id !== tabId));
+    setTabDataMap((prev) => {
+      const newMap = { ...prev };
+      delete newMap[tabId];
+      return newMap;
+    });
+
+    if (activeTabId === tabId) {
+      const remainingTabs = tabs.filter((tab) => tab.id !== tabId);
+      setActiveTabId(remainingTabs[0]?.id || "");
+    }
+  };
+
   const loadApplications = async () => {
     setIsLoading(true);
     try {
@@ -74,7 +203,7 @@ export default function Home() {
       const data = await response.json();
       const newApplications = data.applications || [];
       previousApplicationsRef.current = newApplications;
-      setApplications(newApplications);
+      updateCurrentTabData({ applications: newApplications });
     } catch (error) {
       console.error("Failed to load applications:", error);
     } finally {
@@ -83,12 +212,12 @@ export default function Home() {
   };
 
   const handleViewDiff = async (appName: string) => {
-    setSelectedApp(appName);
+    updateCurrentTabData({ selectedApp: appName });
     setIsDiffLoading(true);
     try {
       const response = await fetch(`/api/apps/${appName}/diff`);
       const data = await response.json();
-      setDiffData(data);
+      updateCurrentTabData({ diffData: data });
     } catch (error) {
       console.error("Failed to load diff:", error);
     } finally {
@@ -98,7 +227,9 @@ export default function Home() {
 
   const handleSync = async (appName: string) => {
     // Add the app to deploying state immediately
-    setDeployingApps((prev) => new Set(prev).add(appName));
+    updateCurrentTabData({
+      deployingApps: new Set(deployingApps).add(appName),
+    });
 
     try {
       const response = await fetch(`/api/apps/${appName}/sync`, {
@@ -121,11 +252,9 @@ export default function Home() {
       await response.json();
 
       // Since the sync API is synchronous, handle completion immediately
-      setDeployingApps((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(appName);
-        return newSet;
-      });
+      const newSet = new Set(deployingApps);
+      newSet.delete(appName);
+      updateCurrentTabData({ deployingApps: newSet });
 
       // Refresh applications after successful sync
       loadApplications();
@@ -137,11 +266,9 @@ export default function Home() {
         description: errorMessage,
       });
       // Remove from deploying state on error
-      setDeployingApps((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(appName);
-        return newSet;
-      });
+      const newSet = new Set(deployingApps);
+      newSet.delete(appName);
+      updateCurrentTabData({ deployingApps: newSet });
       loadApplications();
     }
   };
@@ -177,11 +304,9 @@ export default function Home() {
         description: errorMessage,
       });
       // Remove from deploying state on error
-      setDeployingApps((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(appName);
-        return newSet;
-      });
+      const newSet = new Set(deployingApps);
+      newSet.delete(appName);
+      updateCurrentTabData({ deployingApps: newSet });
       loadApplications();
     }
   };
@@ -190,7 +315,9 @@ export default function Home() {
     if (!selectedApp) return;
 
     // Add the app to deploying state immediately
-    setDeployingApps((prev) => new Set(prev).add(selectedApp));
+    updateCurrentTabData({
+      deployingApps: new Set(deployingApps).add(selectedApp),
+    });
 
     try {
       const response = await fetch(`/api/apps/${selectedApp}/sync`, {
@@ -213,11 +340,9 @@ export default function Home() {
       await response.json();
 
       // Since the sync API is synchronous, handle completion immediately
-      setDeployingApps((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(selectedApp);
-        return newSet;
-      });
+      const newSet = new Set(deployingApps);
+      newSet.delete(selectedApp);
+      updateCurrentTabData({ deployingApps: newSet });
 
       // Refresh applications and diff after successful sync
       loadApplications();
@@ -232,11 +357,9 @@ export default function Home() {
         description: errorMessage,
       });
       // Remove from deploying state on error
-      setDeployingApps((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(selectedApp);
-        return newSet;
-      });
+      const newSet = new Set(deployingApps);
+      newSet.delete(selectedApp);
+      updateCurrentTabData({ deployingApps: newSet });
     }
   };
 
@@ -266,8 +389,7 @@ export default function Home() {
 
       // If the deleted app was selected, clear the selection
       if (selectedApp === appName) {
-        setSelectedApp(null);
-        setDiffData(null);
+        updateCurrentTabData({ selectedApp: null, diffData: null });
       }
 
       // Refresh applications list
@@ -279,11 +401,9 @@ export default function Home() {
   };
 
   const handleDeploymentComplete = (appName: string) => () => {
-    setDeployingApps((prev) => {
-      const newSet = new Set(prev);
-      newSet.delete(appName);
-      return newSet;
-    });
+    const newSet = new Set(deployingApps);
+    newSet.delete(appName);
+    updateCurrentTabData({ deployingApps: newSet });
 
     // Refresh applications and diff after deployment completes
     loadApplications();
@@ -308,34 +428,45 @@ export default function Home() {
   const status = getOverallStatus();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <GitBranch className="h-8 w-8 text-primary mr-3" />
-              <h1 className="text-2xl font-bold text-gray-900">ecscd</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={loadApplications}
-                disabled={isLoading}
-              >
-                <RefreshCw
-                  className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
-                />
-                Refresh
-              </Button>
-              <Button size="sm" onClick={() => setShowNewAppDialog(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                New Application
-              </Button>
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Vertical Tab Bar */}
+      <TabBar
+        tabs={tabs}
+        activeTabId={activeTabId}
+        onTabChange={setActiveTabId}
+        onTabCreate={handleTabCreate}
+        onTabDelete={handleTabDelete}
+      />
+
+      {/* Main Content */}
+      <div className="flex-1 min-h-screen">
+        <header className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center">
+                <GitBranch className="h-8 w-8 text-primary mr-3" />
+                <h1 className="text-2xl font-bold text-gray-900">ecscd</h1>
+              </div>
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={loadApplications}
+                  disabled={isLoading}
+                >
+                  <RefreshCw
+                    className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
+                  />
+                  Refresh
+                </Button>
+                <Button size="sm" onClick={() => setShowNewAppDialog(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Application
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Status Overview */}
@@ -501,18 +632,19 @@ export default function Home() {
         </div>
       </main>
 
-      <NewApplicationDialog
-        open={showNewAppDialog}
-        onOpenChange={setShowNewAppDialog}
-        onSuccess={loadApplications}
-      />
+        <NewApplicationDialog
+          open={showNewAppDialog}
+          onOpenChange={setShowNewAppDialog}
+          onSuccess={loadApplications}
+        />
 
-      <EditApplicationDialog
-        open={showEditAppDialog}
-        onOpenChange={setShowEditAppDialog}
-        application={editingApp}
-        onSuccess={loadApplications}
-      />
+        <EditApplicationDialog
+          open={showEditAppDialog}
+          onOpenChange={setShowEditAppDialog}
+          application={editingApp}
+          onSuccess={loadApplications}
+        />
+      </div>
     </div>
   );
 }
