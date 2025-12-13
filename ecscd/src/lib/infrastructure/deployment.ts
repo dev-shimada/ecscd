@@ -59,218 +59,181 @@ export class Deployment implements DeploymentRepository {
     );
     return diffs;
   }
-  private async compareTaskDefinition(
-    current: RegisterTaskDefinitionCommandInput,
-    target: RegisterTaskDefinitionCommandInput
-  ): Promise<DiffDomain[]> {
+
+  /**
+   * Recursively flatten an object/array into a Map with dot-notation paths
+   * @param obj - Object to flatten
+   * @param prefix - Current path prefix
+   * @returns Map with flattened key-value pairs
+   */
+  private flattenToMap(
+    obj: any,
+    prefix: string = ""
+  ): Map<string, string> {
+    const result = new Map<string, string>();
+
+    // Array identifier keys: defines which property to use as identifier for named arrays
+    const arrayIdentifierKeys = new Map([
+      ["containerDefinitions", "name"],
+      ["environment", "name"],
+      ["secrets", "name"],
+    ]);
+
+    // undefined = don't add to map
+    if (obj === undefined) {
+      return result;
+    }
+
+    // null = add as "null" string
+    if (obj === null) {
+      result.set(prefix, "null");
+      return result;
+    }
+
+    // Handle arrays
+    if (Array.isArray(obj)) {
+      // Empty array = don't add to map (treat as undefined)
+      if (obj.length === 0) {
+        return result;
+      }
+
+      // Determine if this is a named array by looking at the current key
+      const currentKey = prefix.split(".").pop()?.replace(/\[.*\]/, "") || "";
+      const identifierKey = arrayIdentifierKeys.get(currentKey);
+
+      if (identifierKey && obj[0] && typeof obj[0] === "object") {
+        // Named array: use identifier property
+        for (const item of obj) {
+          const identifier = item[identifierKey];
+          if (identifier !== undefined) {
+            const itemPrefix = prefix ? `${prefix}[${identifier}]` : `[${identifier}]`;
+
+            // Check if this is a simple key-value object (environment or secrets)
+            const itemCopy = { ...item };
+            delete itemCopy[identifierKey];
+            const keys = Object.keys(itemCopy);
+
+            // If there's only one key and it's "value" or "valueFrom", use the value directly
+            if (keys.length === 1 && (keys[0] === "value" || keys[0] === "valueFrom")) {
+              result.set(itemPrefix, String(itemCopy[keys[0]]));
+            } else {
+              // Otherwise, recursively flatten
+              for (const [k, v] of this.flattenToMap(itemCopy, itemPrefix)) {
+                result.set(k, v);
+              }
+            }
+          }
+        }
+      } else {
+        // Ordered array: use indices
+        obj.forEach((item, index) => {
+          const itemPrefix = `${prefix}[${index}]`;
+          for (const [k, v] of this.flattenToMap(item, itemPrefix)) {
+            result.set(k, v);
+          }
+        });
+      }
+      return result;
+    }
+
+    // Handle objects
+    if (typeof obj === "object") {
+      for (const [key, value] of Object.entries(obj)) {
+        const newPrefix = prefix ? `${prefix}.${key}` : key;
+        for (const [k, v] of this.flattenToMap(value, newPrefix)) {
+          result.set(k, v);
+        }
+      }
+      return result;
+    }
+
+    // Primitive value: convert to string
+    result.set(prefix, String(obj));
+    return result;
+  }
+
+  /**
+   * Compare two flattened Maps and generate diff objects
+   * @param currentMap - Map representation of current task definition
+   * @param targetMap - Map representation of target task definition
+   * @returns Array of diff objects
+   */
+  private compareMaps(
+    currentMap: Map<string, string>,
+    targetMap: Map<string, string>
+  ): DiffDomain[] {
     const diffs: DiffDomain[] = [];
 
-    // Compare family
-    if (current.family !== target.family) {
-      diffs.push({
-        path: "family",
-        current: current.family,
-        target: target.family,
-        type: "Modified",
-      });
-    }
-
-    // Compare CPU
-    if (current.cpu !== target.cpu) {
-      diffs.push({
-        path: "cpu",
-        current: current.cpu,
-        target: target.cpu,
-        type: "Modified",
-      });
-    }
-
-    // Compare memory
-    if (current.memory !== target.memory) {
-      diffs.push({
-        path: "memory",
-        current: current.memory,
-        target: target.memory,
-        type: "Modified",
-      });
-    }
-
-    // Compare network mode
-    if (current.networkMode !== target.networkMode) {
-      diffs.push({
-        path: "networkMode",
-        current: current.networkMode,
-        target: target.networkMode,
-        type: "Modified",
-      });
-    }
-
-    // Compare execution role ARN
-    if (current.executionRoleArn !== target.executionRoleArn) {
-      diffs.push({
-        path: "executionRoleArn",
-        current: current.executionRoleArn,
-        target: target.executionRoleArn,
-        type: "Modified",
-      });
-    }
-
-    // Compare task role ARN
-    if (current.taskRoleArn !== target.taskRoleArn) {
-      diffs.push({
-        path: "taskRoleArn",
-        current: current.taskRoleArn,
-        target: target.taskRoleArn,
-        type: "Modified",
-      });
-    }
-
-    // Compare container definitions
-    const currentContainers = current.containerDefinitions || [];
-    const targetContainers = target.containerDefinitions || [];
-
-    // Find containers that exist in current but not in target (removed)
-    for (const currentContainer of currentContainers) {
-      const targetContainer = targetContainers.find(
-        (c) => c.name === currentContainer.name
-      );
-      if (!targetContainer) {
+    // Find removed (in current but not in target)
+    for (const [path, currentValue] of currentMap) {
+      if (!targetMap.has(path)) {
         diffs.push({
-          path: `containerDefinitions[${currentContainer.name}]`,
-          current: JSON.stringify(currentContainer),
+          path,
+          current: currentValue,
           target: undefined,
           type: "Removed",
         });
       }
     }
 
-    // Find containers that exist in target but not in current (added)
-    for (const targetContainer of targetContainers) {
-      const currentContainer = currentContainers.find(
-        (c) => c.name === targetContainer.name
-      );
-      if (!currentContainer) {
+    // Find added and modified (in target)
+    for (const [path, targetValue] of targetMap) {
+      if (!currentMap.has(path)) {
         diffs.push({
-          path: `containerDefinitions[${targetContainer.name}]`,
+          path,
           current: undefined,
-          target: JSON.stringify(targetContainer),
+          target: targetValue,
           type: "Added",
+        });
+      } else if (currentMap.get(path) !== targetValue) {
+        diffs.push({
+          path,
+          current: currentMap.get(path),
+          target: targetValue,
+          type: "Modified",
         });
       }
     }
 
-    // Compare existing containers
-    for (const currentContainer of currentContainers) {
-      const targetContainer = targetContainers.find(
-        (c) => c.name === currentContainer.name
-      );
-      if (targetContainer) {
-        // Compare image
-        if (currentContainer.image !== targetContainer.image) {
-          diffs.push({
-            path: `containerDefinitions[${currentContainer.name}].image`,
-            current: currentContainer.image,
-            target: targetContainer.image,
-            type: "Modified",
-          });
-        }
-
-        // Compare CPU
-        if (currentContainer.cpu !== targetContainer.cpu) {
-          diffs.push({
-            path: `containerDefinitions[${currentContainer.name}].cpu`,
-            current: currentContainer.cpu?.toString(),
-            target: targetContainer.cpu?.toString(),
-            type: "Modified",
-          });
-        }
-
-        // Compare memory
-        if (currentContainer.memory !== targetContainer.memory) {
-          diffs.push({
-            path: `containerDefinitions[${currentContainer.name}].memory`,
-            current: currentContainer.memory?.toString(),
-            target: targetContainer.memory?.toString(),
-            type: "Modified",
-          });
-        }
-
-        // Compare memory reservation
-        if (
-          currentContainer.memoryReservation !==
-          targetContainer.memoryReservation
-        ) {
-          diffs.push({
-            path: `containerDefinitions[${currentContainer.name}].memoryReservation`,
-            current: currentContainer.memoryReservation?.toString(),
-            target: targetContainer.memoryReservation?.toString(),
-            type: "Modified",
-          });
-        }
-
-        // Compare essential
-        if (currentContainer.essential !== targetContainer.essential) {
-          diffs.push({
-            path: `containerDefinitions[${currentContainer.name}].essential`,
-            current: currentContainer.essential?.toString(),
-            target: targetContainer.essential?.toString(),
-            type: "Modified",
-          });
-        }
-
-        // Compare environment variables
-        const currentEnv = currentContainer.environment || [];
-        const targetEnv = targetContainer.environment || [];
-
-        const currentEnvMap = new Map(currentEnv.map((e) => [e.name, e.value]));
-        const targetEnvMap = new Map(targetEnv.map((e) => [e.name, e.value]));
-
-        // Find removed environment variables
-        for (const [name, value] of currentEnvMap) {
-          if (!targetEnvMap.has(name)) {
-            diffs.push({
-              path: `containerDefinitions[${currentContainer.name}].environment[${name}]`,
-              current: value,
-              target: undefined,
-              type: "Removed",
-            });
-          }
-        }
-
-        // Find added or modified environment variables
-        for (const [name, value] of targetEnvMap) {
-          if (!currentEnvMap.has(name)) {
-            diffs.push({
-              path: `containerDefinitions[${currentContainer.name}].environment[${name}]`,
-              current: undefined,
-              target: value,
-              type: "Added",
-            });
-          } else if (currentEnvMap.get(name) !== value) {
-            diffs.push({
-              path: `containerDefinitions[${currentContainer.name}].environment[${name}]`,
-              current: currentEnvMap.get(name),
-              target: value,
-              type: "Modified",
-            });
-          }
-        }
-
-        // Compare port mappings
-        const currentPorts = currentContainer.portMappings || [];
-        const targetPorts = targetContainer.portMappings || [];
-
-        if (JSON.stringify(currentPorts) !== JSON.stringify(targetPorts)) {
-          diffs.push({
-            path: `containerDefinitions[${currentContainer.name}].portMappings`,
-            current: JSON.stringify(currentPorts),
-            target: JSON.stringify(targetPorts),
-            type: "Modified",
-          });
-        }
-      }
-    }
-
     return diffs;
+  }
+
+  /**
+   * Clean task definition by removing AWS-generated fields that shouldn't be compared
+   * @param taskDef - Task definition to clean
+   * @returns Cleaned task definition
+   */
+  private cleanTaskDefinitionForComparison(
+    taskDef: RegisterTaskDefinitionCommandInput
+  ): RegisterTaskDefinitionCommandInput {
+    // Create a copy and remove AWS-generated fields
+    const {
+      revision,
+      taskDefinitionArn,
+      registeredAt,
+      registeredBy,
+      status,
+      requiresAttributes,
+      compatibilities,
+      ...cleanedTaskDef
+    } = taskDef as any;
+
+    return cleanedTaskDef;
+  }
+
+  private async compareTaskDefinition(
+    current: RegisterTaskDefinitionCommandInput,
+    target: RegisterTaskDefinitionCommandInput
+  ): Promise<DiffDomain[]> {
+    // Clean both task definitions by removing AWS-generated fields
+    const cleanedCurrent = this.cleanTaskDefinitionForComparison(current);
+    const cleanedTarget = this.cleanTaskDefinitionForComparison(target);
+
+    // Convert both to flat maps
+    const currentMap = this.flattenToMap(cleanedCurrent);
+    const targetMap = this.flattenToMap(cleanedTarget);
+
+    // Compare maps and return diffs
+    return this.compareMaps(currentMap, targetMap);
   }
 }

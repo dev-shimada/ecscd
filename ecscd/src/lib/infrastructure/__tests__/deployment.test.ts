@@ -439,8 +439,9 @@ describe("Deployment.diff", () => {
       const diffs = await deployment.diff(mockApplication);
 
       expect(diffs).toHaveLength(1);
-      expect(diffs[0].path).toBe("containerDefinitions[web]");
+      expect(diffs[0].path).toBe("containerDefinitions[web].image");
       expect(diffs[0].type).toBe("Removed");
+      expect(diffs[0].current).toBe("nginx:latest");
     });
 
     it("should detect added container", async () => {
@@ -472,8 +473,9 @@ describe("Deployment.diff", () => {
       const diffs = await deployment.diff(mockApplication);
 
       expect(diffs).toHaveLength(1);
-      expect(diffs[0].path).toBe("containerDefinitions[web]");
+      expect(diffs[0].path).toBe("containerDefinitions[web].image");
       expect(diffs[0].type).toBe("Added");
+      expect(diffs[0].target).toBe("nginx:latest");
     });
 
     it("should detect container image change", async () => {
@@ -1010,7 +1012,7 @@ describe("Deployment.diff", () => {
             name: "web",
             image: "nginx:latest",
             secrets: [
-              { name: "DB_PASSWORD", valueFrom: "dummy-secret" },
+              { name: "DB_PASSWORD", valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:old-password" },
             ],
           },
         ],
@@ -1022,7 +1024,7 @@ describe("Deployment.diff", () => {
             name: "web",
             image: "nginx:latest",
             secrets: [
-              { name: "DB_PASSWORD", valueFrom: "dummy-secret" },
+              { name: "DB_PASSWORD", valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:new-password" },
             ],
           },
         ],
@@ -1044,8 +1046,8 @@ describe("Deployment.diff", () => {
       expect(diffs).toEqual([
         {
           path: "containerDefinitions[web].secrets[DB_PASSWORD]",
-          current: "dummy-secret",
-          target: "dummy-secret",
+          current: "arn:aws:secretsmanager:us-east-1:123456789012:secret:old-password",
+          target: "arn:aws:secretsmanager:us-east-1:123456789012:secret:new-password",
           type: "Modified",
         },
       ]);
@@ -1161,7 +1163,9 @@ describe("Deployment.diff", () => {
       const diffs = await deployment.diff(mockApplication);
 
       expect(diffs).toHaveLength(1);
-      expect(diffs[0].path).toBe("containerDefinitions[web].portMappings");
+      expect(diffs[0].path).toBe("containerDefinitions[web].portMappings[0].containerPort");
+      expect(diffs[0].current).toBe("80");
+      expect(diffs[0].target).toBe("8080");
       expect(diffs[0].type).toBe("Modified");
     });
 
@@ -1169,7 +1173,7 @@ describe("Deployment.diff", () => {
       const portMappings = [
         {
           containerPort: 80,
-          protocol: "tcp",
+          protocol: "tcp" as const,
         },
       ];
 
@@ -1365,8 +1369,8 @@ describe("Deployment.diff", () => {
         type: "Modified",
       });
 
-      // Check new container
-      expect(diffs.some(d => d.path === "containerDefinitions[sidecar]" && d.type === "Added")).toBe(true);
+      // Check new container (at least one field from sidecar container should be added)
+      expect(diffs.some(d => d.path.startsWith("containerDefinitions[sidecar]") && d.type === "Added")).toBe(true);
     });
   });
 });
