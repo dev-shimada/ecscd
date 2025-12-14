@@ -66,18 +66,8 @@ export class Deployment implements DeploymentRepository {
    * @param prefix - Current path prefix
    * @returns Map with flattened key-value pairs
    */
-  private flattenToMap(
-    obj: any,
-    prefix: string = ""
-  ): Map<string, string> {
+  private flattenToMap(obj: any, prefix: string = ""): Map<string, string> {
     const result = new Map<string, string>();
-
-    // Array identifier keys: defines which property to use as identifier for named arrays
-    const arrayIdentifierKeys = new Map([
-      ["containerDefinitions", "name"],
-      ["environment", "name"],
-      ["secrets", "name"],
-    ]);
 
     // undefined = don't add to map
     if (obj === undefined) {
@@ -87,52 +77,6 @@ export class Deployment implements DeploymentRepository {
     // null = add as "null" string
     if (obj === null) {
       result.set(prefix, "null");
-      return result;
-    }
-
-    // Handle arrays
-    if (Array.isArray(obj)) {
-      // Empty array = don't add to map (treat as undefined)
-      if (obj.length === 0) {
-        return result;
-      }
-
-      // Determine if this is a named array by looking at the current key
-      const currentKey = prefix.split(".").pop()?.replace(/\[.*\]/, "") || "";
-      const identifierKey = arrayIdentifierKeys.get(currentKey);
-
-      if (identifierKey && obj[0] && typeof obj[0] === "object") {
-        // Named array: use identifier property
-        for (const item of obj) {
-          const identifier = item[identifierKey];
-          if (identifier !== undefined) {
-            const itemPrefix = prefix ? `${prefix}[${identifier}]` : `[${identifier}]`;
-
-            // Check if this is a simple key-value object (environment or secrets)
-            const itemCopy = { ...item };
-            delete itemCopy[identifierKey];
-            const keys = Object.keys(itemCopy);
-
-            // If there's only one key and it's "value" or "valueFrom", use the value directly
-            if (keys.length === 1 && (keys[0] === "value" || keys[0] === "valueFrom")) {
-              result.set(itemPrefix, String(itemCopy[keys[0]]));
-            } else {
-              // Otherwise, recursively flatten
-              for (const [k, v] of this.flattenToMap(itemCopy, itemPrefix)) {
-                result.set(k, v);
-              }
-            }
-          }
-        }
-      } else {
-        // Ordered array: use indices
-        obj.forEach((item, index) => {
-          const itemPrefix = `${prefix}[${index}]`;
-          for (const [k, v] of this.flattenToMap(item, itemPrefix)) {
-            result.set(k, v);
-          }
-        });
-      }
       return result;
     }
 

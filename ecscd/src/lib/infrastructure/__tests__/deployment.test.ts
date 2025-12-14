@@ -115,7 +115,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(null);
@@ -142,7 +143,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(taskDef);
@@ -168,7 +170,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -203,7 +206,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -238,7 +242,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -273,7 +278,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -308,7 +314,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -343,7 +350,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -380,7 +388,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -431,7 +440,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -465,7 +475,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -504,7 +515,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -549,7 +561,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -594,7 +607,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -639,7 +653,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -684,7 +699,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -710,9 +726,7 @@ describe("Deployment.diff", () => {
           {
             name: "web",
             image: "nginx:latest",
-            environment: [
-              { name: "ENV_VAR", value: "value" },
-            ],
+            environment: [{ name: "ENV_VAR", value: "value" }],
           },
         ],
       };
@@ -733,7 +747,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -767,9 +782,7 @@ describe("Deployment.diff", () => {
           {
             name: "web",
             image: "nginx:latest",
-            environment: [
-              { name: "NEW_VAR", value: "new_value" },
-            ],
+            environment: [{ name: "NEW_VAR", value: "new_value" }],
           },
         ],
       };
@@ -780,7 +793,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -804,9 +818,7 @@ describe("Deployment.diff", () => {
           {
             name: "web",
             image: "nginx:latest",
-            environment: [
-              { name: "ENV_VAR", value: "old_value" },
-            ],
+            environment: [{ name: "ENV_VAR", value: "old_value" }],
           },
         ],
       };
@@ -816,9 +828,7 @@ describe("Deployment.diff", () => {
           {
             name: "web",
             image: "nginx:latest",
-            environment: [
-              { name: "ENV_VAR", value: "new_value" },
-            ],
+            environment: [{ name: "ENV_VAR", value: "new_value" }],
           },
         ],
       };
@@ -829,7 +839,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -880,7 +891,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -917,9 +929,7 @@ describe("Deployment.diff", () => {
           {
             name: "web",
             image: "nginx:latest",
-            secrets: [
-              { name: "DB_PASSWORD", valueFrom: "dummy-secret" },
-            ],
+            secrets: [{ name: "DB_PASSWORD", valueFrom: "dummy-secret" }],
           },
         ],
       };
@@ -940,7 +950,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -975,7 +986,11 @@ describe("Deployment.diff", () => {
             name: "web",
             image: "nginx:latest",
             secrets: [
-              { name: "API_KEY", valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:api-key" },
+              {
+                name: "API_KEY",
+                valueFrom:
+                  "arn:aws:secretsmanager:us-east-1:123456789012:secret:api-key",
+              },
             ],
           },
         ],
@@ -987,7 +1002,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -998,7 +1014,8 @@ describe("Deployment.diff", () => {
         {
           path: "containerDefinitions[web].secrets[API_KEY]",
           current: undefined,
-          target: "arn:aws:secretsmanager:us-east-1:123456789012:secret:api-key",
+          target:
+            "arn:aws:secretsmanager:us-east-1:123456789012:secret:api-key",
           type: "Added",
         },
       ]);
@@ -1012,7 +1029,11 @@ describe("Deployment.diff", () => {
             name: "web",
             image: "nginx:latest",
             secrets: [
-              { name: "DB_PASSWORD", valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:old-password" },
+              {
+                name: "DB_PASSWORD",
+                valueFrom:
+                  "arn:aws:secretsmanager:us-east-1:123456789012:secret:old-password",
+              },
             ],
           },
         ],
@@ -1024,7 +1045,11 @@ describe("Deployment.diff", () => {
             name: "web",
             image: "nginx:latest",
             secrets: [
-              { name: "DB_PASSWORD", valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:new-password" },
+              {
+                name: "DB_PASSWORD",
+                valueFrom:
+                  "arn:aws:secretsmanager:us-east-1:123456789012:secret:new-password",
+              },
             ],
           },
         ],
@@ -1036,7 +1061,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -1046,8 +1072,10 @@ describe("Deployment.diff", () => {
       expect(diffs).toEqual([
         {
           path: "containerDefinitions[web].secrets[DB_PASSWORD]",
-          current: "arn:aws:secretsmanager:us-east-1:123456789012:secret:old-password",
-          target: "arn:aws:secretsmanager:us-east-1:123456789012:secret:new-password",
+          current:
+            "arn:aws:secretsmanager:us-east-1:123456789012:secret:old-password",
+          target:
+            "arn:aws:secretsmanager:us-east-1:123456789012:secret:new-password",
           type: "Modified",
         },
       ]);
@@ -1061,8 +1089,16 @@ describe("Deployment.diff", () => {
             name: "web",
             image: "nginx:latest",
             secrets: [
-              { name: "SECRET1", valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:secret1" },
-              { name: "SECRET2", valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:old-secret2" },
+              {
+                name: "SECRET1",
+                valueFrom:
+                  "arn:aws:secretsmanager:us-east-1:123456789012:secret:secret1",
+              },
+              {
+                name: "SECRET2",
+                valueFrom:
+                  "arn:aws:secretsmanager:us-east-1:123456789012:secret:old-secret2",
+              },
             ],
           },
         ],
@@ -1074,8 +1110,16 @@ describe("Deployment.diff", () => {
             name: "web",
             image: "nginx:latest",
             secrets: [
-              { name: "SECRET2", valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:new-secret2" },
-              { name: "SECRET3", valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:secret3" },
+              {
+                name: "SECRET2",
+                valueFrom:
+                  "arn:aws:secretsmanager:us-east-1:123456789012:secret:new-secret2",
+              },
+              {
+                name: "SECRET3",
+                valueFrom:
+                  "arn:aws:secretsmanager:us-east-1:123456789012:secret:secret3",
+              },
             ],
           },
         ],
@@ -1087,7 +1131,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -1103,8 +1148,10 @@ describe("Deployment.diff", () => {
       });
       expect(diffs).toContainEqual({
         path: "containerDefinitions[web].secrets[SECRET2]",
-        current: "arn:aws:secretsmanager:us-east-1:123456789012:secret:old-secret2",
-        target: "arn:aws:secretsmanager:us-east-1:123456789012:secret:new-secret2",
+        current:
+          "arn:aws:secretsmanager:us-east-1:123456789012:secret:old-secret2",
+        target:
+          "arn:aws:secretsmanager:us-east-1:123456789012:secret:new-secret2",
         type: "Modified",
       });
       expect(diffs).toContainEqual({
@@ -1155,7 +1202,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -1163,7 +1211,9 @@ describe("Deployment.diff", () => {
       const diffs = await deployment.diff(mockApplication);
 
       expect(diffs).toHaveLength(1);
-      expect(diffs[0].path).toBe("containerDefinitions[web].portMappings[0].containerPort");
+      expect(diffs[0].path).toBe(
+        "containerDefinitions[web].portMappings[0].containerPort"
+      );
       expect(diffs[0].current).toBe("80");
       expect(diffs[0].target).toBe("8080");
       expect(diffs[0].type).toBe("Modified");
@@ -1204,7 +1254,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -1250,7 +1301,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -1289,9 +1341,7 @@ describe("Deployment.diff", () => {
             cpu: 128,
             memory: 256,
             essential: true,
-            environment: [
-              { name: "ENV1", value: "value1" },
-            ],
+            environment: [{ name: "ENV1", value: "value1" }],
             portMappings: [
               {
                 containerPort: 80,
@@ -1340,7 +1390,8 @@ describe("Deployment.diff", () => {
         status: "ACTIVE",
         desiredCount: 1,
         runningCount: 1,
-        taskDefinition: "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
+        taskDefinition:
+          "arn:aws:ecs:us-east-1:123456789012:task-definition/test:1",
         deployments: [],
       });
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDef);
@@ -1370,7 +1421,13 @@ describe("Deployment.diff", () => {
       });
 
       // Check new container (at least one field from sidecar container should be added)
-      expect(diffs.some(d => d.path.startsWith("containerDefinitions[sidecar]") && d.type === "Added")).toBe(true);
+      expect(
+        diffs.some(
+          (d) =>
+            d.path.startsWith("containerDefinitions[sidecar]") &&
+            d.type === "Added"
+        )
+      ).toBe(true);
     });
   });
 });
