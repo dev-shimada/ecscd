@@ -80,6 +80,54 @@ export class Deployment implements DeploymentRepository {
       return result;
     }
 
+    // Handle arrays with special naming for environment, secrets, and containerDefinitions
+    if (Array.isArray(obj)) {
+      // Check if this is an environment or secrets array
+      const isEnvironmentOrSecrets =
+        prefix.endsWith("environment") || prefix.endsWith("secrets");
+
+      // Check if this is a containerDefinitions array
+      const isContainerDefinitions = prefix.endsWith("containerDefinitions");
+
+      const isStringArray = obj.every((item) => typeof item === "string");
+
+      if (isEnvironmentOrSecrets) {
+        // For environment and secrets arrays, store as name-value pairs
+        for (const item of obj) {
+          if (typeof item === "object" && item !== null && "name" in item) {
+            const itemName = item.name;
+            const itemValue = item.value || item.valueFrom || "";
+            const key = prefix ? `${prefix}.${itemName}` : itemName;
+            result.set(key, String(itemValue));
+          }
+        }
+      } else if (isContainerDefinitions) {
+        // For containerDefinitions arrays, use the 'name' property as key
+        for (const item of obj) {
+          if (typeof item === "object" && item !== null && "name" in item) {
+            const itemName = item.name;
+            const newPrefix = prefix ? `${prefix}.${itemName}` : itemName;
+            for (const [k, v] of this.flattenToMap(item, newPrefix)) {
+              result.set(k, v);
+            }
+          }
+        }
+      } else if (isStringArray) {
+        // For string arrays like command and entryPoint, join values with commas
+        const joinedValue = obj.join(",");
+        result.set(prefix, joinedValue);
+      } else {
+        // For other arrays, use index as key
+        for (let i = 0; i < obj.length; i++) {
+          const newPrefix = prefix ? `${prefix}.${i}` : String(i);
+          for (const [k, v] of this.flattenToMap(obj[i], newPrefix)) {
+            result.set(k, v);
+          }
+        }
+      }
+      return result;
+    }
+
     // Handle objects
     if (typeof obj === "object") {
       for (const [key, value] of Object.entries(obj)) {
