@@ -16,7 +16,7 @@
     "@eslint/eslintrc": "^3",
     "@octokit/rest": "^22.0.0",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20.19.17",
+    "@types/node": "^25.0.2",
     "@types/react": "^19.1.14",
     "@types/react-dom": "^19",
     "clsx": "^2.1.1",
