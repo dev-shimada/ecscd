@@ -82,17 +82,56 @@ export class Deployment implements DeploymentRepository {
 
     // Handle arrays with special naming for environment, secrets, and containerDefinitions
     if (Array.isArray(obj)) {
-      // Check if this is an environment or secrets array
-      const isEnvironmentOrSecrets =
-        prefix.endsWith("environment") || prefix.endsWith("secrets");
+      // Empty arrays should not add any entries
+      if (obj.length === 0) {
+        return result;
+      }
+
+      const isStringArray = obj.every((item) => typeof item === "string");
+
+      if (isStringArray) {
+        // For string arrays like command and entryPoint, join values with commas
+        const joinedValue = obj.join(",");
+        result.set(prefix, joinedValue);
+        return result;
+      }
 
       // Check if this is a containerDefinitions array
       const isContainerDefinitions = prefix.endsWith("containerDefinitions");
 
-      const isStringArray = obj.every((item) => typeof item === "string");
+      // Check if this is an environment or secrets array
+      const isEnvironmentOrSecrets =
+        prefix.endsWith("environment") || prefix.endsWith("secrets");
+
+      // Check if this is a volumes array (has 'name' property)
+      const isVolumes = prefix.endsWith("volumes");
+
+      // Check if this is a placementConstraints array (has 'type' property)
+      const isPlacementConstraints = prefix.endsWith("placementConstraints");
+
+      // Check if this is a mountPoints array (has 'sourceVolume' property)
+      const isMountPoints = prefix.endsWith("mountPoints");
+
+      // Check if this is a volumesFrom array (has 'sourceContainer' property)
+      const isVolumesFrom = prefix.endsWith("volumesFrom");
+
+      // Check if this is a portMappings array (has 'containerPort' property)
+      const isPortMappings = prefix.endsWith("portMappings");
+
+      // Check if this is a ulimits array (has 'name' property)
+      const isUlimits = prefix.endsWith("ulimits");
+
+      // Check if this is a systemControls array (has 'namespace' property)
+      const isSystemControls = prefix.endsWith("systemControls");
+
+      // Check if this is a resourceRequirements array (has 'type' property)
+      const isResourceRequirements = prefix.endsWith("resourceRequirements");
+
+      // Check if this is a dependsOn array (has 'containerName' property)
+      const isDependsOn = prefix.endsWith("dependsOn");
 
       if (isEnvironmentOrSecrets) {
-        // For environment and secrets arrays, store as name-value pairs
+        // For environment and secrets arrays, use 'name' as key
         for (const item of obj) {
           if (typeof item === "object" && item !== null && "name" in item) {
             const itemName = item.name;
@@ -101,8 +140,8 @@ export class Deployment implements DeploymentRepository {
             result.set(key, String(itemValue));
           }
         }
-      } else if (isContainerDefinitions) {
-        // For containerDefinitions arrays, use the 'name' property as key
+      } else if (isContainerDefinitions || isVolumes || isUlimits) {
+        // For arrays with 'name' property, use 'name' as key
         for (const item of obj) {
           if (typeof item === "object" && item !== null && "name" in item) {
             const itemName = item.name;
@@ -112,10 +151,100 @@ export class Deployment implements DeploymentRepository {
             }
           }
         }
-      } else if (isStringArray) {
-        // For string arrays like command and entryPoint, join values with commas
-        const joinedValue = obj.join(",");
-        result.set(prefix, joinedValue);
+      } else if (isPlacementConstraints || isResourceRequirements) {
+        // For arrays with 'type' property, use 'type' as key
+        for (const item of obj) {
+          if (typeof item === "object" && item !== null && "type" in item) {
+            const itemType = item.type;
+            const newPrefix = prefix ? `${prefix}.${itemType}` : itemType;
+            for (const [k, v] of this.flattenToMap(item, newPrefix)) {
+              result.set(k, v);
+            }
+          }
+        }
+      } else if (isMountPoints) {
+        // For mountPoints, use 'sourceVolume' as key
+        for (const item of obj) {
+          if (
+            typeof item === "object" &&
+            item !== null &&
+            "sourceVolume" in item
+          ) {
+            const sourceVolume = item.sourceVolume;
+            const newPrefix = prefix
+              ? `${prefix}.${sourceVolume}`
+              : sourceVolume;
+            for (const [k, v] of this.flattenToMap(item, newPrefix)) {
+              result.set(k, v);
+            }
+          }
+        }
+      } else if (isVolumesFrom) {
+        // For volumesFrom, use 'sourceContainer' as key
+        for (const item of obj) {
+          if (
+            typeof item === "object" &&
+            item !== null &&
+            "sourceContainer" in item
+          ) {
+            const sourceContainer = item.sourceContainer;
+            const newPrefix = prefix
+              ? `${prefix}.${sourceContainer}`
+              : sourceContainer;
+            for (const [k, v] of this.flattenToMap(item, newPrefix)) {
+              result.set(k, v);
+            }
+          }
+        }
+      } else if (isPortMappings) {
+        // For portMappings, use 'containerPort' as key
+        for (const item of obj) {
+          if (
+            typeof item === "object" &&
+            item !== null &&
+            "containerPort" in item
+          ) {
+            const containerPort = item.containerPort;
+            const newPrefix = prefix
+              ? `${prefix}.${containerPort}`
+              : String(containerPort);
+            for (const [k, v] of this.flattenToMap(item, newPrefix)) {
+              result.set(k, v);
+            }
+          }
+        }
+      } else if (isSystemControls) {
+        // For systemControls, use 'namespace' as key
+        for (const item of obj) {
+          if (
+            typeof item === "object" &&
+            item !== null &&
+            "namespace" in item
+          ) {
+            const namespace = item.namespace;
+            const newPrefix = prefix ? `${prefix}.${namespace}` : namespace;
+            for (const [k, v] of this.flattenToMap(item, newPrefix)) {
+              result.set(k, v);
+            }
+          }
+        }
+      } else if (isDependsOn) {
+        // For dependsOn, use 'containerName' as key
+        for (const item of obj) {
+          if (
+            typeof item === "object" &&
+            item !== null &&
+            "containerName" in item
+          ) {
+            const containerName = item.containerName;
+            const newPrefix = prefix
+              ? `${prefix}.${containerName}`
+              : containerName;
+            for (const [k, v] of this.flattenToMap(item, newPrefix)) {
+              result.set(k, v);
+            }
+          }
+        }
       } else {
         // For other arrays, use index as key
         for (let i = 0; i < obj.length; i++) {
