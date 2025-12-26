@@ -130,7 +130,20 @@ export class Deployment implements DeploymentRepository {
       // Check if this is a dependsOn array (has 'containerName' property)
       const isDependsOn = prefix.endsWith("dependsOn");
 
-      if (isEnvironmentOrSecrets) {
+      // Check if this is a tags array (has 'key' property for identification)
+      const isTags = prefix.endsWith("tags");
+
+      if (isTags) {
+        // For tags array, use 'key' as path and 'value' as the value
+        for (const item of obj) {
+          if (typeof item === "object" && item !== null && "key" in item) {
+            const tagKey = item.key;
+            const tagValue = item.value || "";
+            const path = prefix ? `${prefix}.${tagKey}` : tagKey;
+            result.set(path, String(tagValue));
+          }
+        }
+      } else if (isEnvironmentOrSecrets) {
         // For environment and secrets arrays, use 'name' as key
         for (const item of obj) {
           if (typeof item === "object" && item !== null && "name" in item) {
