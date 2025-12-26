@@ -48,8 +48,8 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/ecscd:latest
             ghcr.io/${{ github.repository_owner }}/ecscd:${{ github.ref_name }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=ecscd-${{ steps.platform.outputs.platform }}
+          cache-to: type=gha,mode=max,scope=ecscd-${{ steps.platform.outputs.platform }}
 
   release:
     needs: build
@@ -77,11 +77,11 @@ jobs:
               repo: context.repo.repo,
               per_page: 100
             });
-            
+
             const currentTag = context.ref.replace('refs/tags/', '');
             const currentTagIndex = tags.findIndex(tag => tag.name === currentTag);
             const previousTag = currentTagIndex < tags.length - 1 ? tags[currentTagIndex + 1].name : null;
-            
+
             let body = '';
             if (previousTag) {
               const { data: comparison } = await github.rest.repos.compareCommits({
@@ -97,7 +97,7 @@ jobs:
             } else {
               body = 'Initial release';
             }
-            
+
             const { data: release } = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -107,5 +107,5 @@ jobs:
               prerelease: ${{ steps.prerelease.outputs.prerelease }},
               generate_release_notes: true
             });
-            
+
             console.log(`Created release: ${release.html_url}`);
