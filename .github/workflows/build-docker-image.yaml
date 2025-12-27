@@ -48,8 +48,8 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/ecscd:latest
             ghcr.io/${{ github.repository_owner }}/ecscd:${{ github.ref_name }}
-          cache-from: type=gha,scope=ecscd-${{ steps.platform.outputs.platform }}
-          cache-to: type=gha,mode=max,scope=ecscd-${{ steps.platform.outputs.platform }}
+          cache-from: type=gha,scope=ecscd-${{ matrix.os }}
+          cache-to: type=gha,mode=max,scope=ecscd-${{ matrix.os }}
 
   release:
     needs: build
