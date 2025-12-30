@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { toast } from "sonner";
 import { ApplicationCard } from "@/components/application-card";
 import { DiffViewer } from "@/components/diff-viewer";
 import { NewApplicationDialog } from "@/components/new-application-dialog";
 import { EditApplicationDialog } from "@/components/edit-application-dialog";
+import { FilterSelector } from "@/components/filter-selector";
 import { ApplicationDomain, DiffDomain } from "@/lib/domain/application";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -28,11 +29,17 @@ export default function Home() {
   const [showEditAppDialog, setShowEditAppDialog] = useState(false);
   const [editingApp, setEditingApp] = useState<ApplicationDomain | null>(null);
   const [deployingApps, setDeployingApps] = useState<Set<string>>(new Set());
+  const [filterPattern, setFilterPattern] = useState("");
   const previousApplicationsRef = useRef<ApplicationDomain[]>([]);
+
+  const handleFilterChange = useCallback((pattern: string) => {
+    setFilterPattern(pattern);
+  }, []);
 
   useEffect(() => {
     loadApplications();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterPattern]);
 
   // Poll for deployment status every 5 seconds when any app has IN_PROGRESS rolloutState
   useEffect(() => {
@@ -70,7 +77,11 @@ export default function Home() {
   const loadApplications = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/apps");
+      const params = new URLSearchParams();
+      if (filterPattern) {
+        params.set("filter", filterPattern);
+      }
+      const response = await fetch(`/api/apps?${params.toString()}`);
       const data = await response.json();
       const newApplications = data.applications || [];
       previousApplicationsRef.current = newApplications;
@@ -317,6 +328,9 @@ export default function Home() {
               <h1 className="text-2xl font-bold text-gray-900">ecscd</h1>
             </div>
             <div className="flex items-center gap-4">
+              <Suspense fallback={<div className="w-[200px] h-10 bg-gray-100 rounded-md animate-pulse" />}>
+                <FilterSelector onFilterChange={handleFilterChange} />
+              </Suspense>
               <Button
                 variant="outline"
                 size="sm"
