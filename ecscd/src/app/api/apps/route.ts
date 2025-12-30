@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { au } from "@/lib/di";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const applications = await au.getApplications();
+    const { searchParams } = new URL(request.url);
+    const filter = searchParams.get("filter");
+
+    let applications = await au.getApplications();
+
+    if (filter && filter.trim()) {
+      const filterLower = filter.toLowerCase();
+      applications = applications.filter((app) =>
+        app.name.toLowerCase().includes(filterLower)
+      );
+    }
+
     return NextResponse.json({ applications });
   } catch (error) {
     console.error("Error fetching applications:", error);
