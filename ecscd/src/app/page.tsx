@@ -29,7 +29,7 @@ export default function Home() {
   const [showEditAppDialog, setShowEditAppDialog] = useState(false);
   const [editingApp, setEditingApp] = useState<ApplicationDomain | null>(null);
   const [deployingApps, setDeployingApps] = useState<Set<string>>(new Set());
-  const [filterPattern, setFilterPattern] = useState("");
+  const [filterPattern, setFilterPattern] = useState<string | null>(null);
   const previousApplicationsRef = useRef<ApplicationDomain[]>([]);
 
   const handleFilterChange = useCallback((pattern: string) => {
@@ -37,6 +37,8 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    // Wait for FilterSelector to initialize filterPattern from URL
+    if (filterPattern === null) return;
     loadApplications();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterPattern]);
