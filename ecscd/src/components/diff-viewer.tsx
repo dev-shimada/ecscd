@@ -31,11 +31,11 @@ export function DiffViewer({ diffs, summary, onSync, isLoading, error }: DiffVie
   const getDiffIcon = (type: 'Added' | 'Removed' | 'Modified') => {
     switch (type) {
       case 'Added':
-        return <Plus className="h-4 w-4 text-green-600" />;
+        return <Plus className="h-4 w-4 shrink-0 text-green-600" />;
       case 'Removed':
-        return <Minus className="h-4 w-4 text-red-600" />;
+        return <Minus className="h-4 w-4 shrink-0 text-red-600" />;
       case 'Modified':
-        return <Edit3 className="h-4 w-4 text-yellow-600" />;
+        return <Edit3 className="h-4 w-4 shrink-0 text-yellow-600" />;
     }
   };
 
@@ -109,7 +109,7 @@ export function DiffViewer({ diffs, summary, onSync, isLoading, error }: DiffVie
             disabled={isLoading}
             className="flex items-center gap-2"
           >
-            <Play className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <Play className={`h-4 w-4 shrink-0 ${isLoading ? 'animate-spin' : ''}`} />
             {isLoading ? 'Deploying...' : 'Sync Changes'}
           </Button>
         </div>
@@ -121,17 +121,17 @@ export function DiffViewer({ diffs, summary, onSync, isLoading, error }: DiffVie
           {diffs?.map((diff, index) => (
             <div key={index} className={`border rounded-lg p-4 ${getDiffColor(diff.type)}`}>
               <div
-                className="flex items-center gap-2 cursor-pointer"
+                className="flex items-center gap-2 cursor-pointer min-w-0"
                 onClick={() => toggleExpanded(`${index}-${diff.path}`)}
               >
                 {expandedItems.has(`${index}-${diff.path}`) ? (
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className="h-4 w-4 shrink-0" />
                 ) : (
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-4 w-4 shrink-0" />
                 )}
                 {getDiffIcon(diff.type)}
-                <span className="font-medium">{diff.path}</span>
-                <Badge variant="outline" className="ml-auto">
+                <span className="font-medium min-w-0 break-all">{diff.path}</span>
+                <Badge variant="outline" className="shrink-0">
                   {diff.type}
                 </Badge>
               </div>
