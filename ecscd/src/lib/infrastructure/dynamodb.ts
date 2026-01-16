@@ -13,6 +13,7 @@ import { FilterDomain } from "../domain/filter";
 
 interface ApplicationsModel {
   name: string;
+  item_type?: string;
   git_repo: string;
   git_branch: string;
   git_path: string;
@@ -48,6 +49,10 @@ export class DynamoDB implements IDatabase {
     try {
       const command = new ScanCommand({
         TableName: this.tableName,
+        FilterExpression: "item_type = :item_type",
+        ExpressionAttributeValues: {
+          ":item_type": "application",
+        },
       });
 
       const response = await this.client.send(command);
@@ -74,6 +79,7 @@ export class DynamoDB implements IDatabase {
         TableName: this.tableName,
         Item: {
           name: application.name,
+          item_type: "application",
           git_repo: application.gitConfig.repo,
           git_branch: application.gitConfig.branch,
           git_path: application.gitConfig.path,
@@ -110,6 +116,7 @@ export class DynamoDB implements IDatabase {
           name: application.name,
         },
         UpdateExpression: `SET
+          item_type = :item_type,
           git_repo = :git_repo,
           git_branch = :git_branch,
           git_path = :git_path,
@@ -119,6 +126,7 @@ export class DynamoDB implements IDatabase {
           aws_role_arn = :aws_role_arn,
           updated_at = :updated_at`,
         ExpressionAttributeValues: {
+          ":item_type": "application",
           ":git_repo": application.gitConfig.repo,
           ":git_branch": application.gitConfig.branch,
           ":git_path": application.gitConfig.path,
