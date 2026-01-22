@@ -109,12 +109,18 @@ export default function Home() {
 
       await response.json();
 
-      // Since the sync API is synchronous, handle completion immediately
-      setDeployingApps((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(appName);
-        return newSet;
-      });
+      // Trigger immediate reload of the ApplicationCard to detect deployment state
+      refreshKeyRef.current += 1;
+      setAppNames((prev) => [...prev]);
+
+      // Remove from deployingApps after a short delay to allow the card to detect the actual IN_PROGRESS state
+      setTimeout(() => {
+        setDeployingApps((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(appName);
+          return newSet;
+        });
+      }, 2000);
     } catch (error) {
       console.error("Failed to start sync:", error);
       const errorMessage =
@@ -193,12 +199,18 @@ export default function Home() {
 
       await response.json();
 
-      // Since the sync API is synchronous, handle completion immediately
-      setDeployingApps((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(selectedApp);
-        return newSet;
-      });
+      // Trigger immediate reload of the ApplicationCard to detect deployment state
+      refreshKeyRef.current += 1;
+      setAppNames((prev) => [...prev]);
+
+      // Remove from deployingApps after a short delay to allow the card to detect the actual IN_PROGRESS state
+      setTimeout(() => {
+        setDeployingApps((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(selectedApp);
+          return newSet;
+        });
+      }, 2000);
 
       // Refresh diff after successful sync
       if (selectedApp) {
