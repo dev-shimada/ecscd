@@ -33,6 +33,37 @@ export class Application implements ApplicationRepository {
     );
     return applications;
   }
+
+  async getApplicationNames(): Promise<string[]> {
+    return this.db.getApplicationNames();
+  }
+
+  async getApplication(name: string): Promise<ApplicationDomain | null> {
+    const applications = await this.db.getApplications();
+    const app = applications.find((a) => a.name === name);
+    if (!app) {
+      return null;
+    }
+
+    // ECSサービス情報を取得
+    try {
+      const aws = new AWS();
+      const ecsResponse = await aws.describeServices(
+        await aws.createECSClient(app.awsConfig),
+        {
+          cluster: app.ecsConfig.cluster,
+          service: app.ecsConfig.service,
+        }
+      );
+      app.service = ecsResponse;
+    } catch (error) {
+      console.warn(`Error fetching ECS service for ${app.name}:`, error);
+      app.sync.status = "Error";
+    }
+
+    return app;
+  }
+
   async getService(
     application: ApplicationDomain
   ): Promise<ApplicationDomain["service"]> {

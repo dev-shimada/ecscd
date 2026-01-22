@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Card,
   CardHeader,
@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 
 interface ApplicationCardProps {
-  application: ApplicationDomain;
+  appName: string;
   onSync?: (appName: string) => void;
   onViewDiff?: (appName: string) => void;
   onEdit?: (appName: string) => void;
@@ -32,30 +32,84 @@ interface ApplicationCardProps {
   onRollback?: (appName: string) => void;
   isDeploymentActive?: boolean;
   onDeploymentComplete?: () => void;
+  onDataLoaded?: (application: ApplicationDomain) => void;
 }
 
 export function ApplicationCard({
-  application,
+  appName,
   onSync,
   onViewDiff,
   onEdit,
   onDelete,
   onRollback,
   isDeploymentActive = false,
+  onDataLoaded,
 }: ApplicationCardProps) {
+  const [application, setApplication] = useState<ApplicationDomain | null>(null);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const previousApplicationRef = useRef<ApplicationDomain | null>(null);
+
+  const loadApplication = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/apps/${encodeURIComponent(appName)}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch application");
+      }
+      const data = await response.json();
+      const newApplication = data.application as ApplicationDomain;
+
+      // Only update if there are actual changes
+      const hasChanges =
+        JSON.stringify(newApplication) !==
+        JSON.stringify(previousApplicationRef.current);
+
+      if (hasChanges) {
+        previousApplicationRef.current = newApplication;
+        setApplication(newApplication);
+        onDataLoaded?.(newApplication);
+      }
+    } catch (error) {
+      console.error(`Failed to load application ${appName}:`, error);
+    } finally {
+      setIsLoadingData(false);
+    }
+  }, [appName, onDataLoaded]);
+
+  useEffect(() => {
+    loadApplication();
+  }, [loadApplication]);
+
+  // Poll for deployment status every 5 seconds when deployment is in progress
+  useEffect(() => {
+    const hasInProgressDeployment =
+      isDeploymentActive ||
+      application?.service?.deployments.some(
+        (d) => d.rolloutState === "IN_PROGRESS"
+      );
+
+    if (!hasInProgressDeployment) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      loadApplication();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [application, isDeploymentActive, loadApplication]);
 
   // Check for active deployment from both props and service state
   const hasActiveDeployment =
     isDeploymentActive ||
-    application.service?.deployments.some(
+    application?.service?.deployments.some(
       (d) => d.rolloutState === "IN_PROGRESS"
     ) ||
     false;
 
   const hasRollbackDeployment =
-    application.service?.deployments.some((d) =>
+    application?.service?.deployments.some((d) =>
       d.rolloutStateReason.includes("rolling back to")
     ) || false;
 
@@ -114,16 +168,19 @@ export function ApplicationCard({
   };
 
   const handleSync = () => {
+    if (!application) return;
     setIsLoading(true);
     onSync?.(application.name);
   };
 
   const handleDelete = () => {
+    if (!application) return;
     setShowDeleteConfirm(false);
     onDelete?.(application.name);
   };
 
   const handleRollback = () => {
+    if (!application) return;
     setIsLoading(true);
     onRollback?.(application.name);
   };
@@ -173,6 +230,7 @@ export function ApplicationCard({
   };
 
   const getEcsConsoleUrl = () => {
+    if (!application) return "#";
     const region = application.awsConfig.region || "us-east-1";
     const cluster = application.ecsConfig.cluster;
     const service = application.ecsConfig.service;
@@ -180,6 +238,33 @@ export function ApplicationCard({
       cluster
     )}/services/${encodeURIComponent(service)}/deployments?region=${region}`;
   };
+
+  // Loading state
+  if (isLoadingData) {
+    return (
+      <Card className="w-full">
+        <CardContent className="py-8">
+          <div className="flex items-center justify-center gap-3">
+            <RefreshCw className="h-5 w-5 animate-spin text-gray-600" />
+            <span className="text-gray-600">Loading {appName}...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Error state (application not found)
+  if (!application) {
+    return (
+      <Card className="w-full">
+        <CardContent className="py-8">
+          <div className="text-center text-gray-600">
+            Failed to load application: {appName}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full">

@@ -4,7 +4,21 @@ import { au } from "@/lib/di";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const namesOnly = searchParams.get("namesOnly") === "true";
     const filter = searchParams.get("filter");
+
+    if (namesOnly) {
+      let names = await au.getApplicationNames();
+
+      if (filter && filter.trim()) {
+        const filterLower = filter.toLowerCase();
+        names = names.filter((name) =>
+          name.toLowerCase().includes(filterLower)
+        );
+      }
+
+      return NextResponse.json({ names });
+    }
 
     let applications = await au.getApplications();
 

@@ -125,6 +125,53 @@ export class AWS implements IAws {
       delete taskDefInput.tags;
     }
 
+    // Clean up containerDefinitions to remove empty or invalid arrays
+    if (taskDefInput.containerDefinitions) {
+      taskDefInput.containerDefinitions = taskDefInput.containerDefinitions.map(
+        (container) => {
+          const cleanedContainer = { ...container };
+
+          // Remove secrets if empty or contains invalid entries
+          if (cleanedContainer.secrets) {
+            const validSecrets = cleanedContainer.secrets.filter(
+              (secret) => secret?.name && secret.name.trim() !== ""
+            );
+            if (validSecrets.length === 0) {
+              delete cleanedContainer.secrets;
+            } else {
+              cleanedContainer.secrets = validSecrets;
+            }
+          }
+
+          // Remove environment if empty
+          if (
+            cleanedContainer.environment &&
+            cleanedContainer.environment.length === 0
+          ) {
+            delete cleanedContainer.environment;
+          }
+
+          // Remove mountPoints if empty
+          if (
+            cleanedContainer.mountPoints &&
+            cleanedContainer.mountPoints.length === 0
+          ) {
+            delete cleanedContainer.mountPoints;
+          }
+
+          // Remove volumesFrom if empty
+          if (
+            cleanedContainer.volumesFrom &&
+            cleanedContainer.volumesFrom.length === 0
+          ) {
+            delete cleanedContainer.volumesFrom;
+          }
+
+          return cleanedContainer;
+        }
+      );
+    }
+
     const response = await client.send(
       new RegisterTaskDefinitionCommand(taskDefInput)
     );

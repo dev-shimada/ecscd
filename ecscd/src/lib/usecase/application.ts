@@ -4,6 +4,8 @@ import { DeploymentRepository } from "../repository/deployment";
 
 export interface IApplicationUsecase {
   getApplications(): Promise<ApplicationDomain[]>;
+  getApplicationNames(): Promise<string[]>;
+  getApplication(name: string): Promise<ApplicationDomain | null>;
   getService(
     application: ApplicationDomain
   ): Promise<ApplicationDomain["service"]>;
@@ -41,6 +43,34 @@ export class ApplicationUsecase implements IApplicationUsecase {
     );
     return applications;
   }
+
+  async getApplicationNames(): Promise<string[]> {
+    return this.applicationRepository.getApplicationNames();
+  }
+
+  async getApplication(name: string): Promise<ApplicationDomain | null> {
+    const application = await this.applicationRepository.getApplication(name);
+    if (!application) {
+      return null;
+    }
+
+    // diff（同期状態）を取得
+    if (application.sync.status !== "Error") {
+      try {
+        const deployments = await this.deploymentRepository.diff(application);
+        if (deployments.length > 0) {
+          application.sync.status = "OutOfSync";
+        } else {
+          application.sync.status = "InSync";
+        }
+      } catch {
+        application.sync.status = "Error";
+      }
+    }
+
+    return application;
+  }
+
   async createApplication(application: ApplicationDomain): Promise<void> {
     await this.applicationRepository.createApplication(application);
   }

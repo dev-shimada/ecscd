@@ -14,7 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, RefreshCw, GitBranch } from "lucide-react";
 
 export default function Home() {
-  const [applications, setApplications] = useState<ApplicationDomain[]>([]);
+  const [appNames, setAppNames] = useState<string[]>([]);
+  const [applicationsData, setApplicationsData] = useState<Map<string, ApplicationDomain>>(new Map());
   const [selectedApp, setSelectedApp] = useState<string | null>(null);
   const [diffData, setDiffData] = useState<{
     error: undefined;
@@ -30,70 +31,45 @@ export default function Home() {
   const [editingApp, setEditingApp] = useState<ApplicationDomain | null>(null);
   const [deployingApps, setDeployingApps] = useState<Set<string>>(new Set());
   const [filterPattern, setFilterPattern] = useState<string | null>(null);
-  const previousApplicationsRef = useRef<ApplicationDomain[]>([]);
+  const refreshKeyRef = useRef(0);
 
   const handleFilterChange = useCallback((pattern: string) => {
     setFilterPattern(pattern);
   }, []);
 
-  useEffect(() => {
-    // Wait for FilterSelector to initialize filterPattern from URL
-    if (filterPattern === null) return;
-    loadApplications();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterPattern]);
-
-  // Poll for deployment status every 5 seconds when any app has IN_PROGRESS rolloutState
-  useEffect(() => {
-    const hasInProgressDeployment = applications.some((app) =>
-      app.service?.deployments.some((d) => d.rolloutState === "IN_PROGRESS")
-    );
-
-    if (!hasInProgressDeployment) {
-      return;
-    }
-
-    const interval = setInterval(async () => {
-      try {
-        const response = await fetch("/api/apps");
-        const data = await response.json();
-        const newApplications = data.applications || [];
-
-        // Compare with previous state to only update if there are actual changes
-        const hasChanges =
-          JSON.stringify(newApplications) !==
-          JSON.stringify(previousApplicationsRef.current);
-
-        if (hasChanges) {
-          previousApplicationsRef.current = newApplications;
-          setApplications(newApplications);
-        }
-      } catch (error) {
-        console.error("Failed to poll applications:", error);
-      }
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [applications]);
-
-  const loadApplications = async () => {
+  const loadApplicationNames = useCallback(async () => {
     setIsLoading(true);
     try {
-      const params = new URLSearchParams();
+      const params = new URLSearchParams({ namesOnly: "true" });
       if (filterPattern) {
         params.set("filter", filterPattern);
       }
       const response = await fetch(`/api/apps?${params.toString()}`);
       const data = await response.json();
-      const newApplications = data.applications || [];
-      previousApplicationsRef.current = newApplications;
-      setApplications(newApplications);
+      const names = data.names || [];
+      setAppNames(names);
+      // Increment refresh key to trigger card reloads
+      refreshKeyRef.current += 1;
     } catch (error) {
-      console.error("Failed to load applications:", error);
+      console.error("Failed to load application names:", error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filterPattern]);
+
+  useEffect(() => {
+    // Wait for FilterSelector to initialize filterPattern from URL
+    if (filterPattern === null) return;
+    loadApplicationNames();
+  }, [filterPattern, loadApplicationNames]);
+
+  const handleDataLoaded = useCallback((application: ApplicationDomain) => {
+    setApplicationsData((prev) => {
+      const newMap = new Map(prev);
+      newMap.set(application.name, application);
+      return newMap;
+    });
+  }, []);
 
   const handleViewDiff = async (appName: string) => {
     setSelectedApp(appName);
@@ -133,15 +109,18 @@ export default function Home() {
 
       await response.json();
 
-      // Since the sync API is synchronous, handle completion immediately
-      setDeployingApps((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(appName);
-        return newSet;
-      });
+      // Trigger immediate reload of the ApplicationCard to detect deployment state
+      refreshKeyRef.current += 1;
+      setAppNames((prev) => [...prev]);
 
-      // Refresh applications after successful sync
-      loadApplications();
+      // Remove from deployingApps after a short delay to allow the card to detect the actual IN_PROGRESS state
+      setTimeout(() => {
+        setDeployingApps((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(appName);
+          return newSet;
+        });
+      }, 2000);
     } catch (error) {
       console.error("Failed to start sync:", error);
       const errorMessage =
@@ -155,7 +134,6 @@ export default function Home() {
         newSet.delete(appName);
         return newSet;
       });
-      loadApplications();
     }
   };
 
@@ -179,9 +157,6 @@ export default function Home() {
       }
 
       await response.json();
-
-      // Refresh applications after successful rollback
-      loadApplications();
     } catch (error) {
       console.error("Failed to start rollback:", error);
       const errorMessage =
@@ -195,7 +170,6 @@ export default function Home() {
         newSet.delete(appName);
         return newSet;
       });
-      loadApplications();
     }
   };
 
@@ -225,15 +199,20 @@ export default function Home() {
 
       await response.json();
 
-      // Since the sync API is synchronous, handle completion immediately
-      setDeployingApps((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(selectedApp);
-        return newSet;
-      });
+      // Trigger immediate reload of the ApplicationCard to detect deployment state
+      refreshKeyRef.current += 1;
+      setAppNames((prev) => [...prev]);
 
-      // Refresh applications and diff after successful sync
-      loadApplications();
+      // Remove from deployingApps after a short delay to allow the card to detect the actual IN_PROGRESS state
+      setTimeout(() => {
+        setDeployingApps((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(selectedApp);
+          return newSet;
+        });
+      }, 2000);
+
+      // Refresh diff after successful sync
       if (selectedApp) {
         handleViewDiff(selectedApp);
       }
@@ -254,7 +233,7 @@ export default function Home() {
   };
 
   const handleEdit = (appName: string) => {
-    const app = applications.find((a) => a.name === appName);
+    const app = applicationsData.get(appName);
     if (app) {
       setEditingApp(app);
       setShowEditAppDialog(true);
@@ -283,8 +262,13 @@ export default function Home() {
         setDiffData(null);
       }
 
-      // Refresh applications list
-      loadApplications();
+      // Remove from local state
+      setAppNames((prev) => prev.filter((name) => name !== appName));
+      setApplicationsData((prev) => {
+        const newMap = new Map(prev);
+        newMap.delete(appName);
+        return newMap;
+      });
     } catch (error) {
       console.error("Failed to delete application:", error);
       // You could add toast notification here
@@ -298,16 +282,16 @@ export default function Home() {
       return newSet;
     });
 
-    // Refresh applications and diff after deployment completes
-    loadApplications();
+    // Refresh diff after deployment completes
     if (selectedApp === appName) {
       handleViewDiff(appName);
     }
   };
 
   const getOverallStatus = () => {
-    if (applications.length === 0) return { active: 0, inSync: 0, total: 0 };
+    if (appNames.length === 0) return { active: 0, inSync: 0, total: 0 };
 
+    const applications = Array.from(applicationsData.values());
     const active = applications.filter(
       (app) => app.service?.status === "ACTIVE"
     ).length;
@@ -315,7 +299,7 @@ export default function Home() {
       (app) => app.sync.status === "InSync"
     ).length;
 
-    return { active, inSync, total: applications.length };
+    return { active, inSync, total: appNames.length };
   };
 
   const status = getOverallStatus();
@@ -336,7 +320,7 @@ export default function Home() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={loadApplications}
+                onClick={loadApplicationNames}
                 disabled={isLoading}
               >
                 <RefreshCw
@@ -419,19 +403,19 @@ export default function Home() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">Applications</h2>
-              {applications.length > 0 && (
+              {appNames.length > 0 && (
                 <span className="text-sm text-gray-600">
-                  {applications.length} application
-                  {applications.length !== 1 ? "s" : ""}
+                  {appNames.length} application
+                  {appNames.length !== 1 ? "s" : ""}
                 </span>
               )}
             </div>
 
-            {isLoading ? (
+            {isLoading && appNames.length === 0 ? (
               <div className="flex items-center justify-center py-12">
                 <RefreshCw className="h-8 w-8 animate-spin text-gray-600" />
               </div>
-            ) : applications.length === 0 ? (
+            ) : appNames.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
                   <div className="text-gray-600 mb-4">
@@ -445,23 +429,18 @@ export default function Home() {
               </Card>
             ) : (
               <div className="space-y-4">
-                {applications.map((app) => (
+                {appNames.map((appName) => (
                   <ApplicationCard
-                    key={app.name}
-                    application={app}
+                    key={`${appName}-${refreshKeyRef.current}`}
+                    appName={appName}
                     onSync={handleSync}
                     onViewDiff={handleViewDiff}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onRollback={handleRollback}
-                    isDeploymentActive={
-                      deployingApps.has(app.name) ||
-                      app.service?.deployments.some(
-                        (d) => d.rolloutState === "IN_PROGRESS"
-                      ) ||
-                      false
-                    }
-                    onDeploymentComplete={handleDeploymentComplete(app.name)}
+                    isDeploymentActive={deployingApps.has(appName)}
+                    onDeploymentComplete={handleDeploymentComplete(appName)}
+                    onDataLoaded={handleDataLoaded}
                   />
                 ))}
               </div>
@@ -497,8 +476,8 @@ export default function Home() {
                 isLoading={
                   selectedApp
                     ? deployingApps.has(selectedApp) ||
-                      applications
-                        .find((app) => app.name === selectedApp)
+                      applicationsData
+                        .get(selectedApp)
                         ?.service?.deployments.some(
                           (d) => d.rolloutState === "IN_PROGRESS"
                         )
@@ -520,14 +499,14 @@ export default function Home() {
       <NewApplicationDialog
         open={showNewAppDialog}
         onOpenChange={setShowNewAppDialog}
-        onSuccess={loadApplications}
+        onSuccess={loadApplicationNames}
       />
 
       <EditApplicationDialog
         open={showEditAppDialog}
         onOpenChange={setShowEditAppDialog}
         application={editingApp}
-        onSuccess={loadApplications}
+        onSuccess={loadApplicationNames}
       />
     </div>
   );

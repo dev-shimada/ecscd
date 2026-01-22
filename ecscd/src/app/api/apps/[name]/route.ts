@@ -1,6 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { au } from "@/lib/di";
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ name: string }> }
+) {
+  try {
+    const { name } = await params;
+    if (!name) {
+      return NextResponse.json(
+        { error: "Missing application name" },
+        { status: 400 }
+      );
+    }
+
+    const application = await au.getApplication(name);
+    if (!application) {
+      return NextResponse.json(
+        { error: "Application not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ application });
+  } catch (error) {
+    console.error("Error fetching application:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch application" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ name: string }> }
