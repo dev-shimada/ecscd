@@ -5,12 +5,15 @@ import {
   PutCommand,
   UpdateCommand,
   DeleteCommand,
+  GetCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { IDatabase } from "./interface/database";
 import { ApplicationDomain } from "../domain/application";
+import { FilterDomain } from "../domain/filter";
 
 interface ApplicationsModel {
   name: string;
+  item_type?: string;
   git_repo: string;
   git_branch: string;
   git_path: string;
@@ -19,6 +22,15 @@ interface ApplicationsModel {
   aws_region: string;
   aws_role_arn: string;
   aws_external_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface FiltersModel {
+  id: string;
+  item_type: string;
+  name: string;
+  pattern: string;
   created_at: string;
   updated_at: string;
 }
@@ -37,6 +49,10 @@ export class DynamoDB implements IDatabase {
     try {
       const command = new ScanCommand({
         TableName: this.tableName,
+        FilterExpression: "item_type = :item_type",
+        ExpressionAttributeValues: {
+          ":item_type": "application",
+        },
       });
 
       const response = await this.client.send(command);
@@ -89,6 +105,7 @@ export class DynamoDB implements IDatabase {
         TableName: this.tableName,
         Item: {
           name: application.name,
+          item_type: "application",
           git_repo: application.gitConfig.repo,
           git_branch: application.gitConfig.branch,
           git_path: application.gitConfig.path,
@@ -128,6 +145,7 @@ export class DynamoDB implements IDatabase {
           name: application.name,
         },
         UpdateExpression: `SET
+          item_type = :item_type,
           git_repo = :git_repo,
           git_branch = :git_branch,
           git_path = :git_path,
@@ -137,6 +155,7 @@ export class DynamoDB implements IDatabase {
           aws_role_arn = :aws_role_arn,
           updated_at = :updated_at`,
         ExpressionAttributeValues: {
+          ":item_type": "application",
           ":git_repo": application.gitConfig.repo,
           ":git_branch": application.gitConfig.branch,
           ":git_path": application.gitConfig.path,
@@ -211,6 +230,108 @@ export class DynamoDB implements IDatabase {
         roleArn: item.aws_role_arn,
         externalId: item.aws_external_id,
       },
+      createdAt: new Date(item.created_at),
+      updatedAt: new Date(item.updated_at),
+    };
+  }
+
+  async getFilters(): Promise<FilterDomain[]> {
+    try {
+      const command = new ScanCommand({
+        TableName: this.tableName,
+        FilterExpression: "item_type = :item_type",
+        ExpressionAttributeValues: {
+          ":item_type": "filter",
+        },
+      });
+
+      const response = await this.client.send(command);
+      const items = response.Items || [];
+
+      const filters: FilterDomain[] = items.map((item) =>
+        this.mapItemToFilter(item as FiltersModel)
+      );
+
+      return filters.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+    } catch (error) {
+      throw new Error(`Failed to get filters: ${error}`);
+    }
+  }
+
+  async getFilterById(id: string): Promise<FilterDomain | null> {
+    try {
+      const command = new GetCommand({
+        TableName: this.tableName,
+        Key: {
+          name: `filter#${id}`,
+        },
+      });
+
+      const response = await this.client.send(command);
+      if (!response.Item) {
+        return null;
+      }
+
+      return this.mapItemToFilter(response.Item as FiltersModel);
+    } catch (error) {
+      throw new Error(`Failed to get filter: ${error}`);
+    }
+  }
+
+  async createFilter(filter: FilterDomain): Promise<void> {
+    try {
+      const command = new PutCommand({
+        TableName: this.tableName,
+        Item: {
+          name: `filter#${filter.id}`,
+          id: filter.id,
+          item_type: "filter",
+          filter_name: filter.name,
+          pattern: filter.pattern,
+          created_at: filter.createdAt.toISOString(),
+          updated_at: filter.updatedAt.toISOString(),
+        },
+        ConditionExpression: "attribute_not_exists(#name)",
+        ExpressionAttributeNames: {
+          "#name": "name",
+        },
+      });
+
+      await this.client.send(command);
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.name === "ConditionalCheckFailedException"
+      ) {
+        throw new Error(`Filter with id '${filter.id}' already exists`);
+      }
+      throw new Error(`Failed to create filter: ${error}`);
+    }
+  }
+
+  async deleteFilter(id: string): Promise<void> {
+    try {
+      const command = new DeleteCommand({
+        TableName: this.tableName,
+        Key: {
+          name: `filter#${id}`,
+        },
+      });
+
+      await this.client.send(command);
+    } catch (error) {
+      throw new Error(`Failed to delete filter: ${error}`);
+    }
+  }
+
+  private mapItemToFilter(item: FiltersModel): FilterDomain {
+    return {
+      id: item.id,
+      name: (item as unknown as { filter_name: string }).filter_name,
+      pattern: item.pattern,
       createdAt: new Date(item.created_at),
       updatedAt: new Date(item.updated_at),
     };

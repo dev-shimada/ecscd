@@ -229,6 +229,16 @@ export function ApplicationCard({
     return result;
   };
 
+  const getEcsConsoleUrl = () => {
+    if (!application) return "#";
+    const region = application.awsConfig.region || "us-east-1";
+    const cluster = application.ecsConfig.cluster;
+    const service = application.ecsConfig.service;
+    return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${encodeURIComponent(
+      cluster
+    )}/services/${encodeURIComponent(service)}/deployments?region=${region}`;
+  };
+
   // Loading state
   if (isLoadingData) {
     return (
@@ -404,13 +414,24 @@ export function ApplicationCard({
 
           {hasActiveDeployment && (
             <div className="p-3 bg-gray-100 rounded-md">
-              <div className="flex items-center gap-2">
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                <span className="font-medium">
-                  {application.service?.deployments.filter(
-                    (d) => d.status === "PRIMARY"
-                  )[0]?.rolloutState || "Deploying..."}
-                </span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <span className="font-medium">
+                    {application.service?.deployments.filter(
+                      (d) => d.status === "PRIMARY"
+                    )[0]?.rolloutState || "Deploying..."}
+                  </span>
+                </div>
+                <a
+                  href={getEcsConsoleUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                >
+                  View in AWS Console
+                  <ExternalLink className="h-3 w-3" />
+                </a>
               </div>
               {application.service?.deployments.some(
                 (d) => d.status === "PRIMARY"

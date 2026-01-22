@@ -5,13 +5,30 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const namesOnly = searchParams.get("namesOnly") === "true";
+    const filter = searchParams.get("filter");
 
     if (namesOnly) {
-      const names = await au.getApplicationNames();
+      let names = await au.getApplicationNames();
+
+      if (filter && filter.trim()) {
+        const filterLower = filter.toLowerCase();
+        names = names.filter((name) =>
+          name.toLowerCase().includes(filterLower)
+        );
+      }
+
       return NextResponse.json({ names });
     }
 
-    const applications = await au.getApplications();
+    let applications = await au.getApplications();
+
+    if (filter && filter.trim()) {
+      const filterLower = filter.toLowerCase();
+      applications = applications.filter((app) =>
+        app.name.toLowerCase().includes(filterLower)
+      );
+    }
+
     return NextResponse.json({ applications });
   } catch (error) {
     console.error("Error fetching applications:", error);

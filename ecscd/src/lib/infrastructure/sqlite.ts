@@ -2,6 +2,7 @@ import sqlite3 from "sqlite3";
 import { IDatabase } from "./interface/database";
 import { Database } from "sqlite3";
 import { ApplicationDomain } from "../domain/application";
+import { FilterDomain } from "../domain/filter";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -15,6 +16,14 @@ interface ApplicationsModel {
   aws_region: string;
   aws_role_arn: string;
   aws_external_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface FiltersModel {
+  id: string;
+  name: string;
+  pattern: string;
   created_at: string;
   updated_at: string;
 }
@@ -47,6 +56,21 @@ export class SQLite implements IDatabase {
                 aws_region TEXT NOT NULL,
                 aws_role_arn TEXT,
                 aws_external_id TEXT NOT NULL,
+                created_at DATETIME NOT NULL,
+                updated_at DATETIME NOT NULL
+            )`,
+          (err: Error | null) => {
+            if (err) {
+              reject(err);
+            }
+          }
+        );
+        this.db.run(
+          `
+            CREATE TABLE IF NOT EXISTS filters (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                pattern TEXT NOT NULL,
                 created_at DATETIME NOT NULL,
                 updated_at DATETIME NOT NULL
             )`,
@@ -197,6 +221,87 @@ export class SQLite implements IDatabase {
         roleArn: row.aws_role_arn,
         externalId: row.aws_external_id,
       },
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
+    };
+  }
+
+  async getFilters(): Promise<FilterDomain[]> {
+    return new Promise((resolve, reject) => {
+      this.db.all(
+        `SELECT * FROM filters ORDER BY created_at DESC`,
+        (err: Error | null, rows: FiltersModel[]) => {
+          if (err) {
+            return reject(err);
+          }
+          const filters: FilterDomain[] = rows.map((row) =>
+            this.mapRowToFilter(row)
+          );
+          resolve(filters);
+        }
+      );
+    });
+  }
+
+  async getFilterById(id: string): Promise<FilterDomain | null> {
+    return new Promise((resolve, reject) => {
+      this.db.get(
+        `SELECT * FROM filters WHERE id = ?`,
+        [id],
+        (err: Error | null, row: FiltersModel | undefined) => {
+          if (err) {
+            return reject(err);
+          }
+          if (!row) {
+            return resolve(null);
+          }
+          resolve(this.mapRowToFilter(row));
+        }
+      );
+    });
+  }
+
+  async createFilter(filter: FilterDomain): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        `INSERT INTO filters (id, name, pattern, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
+        [
+          filter.id,
+          filter.name,
+          filter.pattern,
+          filter.createdAt.toISOString(),
+          filter.updatedAt.toISOString(),
+        ],
+        (err: Error | null) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve();
+        }
+      );
+    });
+  }
+
+  async deleteFilter(id: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        `DELETE FROM filters WHERE id = ?`,
+        [id],
+        (err: Error | null) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve();
+        }
+      );
+    });
+  }
+
+  private mapRowToFilter(row: FiltersModel): FilterDomain {
+    return {
+      id: row.id,
+      name: row.name,
+      pattern: row.pattern,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
     };

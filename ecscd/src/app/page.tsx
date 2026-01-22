@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { toast } from "sonner";
 import { ApplicationCard } from "@/components/application-card";
 import { DiffViewer } from "@/components/diff-viewer";
 import { NewApplicationDialog } from "@/components/new-application-dialog";
 import { EditApplicationDialog } from "@/components/edit-application-dialog";
+import { FilterSelector } from "@/components/filter-selector";
 import { ApplicationDomain, DiffDomain } from "@/lib/domain/application";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -29,12 +30,21 @@ export default function Home() {
   const [showEditAppDialog, setShowEditAppDialog] = useState(false);
   const [editingApp, setEditingApp] = useState<ApplicationDomain | null>(null);
   const [deployingApps, setDeployingApps] = useState<Set<string>>(new Set());
+  const [filterPattern, setFilterPattern] = useState<string | null>(null);
   const refreshKeyRef = useRef(0);
+
+  const handleFilterChange = useCallback((pattern: string) => {
+    setFilterPattern(pattern);
+  }, []);
 
   const loadApplicationNames = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/apps?namesOnly=true");
+      const params = new URLSearchParams({ namesOnly: "true" });
+      if (filterPattern) {
+        params.set("filter", filterPattern);
+      }
+      const response = await fetch(`/api/apps?${params.toString()}`);
       const data = await response.json();
       const names = data.names || [];
       setAppNames(names);
@@ -45,11 +55,13 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [filterPattern]);
 
   useEffect(() => {
+    // Wait for FilterSelector to initialize filterPattern from URL
+    if (filterPattern === null) return;
     loadApplicationNames();
-  }, [loadApplicationNames]);
+  }, [filterPattern, loadApplicationNames]);
 
   const handleDataLoaded = useCallback((application: ApplicationDomain) => {
     setApplicationsData((prev) => {
@@ -290,6 +302,9 @@ export default function Home() {
               <h1 className="text-2xl font-bold text-gray-900">ecscd</h1>
             </div>
             <div className="flex items-center gap-4">
+              <Suspense fallback={<div className="w-[200px] h-10 bg-gray-100 rounded-md animate-pulse" />}>
+                <FilterSelector onFilterChange={handleFilterChange} />
+              </Suspense>
               <Button
                 variant="outline"
                 size="sm"

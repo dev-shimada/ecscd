@@ -7,6 +7,8 @@ import { GitHub } from "./infrastructure/github";
 import { SQLite } from "./infrastructure/sqlite";
 import { DynamoDB } from "./infrastructure/dynamodb";
 import { IDatabase } from "./infrastructure/interface/database";
+import { Filter } from "./infrastructure/filter";
+import { FilterUsecase } from "./usecase/filter";
 
 function createDatabase(): IDatabase {
   const dbType = process.env.DATABASE_TYPE || "sqlite";
@@ -23,10 +25,14 @@ function createDatabase(): IDatabase {
   }
 }
 
-const ar = new Application(createDatabase());
+const db = createDatabase();
+const ar = new Application(db);
 const dr = new Deployment(
   new AWS(),
   new GitHub(process.env.GITHUB_TOKEN || "")
 );
+const fr = new Filter(db);
+
 export const au = new ApplicationUsecase(ar, dr);
 export const du = new DeploymentUsecase(dr);
+export const fu = new FilterUsecase(fr);

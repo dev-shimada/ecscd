@@ -22,6 +22,6 @@
 		"source=${env:HOME}/.aws,target=/root/.aws,type=bind,readonly",
 		"source=${env:HOME}/.claude,target=/root/.claude,type=bind"
 	],
-	"forwardPorts": [],
+	"forwardPorts": [3000],
 	"remoteUser": "root"
 }
