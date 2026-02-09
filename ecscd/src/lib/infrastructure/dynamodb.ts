@@ -77,6 +77,10 @@ export class DynamoDB implements IDatabase {
     try {
       const command = new ScanCommand({
         TableName: this.tableName,
+        FilterExpression: "item_type = :item_type",
+        ExpressionAttributeValues: {
+          ":item_type": "application",
+        },
         ProjectionExpression: "#name, created_at",
         ExpressionAttributeNames: {
           "#name": "name",
