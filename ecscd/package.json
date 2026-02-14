@@ -12,10 +12,10 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.962.0",
-    "@aws-sdk/client-ecs": "^3.958.0",
-    "@aws-sdk/client-sts": "^3.883.0",
-    "@aws-sdk/lib-dynamodb": "^3.962.0",
+    "@aws-sdk/client-dynamodb": "^3.990.0",
+    "@aws-sdk/client-ecs": "^3.990.0",
+    "@aws-sdk/client-sts": "^3.990.0",
+    "@aws-sdk/lib-dynamodb": "^3.990.0",
     "@eslint/eslintrc": "^3",
     "@octokit/rest": "^22.0.0",
     "@tailwindcss/postcss": "^4",
