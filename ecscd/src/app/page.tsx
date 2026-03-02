@@ -11,6 +11,7 @@ import { ApplicationDomain, DiffDomain } from "@/lib/domain/application";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { Plus, RefreshCw, GitBranch } from "lucide-react";
 
 export default function Home() {
@@ -26,6 +27,7 @@ export default function Home() {
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isDiffLoading, setIsDiffLoading] = useState(false);
+  const [isDiffSheetOpen, setIsDiffSheetOpen] = useState(false);
   const [showNewAppDialog, setShowNewAppDialog] = useState(false);
   const [showEditAppDialog, setShowEditAppDialog] = useState(false);
   const [editingApp, setEditingApp] = useState<ApplicationDomain | null>(null);
@@ -73,6 +75,7 @@ export default function Home() {
 
   const handleViewDiff = async (appName: string) => {
     setSelectedApp(appName);
+    setIsDiffSheetOpen(true);
     setIsDiffLoading(true);
     try {
       const response = await fetch(`/api/apps/${appName}/diff`);
@@ -256,10 +259,11 @@ export default function Home() {
         throw new Error(errorData.error || "Delete failed");
       }
 
-      // If the deleted app was selected, clear the selection
+      // If the deleted app was selected, clear the selection and close the sheet
       if (selectedApp === appName) {
         setSelectedApp(null);
         setDiffData(null);
+        setIsDiffSheetOpen(false);
       }
 
       // Remove from local state
@@ -282,8 +286,8 @@ export default function Home() {
       return newSet;
     });
 
-    // Refresh diff after deployment completes
-    if (selectedApp === appName) {
+    // Refresh diff after deployment completes if sheet is open
+    if (selectedApp === appName && isDiffSheetOpen) {
       handleViewDiff(appName);
     }
   };
@@ -398,76 +402,71 @@ export default function Home() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Applications List */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Applications</h2>
-              {appNames.length > 0 && (
-                <span className="text-sm text-gray-600">
-                  {appNames.length} application
-                  {appNames.length !== 1 ? "s" : ""}
-                </span>
-              )}
-            </div>
-
-            {isLoading && appNames.length === 0 ? (
-              <div className="flex items-center justify-center py-12">
-                <RefreshCw className="h-8 w-8 animate-spin text-gray-600" />
-              </div>
-            ) : appNames.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <div className="text-gray-600 mb-4">
-                    No applications configured yet
-                  </div>
-                  <Button onClick={() => setShowNewAppDialog(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add your first application
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                {appNames.map((appName) => (
-                  <ApplicationCard
-                    key={`${appName}-${refreshKeyRef.current}`}
-                    appName={appName}
-                    onSync={handleSync}
-                    onViewDiff={handleViewDiff}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onRollback={handleRollback}
-                    isDeploymentActive={deployingApps.has(appName)}
-                    onDeploymentComplete={handleDeploymentComplete(appName)}
-                    onDataLoaded={handleDataLoaded}
-                  />
-                ))}
-              </div>
+        {/* Applications List */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Applications</h2>
+            {appNames.length > 0 && (
+              <span className="text-sm text-gray-600">
+                {appNames.length} application
+                {appNames.length !== 1 ? "s" : ""}
+              </span>
             )}
           </div>
 
-          {/* Diff Viewer */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold">
-              {selectedApp ? `Diff: ${selectedApp}` : "Configuration Diff"}
-            </h2>
+          {isLoading && appNames.length === 0 ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="h-8 w-8 animate-spin text-gray-600" />
+            </div>
+          ) : appNames.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <div className="text-gray-600 mb-4">
+                  No applications configured yet
+                </div>
+                <Button onClick={() => setShowNewAppDialog(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add your first application
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {appNames.map((appName) => (
+                <ApplicationCard
+                  key={`${appName}-${refreshKeyRef.current}`}
+                  appName={appName}
+                  onSync={handleSync}
+                  onViewDiff={handleViewDiff}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onRollback={handleRollback}
+                  isDeploymentActive={deployingApps.has(appName)}
+                  onDeploymentComplete={handleDeploymentComplete(appName)}
+                  onDataLoaded={handleDataLoaded}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
 
-            {!selectedApp ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <div className="text-gray-600">
-                    Select an application to view its configuration diff
-                  </div>
-                </CardContent>
-              </Card>
-            ) : isDiffLoading ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <RefreshCw className="h-8 w-8 animate-spin text-gray-600 mx-auto mb-4" />
-                  <div className="text-gray-600">Loading diff...</div>
-                </CardContent>
-              </Card>
+      {/* Diff Viewer Sheet */}
+      <Sheet open={isDiffSheetOpen} onOpenChange={setIsDiffSheetOpen}>
+        <SheetContent side="right">
+          <SheetClose />
+          <div className="p-6">
+            <SheetHeader className="mb-6">
+              <SheetTitle>
+                {selectedApp ? `Diff: ${selectedApp}` : "Configuration Diff"}
+              </SheetTitle>
+            </SheetHeader>
+
+            {isDiffLoading ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <RefreshCw className="h-8 w-8 animate-spin text-gray-600 mb-4" />
+                <div className="text-gray-600">Loading diff...</div>
+              </div>
             ) : diffData ? (
               <DiffViewer
                 diffs={diffData.diffs || []}
@@ -493,8 +492,8 @@ export default function Home() {
               </Card>
             )}
           </div>
-        </div>
-      </main>
+        </SheetContent>
+      </Sheet>
 
       <NewApplicationDialog
         open={showNewAppDialog}
