@@ -10,6 +10,10 @@ interface SheetProps {
   children: React.ReactNode
 }
 
+const SheetContext = React.createContext<{
+  onOpenChange: (open: boolean) => void
+} | null>(null)
+
 interface SheetContentProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode
   side?: "left" | "right"
@@ -49,13 +53,15 @@ const Sheet = ({ open, onOpenChange, children }: SheetProps) => {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50">
-      <div
-        className="fixed inset-0 bg-black/50"
-        onClick={() => onOpenChange(false)}
-      />
-      {children}
-    </div>
+    <SheetContext.Provider value={{ onOpenChange }}>
+      <div className="fixed inset-0 z-50">
+        <div
+          className="fixed inset-0 bg-black/50"
+          onClick={() => onOpenChange(false)}
+        />
+        {children}
+      </div>
+    </SheetContext.Provider>
   )
 }
 
@@ -111,19 +117,31 @@ SheetDescription.displayName = "SheetDescription"
 const SheetClose = React.forwardRef<
   HTMLButtonElement,
   React.ButtonHTMLAttributes<HTMLButtonElement>
->(({ className, ...props }, ref) => (
-  <button
-    ref={ref}
-    className={cn(
-      "absolute right-4 top-4 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:pointer-events-none",
-      className
-    )}
-    {...props}
-  >
-    <X className="h-4 w-4" />
-    <span className="sr-only">Close</span>
-  </button>
-))
+>(({ className, onClick, ...props }, ref) => {
+  const context = React.useContext(SheetContext)
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (onClick) {
+      onClick(e)
+    }
+    context?.onOpenChange(false)
+  }
+
+  return (
+    <button
+      ref={ref}
+      className={cn(
+        "absolute right-4 top-4 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:pointer-events-none",
+        className
+      )}
+      onClick={handleClick}
+      {...props}
+    >
+      <X className="h-4 w-4" />
+      <span className="sr-only">Close</span>
+    </button>
+  )
+})
 SheetClose.displayName = "SheetClose"
 
 export {

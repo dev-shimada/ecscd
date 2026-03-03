@@ -454,12 +454,12 @@ export default function Home() {
       {/* Diff Viewer Sheet */}
       <Sheet open={isDiffSheetOpen} onOpenChange={setIsDiffSheetOpen}>
         <SheetContent side="right">
-          <SheetClose />
           <div className="p-6">
             <SheetHeader className="mb-6">
               <SheetTitle>
                 {selectedApp ? `Diff: ${selectedApp}` : "Configuration Diff"}
               </SheetTitle>
+              <SheetClose />
             </SheetHeader>
 
             {isDiffLoading ? (
