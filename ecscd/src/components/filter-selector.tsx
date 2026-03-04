@@ -9,7 +9,7 @@ import { Search, Save, X, ChevronDown, Trash2 } from "lucide-react";
 import { SaveFilterDialog } from "./save-filter-dialog";
 
 interface FilterSelectorProps {
-  onFilterChange: (pattern: string) => void;
+  onFilterChange: (pattern: string, isInitializing?: boolean) => void;
 }
 
 export function FilterSelector({ onFilterChange }: FilterSelectorProps) {
@@ -35,7 +35,7 @@ export function FilterSelector({ onFilterChange }: FilterSelectorProps) {
   useEffect(() => {
     const filterParam = searchParams.get("filter") || "";
     setCurrentFilter(filterParam);
-    onFilterChange(filterParam);
+    onFilterChange(filterParam, true); // Mark as initializing
   }, [searchParams, onFilterChange]);
 
   // Load saved filters on mount
