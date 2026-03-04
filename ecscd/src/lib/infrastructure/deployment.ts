@@ -340,6 +340,20 @@ export class Deployment implements DeploymentRepository {
   private cleanTaskDefinitionForComparison(
     taskDef: RegisterTaskDefinitionCommandInput
   ): RegisterTaskDefinitionCommandInput {
+    /**
+     * AWS APIから返されるタスク定義には、RegisterTaskDefinitionCommandInputには
+     * 含まれないメタデータフィールドが含まれる場合がある
+     */
+    type TaskDefinitionWithMetadata = RegisterTaskDefinitionCommandInput & {
+      revision?: number;
+      taskDefinitionArn?: string;
+      registeredAt?: Date;
+      registeredBy?: string;
+      status?: string;
+      requiresAttributes?: unknown[];
+      compatibilities?: string[];
+    };
+
     // Create a copy and remove AWS-generated fields
     const {
       revision,
@@ -350,7 +364,7 @@ export class Deployment implements DeploymentRepository {
       requiresAttributes,
       compatibilities,
       ...cleanedTaskDef
-    } = taskDef as any;
+    } = taskDef as TaskDefinitionWithMetadata;
 
     return cleanedTaskDef;
   }

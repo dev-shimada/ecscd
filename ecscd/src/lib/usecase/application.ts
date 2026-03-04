@@ -16,28 +16,33 @@ export class ApplicationUsecase implements IApplicationUsecase {
     private deploymentRepository: DeploymentRepository
   ) {}
 
+  /**
+   * アプリケーションにECS情報とdiff情報を付加する共通メソッド
+   */
+  private async enrichApplicationWithServiceInfo(app: ApplicationDomain): Promise<void> {
+    try {
+      // ECS情報を取得
+      app.service = await this.deploymentRepository.getService(app);
+
+      // diff情報を取得
+      const deployments = await this.deploymentRepository.diff(app);
+      if (deployments.length > 0) {
+        app.sync.status = "OutOfSync";
+      } else {
+        app.sync.status = "InSync";
+      }
+    } catch (error) {
+      console.warn(`Error fetching info for ${app.name}:`, error);
+      app.sync.status = "Error";
+    }
+  }
+
   async getApplications(): Promise<ApplicationDomain[]> {
     const applications = await this.applicationRepository.getApplications();
 
     // 並列でECS情報とdiff（同期状態）を取得
     await Promise.all(
-      applications.map(async (app) => {
-        try {
-          // ECS情報を取得
-          app.service = await this.deploymentRepository.getService(app);
-
-          // diff情報を取得
-          const deployments = await this.deploymentRepository.diff(app);
-          if (deployments.length > 0) {
-            app.sync.status = "OutOfSync";
-          } else {
-            app.sync.status = "InSync";
-          }
-        } catch (error) {
-          console.warn(`Error fetching info for ${app.name}:`, error);
-          app.sync.status = "Error";
-        }
-      })
+      applications.map(app => this.enrichApplicationWithServiceInfo(app))
     );
     return applications;
   }
@@ -53,21 +58,7 @@ export class ApplicationUsecase implements IApplicationUsecase {
     }
 
     // ECS情報とdiff（同期状態）を取得
-    try {
-      // ECS情報を取得
-      application.service = await this.deploymentRepository.getService(application);
-
-      // diff情報を取得
-      const deployments = await this.deploymentRepository.diff(application);
-      if (deployments.length > 0) {
-        application.sync.status = "OutOfSync";
-      } else {
-        application.sync.status = "InSync";
-      }
-    } catch (error) {
-      console.warn(`Error fetching info for ${application.name}:`, error);
-      application.sync.status = "Error";
-    }
+    await this.enrichApplicationWithServiceInfo(application);
 
     return application;
   }
