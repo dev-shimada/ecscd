@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from "react";
 import { toast } from "sonner";
 import { ApplicationCard } from "@/components/application-card";
 import { DiffViewer } from "@/components/diff-viewer";
@@ -32,11 +32,18 @@ export default function Home() {
   const [showEditAppDialog, setShowEditAppDialog] = useState(false);
   const [editingApp, setEditingApp] = useState<ApplicationDomain | null>(null);
   const [deployingApps, setDeployingApps] = useState<Set<string>>(new Set());
-  const [filterPattern, setFilterPattern] = useState<string | null>(null);
+  const [filterPattern, setFilterPattern] = useState("");
+  const [isFilterInitialized, setIsFilterInitialized] = useState(false);
   const refreshKeyRef = useRef(0);
 
-  const handleFilterChange = useCallback((pattern: string) => {
+  const handleFilterChange = useCallback((pattern: string, isInitializing = false) => {
     setFilterPattern(pattern);
+    if (isInitializing) {
+      setIsFilterInitialized(true);
+    } else {
+      // Clear existing data when filter changes to prevent memory leaks
+      setApplicationsData(new Map());
+    }
   }, []);
 
   const loadApplicationNames = useCallback(async () => {
@@ -61,9 +68,9 @@ export default function Home() {
 
   useEffect(() => {
     // Wait for FilterSelector to initialize filterPattern from URL
-    if (filterPattern === null) return;
+    if (!isFilterInitialized) return;
     loadApplicationNames();
-  }, [filterPattern, loadApplicationNames]);
+  }, [filterPattern, isFilterInitialized, loadApplicationNames]);
 
   const handleDataLoaded = useCallback((application: ApplicationDomain) => {
     setApplicationsData((prev) => {
@@ -292,21 +299,26 @@ export default function Home() {
     }
   };
 
-  const getOverallStatus = () => {
+  // Derive filtered applications that match current filter
+  const filteredApplications = useMemo(() => {
+    return Array.from(applicationsData.values()).filter(
+      (app) => appNames.includes(app.name)
+    );
+  }, [applicationsData, appNames]);
+
+  // Calculate overall status with memoization
+  const status = useMemo(() => {
     if (appNames.length === 0) return { active: 0, inSync: 0, total: 0 };
 
-    const applications = Array.from(applicationsData.values());
-    const active = applications.filter(
+    const active = filteredApplications.filter(
       (app) => app.service?.status === "ACTIVE"
     ).length;
-    const inSync = applications.filter(
+    const inSync = filteredApplications.filter(
       (app) => app.sync.status === "InSync"
     ).length;
 
     return { active, inSync, total: appNames.length };
-  };
-
-  const status = getOverallStatus();
+  }, [appNames, filteredApplications]);
 
   return (
     <div className="min-h-screen bg-gray-50">
