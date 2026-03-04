@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { au } from "@/lib/di";
+import { createContainer } from "@/lib/di";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const namesOnly = searchParams.get("namesOnly") === "true";
     const filter = searchParams.get("filter");
+    const { applicationUsecase } = createContainer();
 
     if (namesOnly) {
-      let names = await au.getApplicationNames();
+      let names = await applicationUsecase.getApplicationNames();
 
       if (filter && filter.trim()) {
         const filterLower = filter.toLowerCase();
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ names });
     }
 
-    let applications = await au.getApplications();
+    let applications = await applicationUsecase.getApplications();
 
     if (filter && filter.trim()) {
       const filterLower = filter.toLowerCase();
@@ -50,8 +51,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { applicationUsecase } = createContainer();
+
     // Check if application with same name already exists
-    const existingApps = await au.getApplications();
+    const existingApps = await applicationUsecase.getApplications();
     if (existingApps.find((app) => app.name === name)) {
       return NextResponse.json(
         { error: "Application with this name already exists" },
@@ -67,7 +70,7 @@ export async function POST(request: NextRequest) {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    await au.createApplication(newApp);
+    await applicationUsecase.createApplication(newApp);
     return NextResponse.json(
       { message: "Application created successfully" },
       { status: 201 }

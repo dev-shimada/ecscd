@@ -370,4 +370,10 @@ export class Deployment implements DeploymentRepository {
     // Compare maps and return diffs
     return this.compareMaps(currentMap, targetMap);
   }
+
+  async getService(application: ApplicationDomain): Promise<ApplicationDomain["service"]> {
+    const client = await this.aws.createECSClient(application.awsConfig);
+    const service = await this.aws.describeServices(client, application.ecsConfig);
+    return service;
+  }
 }
