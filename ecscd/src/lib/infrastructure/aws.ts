@@ -20,6 +20,7 @@ import {
   Credentials,
   STSClientConfig,
 } from "@aws-sdk/client-sts";
+import { debugLog } from "../utils/logger";
 
 export class AWS implements IAws {
   private async getCredentials(
@@ -44,6 +45,15 @@ export class AWS implements IAws {
     });
 
     const response = await stsClient.send(command);
+    debugLog("STS AssumeRole response", {
+      Credentials: response.Credentials
+        ? {
+            AccessKeyId: response.Credentials.AccessKeyId,
+            Expiration: response.Credentials.Expiration,
+          }
+        : undefined,
+      AssumedRoleUser: response.AssumedRoleUser,
+    });
     if (!response.Credentials) {
       throw new Error("Failed to assume role: No credentials returned");
     }
@@ -82,6 +92,7 @@ export class AWS implements IAws {
     };
     const command = new DescribeServicesCommand(input);
     const response = await client.send(command);
+    debugLog("ECS DescribeServices response", response);
     if (response.failures && response.failures.length > 0) {
       return undefined;
     }
@@ -109,6 +120,7 @@ export class AWS implements IAws {
       taskDefinition: taskDefinitionArn,
     });
     const response = await client.send(command);
+    debugLog("ECS DescribeTaskDefinition response", response);
     if (!response.taskDefinition) {
       return undefined;
     }
@@ -175,6 +187,7 @@ export class AWS implements IAws {
     const response = await client.send(
       new RegisterTaskDefinitionCommand(taskDefInput)
     );
+    debugLog("ECS RegisterTaskDefinition response", response);
     if (
       !response.taskDefinition ||
       !response.taskDefinition.taskDefinitionArn
@@ -195,6 +208,7 @@ export class AWS implements IAws {
       taskDefinition: taskDefinitionArn,
     });
     const response = await client.send(command);
+    debugLog("ECS UpdateService response", response);
     if (!response.service) {
       throw new Error("Failed to update service");
     }
@@ -210,6 +224,7 @@ export class AWS implements IAws {
       service: ecsConfig.service,
     });
     const listResponse = await client.send(listCommand);
+    debugLog("ECS ListServiceDeployments response", listResponse);
     const deployment = listResponse.serviceDeployments?.find(
       (d) => d.status === "IN_PROGRESS"
     );
@@ -223,6 +238,7 @@ export class AWS implements IAws {
       stopType: "ROLLBACK",
     });
     const response = await client.send(command);
+    debugLog("ECS StopServiceDeployment response", response);
     if (!response.serviceDeploymentArn) {
       throw new Error("Failed to stop service deployment");
     }
