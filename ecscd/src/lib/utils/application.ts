@@ -21,7 +21,7 @@ export function getSyncStatusColor(status: string) {
  */
 export function getServiceStatusColor(status: string) {
   switch (status) {
-    case "Active":
+    case "ACTIVE":
       return "success";
     default:
       return "secondary";
@@ -116,6 +116,6 @@ export function getEcsConsoleUrl(application: ApplicationDomain): string {
   const cluster = application.ecsConfig.cluster;
   const service = application.ecsConfig.service;
   return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${encodeURIComponent(
-    cluster
+    cluster,
   )}/services/${encodeURIComponent(service)}/deployments?region=${region}`;
 }
