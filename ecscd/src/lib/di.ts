@@ -25,14 +25,24 @@ function createDatabase(): IDatabase {
   }
 }
 
-const db = createDatabase();
-const ar = new Application(db);
-const dr = new Deployment(
-  new AWS(),
-  new GitHub(process.env.GITHUB_TOKEN || "")
-);
-const fr = new Filter(db);
+export interface Container {
+  applicationUsecase: ApplicationUsecase;
+  deploymentUsecase: DeploymentUsecase;
+  filterUsecase: FilterUsecase;
+}
 
-export const au = new ApplicationUsecase(ar, dr);
-export const du = new DeploymentUsecase(dr);
-export const fu = new FilterUsecase(fr);
+export function createContainer(): Container {
+  const db = createDatabase();
+  const aws = new AWS();
+  const github = new GitHub(process.env.GITHUB_TOKEN || "");
+
+  const applicationRepository = new Application(db);
+  const deploymentRepository = new Deployment(aws, github);
+  const filterRepository = new Filter(db);
+
+  return {
+    applicationUsecase: new ApplicationUsecase(applicationRepository, deploymentRepository),
+    deploymentUsecase: new DeploymentUsecase(deploymentRepository),
+    filterUsecase: new FilterUsecase(filterRepository),
+  };
+}

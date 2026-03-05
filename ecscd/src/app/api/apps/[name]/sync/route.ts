@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ApplicationDomain } from "@/lib/domain/application";
-import { au, du } from "@/lib/di";
+import { createContainer } from "@/lib/di";
 
 export async function POST(
   request: NextRequest,
@@ -14,8 +14,11 @@ export async function POST(
         { status: 400 }
       );
     }
+
+    const { applicationUsecase, deploymentUsecase } = createContainer();
+
     // Check if application with the given name exists
-    const existingApps = await au.getApplications();
+    const existingApps = await applicationUsecase.getApplications();
     const appIndex = existingApps.findIndex((app) => app.name === name);
     if (appIndex === -1) {
       return NextResponse.json(
@@ -25,7 +28,7 @@ export async function POST(
     }
 
     const application: ApplicationDomain = existingApps[appIndex];
-    await du.syncService(application);
+    await deploymentUsecase.syncService(application);
     return NextResponse.json(
       { message: "Service synchronized successfully" },
       { status: 200 }

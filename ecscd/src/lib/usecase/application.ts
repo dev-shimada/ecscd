@@ -6,9 +6,6 @@ export interface IApplicationUsecase {
   getApplications(): Promise<ApplicationDomain[]>;
   getApplicationNames(): Promise<string[]>;
   getApplication(name: string): Promise<ApplicationDomain | null>;
-  getService(
-    application: ApplicationDomain
-  ): Promise<ApplicationDomain["service"]>;
   createApplication(application: ApplicationDomain): Promise<void>;
   updateApplication(application: ApplicationDomain): Promise<void>;
 }
@@ -19,27 +16,33 @@ export class ApplicationUsecase implements IApplicationUsecase {
     private deploymentRepository: DeploymentRepository
   ) {}
 
+  /**
+   * アプリケーションにECS情報とdiff情報を付加する共通メソッド
+   */
+  private async enrichApplicationWithServiceInfo(app: ApplicationDomain): Promise<void> {
+    try {
+      // ECS情報を取得
+      app.service = await this.deploymentRepository.getService(app);
+
+      // diff情報を取得
+      const deployments = await this.deploymentRepository.diff(app);
+      if (deployments.length > 0) {
+        app.sync.status = "OutOfSync";
+      } else {
+        app.sync.status = "InSync";
+      }
+    } catch (error) {
+      console.warn(`Error fetching info for ${app.name}:`, error);
+      app.sync.status = "Error";
+    }
+  }
+
   async getApplications(): Promise<ApplicationDomain[]> {
     const applications = await this.applicationRepository.getApplications();
 
-    // 並列でdiff（同期状態）を取得
-    // 既にErrorステータスのアプリはスキップ
+    // 並列でECS情報とdiff（同期状態）を取得
     await Promise.all(
-      applications.map(async (app) => {
-        if (app.sync.status === "Error") {
-          return;
-        }
-        try {
-          const deployments = await this.deploymentRepository.diff(app);
-          if (deployments.length > 0) {
-            app.sync.status = "OutOfSync";
-          } else {
-            app.sync.status = "InSync";
-          }
-        } catch {
-          app.sync.status = "Error";
-        }
-      })
+      applications.map(app => this.enrichApplicationWithServiceInfo(app))
     );
     return applications;
   }
@@ -54,19 +57,8 @@ export class ApplicationUsecase implements IApplicationUsecase {
       return null;
     }
 
-    // diff（同期状態）を取得
-    if (application.sync.status !== "Error") {
-      try {
-        const deployments = await this.deploymentRepository.diff(application);
-        if (deployments.length > 0) {
-          application.sync.status = "OutOfSync";
-        } else {
-          application.sync.status = "InSync";
-        }
-      } catch {
-        application.sync.status = "Error";
-      }
-    }
+    // ECS情報とdiff（同期状態）を取得
+    await this.enrichApplicationWithServiceInfo(application);
 
     return application;
   }
@@ -79,10 +71,5 @@ export class ApplicationUsecase implements IApplicationUsecase {
   }
   async deleteApplication(name: string): Promise<void> {
     await this.applicationRepository.deleteApplication(name);
-  }
-  async getService(
-    application: ApplicationDomain
-  ): Promise<ApplicationDomain["service"]> {
-    return this.applicationRepository.getService(application);
   }
 }

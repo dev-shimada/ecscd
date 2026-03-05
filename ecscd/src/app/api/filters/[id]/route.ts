@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fu } from "@/lib/di";
+import { createContainer } from "@/lib/di";
 
 export async function GET(
   request: NextRequest,
@@ -7,7 +7,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const filter = await fu.getFilterById(id);
+    const { filterUsecase } = createContainer();
+    const filter = await filterUsecase.getFilterById(id);
 
     if (!filter) {
       return NextResponse.json({ error: "Filter not found" }, { status: 404 });
@@ -29,7 +30,8 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await fu.deleteFilter(id);
+    const { filterUsecase } = createContainer();
+    await filterUsecase.deleteFilter(id);
     return NextResponse.json({ message: "Filter deleted successfully" });
   } catch (error) {
     console.error("Error deleting filter:", error);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { au } from "@/lib/di";
+import { createContainer } from "@/lib/di";
 
 export async function GET(
   request: NextRequest,
@@ -14,7 +14,8 @@ export async function GET(
       );
     }
 
-    const application = await au.getApplication(name);
+    const { applicationUsecase } = createContainer();
+    const application = await applicationUsecase.getApplication(name);
     if (!application) {
       return NextResponse.json(
         { error: "Application not found" },
@@ -47,8 +48,10 @@ export async function PUT(
       );
     }
 
+    const { applicationUsecase } = createContainer();
+
     // Check if application with the given name exists
-    const existingApps = await au.getApplications();
+    const existingApps = await applicationUsecase.getApplications();
     const appIndex = existingApps.findIndex((app) => app.name === name);
     if (appIndex === -1) {
       return NextResponse.json(
@@ -65,7 +68,7 @@ export async function PUT(
       awsConfig,
       updatedAt: new Date(),
     };
-    await au.updateApplication(updatedApp);
+    await applicationUsecase.updateApplication(updatedApp);
     return NextResponse.json(
       { message: "Application updated successfully" },
       { status: 200 }
@@ -84,6 +87,8 @@ export async function DELETE(
   { params }: { params: Promise<{ name: string }> }
 ) {
   try {
+    const { applicationUsecase } = createContainer();
+
     // Check if application with the given name exists
     const { name } = await params;
     if (!name) {
@@ -92,7 +97,7 @@ export async function DELETE(
         { status: 400 }
       );
     }
-    const existingApps = await au.getApplications();
+    const existingApps = await applicationUsecase.getApplications();
     const appIndex = existingApps.findIndex((app) => app.name === name);
     if (appIndex === -1) {
       return NextResponse.json(
@@ -101,7 +106,7 @@ export async function DELETE(
       );
     }
 
-    await au.deleteApplication(name);
+    await applicationUsecase.deleteApplication(name);
     return NextResponse.json(
       { message: "Application deleted successfully" },
       { status: 200 }

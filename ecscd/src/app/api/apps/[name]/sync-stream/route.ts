@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ApplicationDomain } from "@/lib/domain/application";
-import { au } from "@/lib/di";
+import { createContainer } from "@/lib/di";
 
 export async function GET(
   request: NextRequest,
@@ -14,8 +14,11 @@ export async function GET(
         { status: 400 }
       );
     }
+
+    const { applicationUsecase } = createContainer();
+
     // Check if application with the given name exists
-    const existingApps = await au.getApplications();
+    const existingApps = await applicationUsecase.getApplications();
     const appIndex = existingApps.findIndex((app) => app.name === name);
     if (appIndex === -1) {
       return NextResponse.json(
@@ -25,8 +28,7 @@ export async function GET(
     }
 
     const application: ApplicationDomain = existingApps[appIndex];
-    const app = await au.getService(application);
-    return NextResponse.json({ service: app }, { status: 200 });
+    return NextResponse.json({ service: application.service }, { status: 200 });
   } catch (error) {
     console.error("Error fetching diffs:", error);
     return NextResponse.json(

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fu } from "@/lib/di";
+import { createContainer } from "@/lib/di";
 
 export async function GET() {
   try {
-    const filters = await fu.getFilters();
+    const { filterUsecase } = createContainer();
+    const filters = await filterUsecase.getFilters();
     return NextResponse.json({ filters });
   } catch (error) {
     console.error("Error fetching filters:", error);
@@ -26,7 +27,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const filter = await fu.createFilter(name, pattern);
+    const { filterUsecase } = createContainer();
+    const filter = await filterUsecase.createFilter(name, pattern);
     return NextResponse.json({ filter }, { status: 201 });
   } catch (error) {
     console.error("Error creating filter:", error);

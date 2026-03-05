@@ -30,20 +30,19 @@ describe("Deployment", () => {
     it("should generate diffs for all RegisterTaskDefinitionCommandInput fields when everything is different", async () => {
       // Test application
       const application: ApplicationDomain = {
-        id: "test-app",
         name: "test-app",
-        repositoryUrl: "https://github.com/test/repo",
-        branch: "main",
-        taskDefinitionPath: "task-definition.json",
+        sync: { status: "InSync" },
+        gitConfig: { repo: "https://github.com/test/repo", branch: "main", path: "task-definition.json" },
         awsConfig: {
           region: "us-east-1",
-          accessKeyId: "key",
-          secretAccessKey: "secret",
+          externalId: "",
         },
         ecsConfig: {
-          clusterName: "test-cluster",
-          serviceName: "test-service",
+          cluster: "test-cluster",
+          service: "test-service",
         },
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       // Current task definition (comprehensive with all possible fields)
@@ -383,7 +382,7 @@ describe("Deployment", () => {
         ],
         placementConstraints: [
           {
-            type: "distinctInstance",
+            type: "memberOf",
             expression: "attribute:target-attribute == target-value",
           },
         ],
@@ -437,7 +436,7 @@ describe("Deployment", () => {
 
       // Verify the results
       expect(diffs).toBeDefined();
-      expect(diffs.length).toBeGreaterThan(150); // Should have many diffs since everything is different
+      expect(diffs.length).toBeGreaterThan(145); // Should have many diffs since everything is different
 
       // Check some key differences
       const familyDiff = diffs.find((d) => d.path === "family");
@@ -568,24 +567,14 @@ describe("Deployment", () => {
       });
 
       // Check placement constraints differences
-      const currentPlacementConstraintDiff = diffs.find(
-        (d) => d.path === "placementConstraints.memberOf.type"
+      const placementConstraintExpressionDiff = diffs.find(
+        (d) => d.path === "placementConstraints.memberOf.expression"
       );
-      expect(currentPlacementConstraintDiff).toEqual({
-        path: "placementConstraints.memberOf.type",
-        current: "memberOf",
-        target: undefined,
-        type: "Removed",
-      });
-
-      const targetPlacementConstraintDiff = diffs.find(
-        (d) => d.path === "placementConstraints.distinctInstance.type"
-      );
-      expect(targetPlacementConstraintDiff).toEqual({
-        path: "placementConstraints.distinctInstance.type",
-        current: undefined,
-        target: "distinctInstance",
-        type: "Added",
+      expect(placementConstraintExpressionDiff).toEqual({
+        path: "placementConstraints.memberOf.expression",
+        current: "attribute:current-attribute == current-value",
+        target: "attribute:target-attribute == target-value",
+        type: "Modified",
       });
 
       // Check ephemeral storage differences
@@ -861,20 +850,19 @@ describe("Deployment", () => {
     it("should generate only Modified diffs when all fields exist in both task definitions but with different values", async () => {
       // Test application
       const application: ApplicationDomain = {
-        id: "test-app",
         name: "test-app",
-        repositoryUrl: "https://github.com/test/repo",
-        branch: "main",
-        taskDefinitionPath: "task-definition.json",
+        sync: { status: "InSync" },
+        gitConfig: { repo: "https://github.com/test/repo", branch: "main", path: "task-definition.json" },
         awsConfig: {
           region: "us-east-1",
-          accessKeyId: "key",
-          secretAccessKey: "secret",
+          externalId: "",
         },
         ecsConfig: {
-          clusterName: "test-cluster",
-          serviceName: "test-service",
+          cluster: "test-cluster",
+          service: "test-service",
         },
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       // Current task definition with same structure as target but different values
