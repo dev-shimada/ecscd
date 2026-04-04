@@ -322,7 +322,7 @@ export default function Home() {
   return (
     <div className="h-screen bg-gray-50 grid grid-cols-1 lg:grid-cols-[360px_1fr]">
       <aside className="bg-white flex flex-col min-h-0 relative z-10">
-        <header className="h-16 shrink-0 px-4 sm:px-6 flex items-center relative z-20 shadow-[0_3px_10px_rgba(15,23,42,0.08)]">
+        <header className="h-16 shrink-0 px-4 sm:px-6 flex items-center relative z-20">
           <div className="flex items-center gap-3">
             <GitBranch className="h-7 w-7 text-primary" />
             <h1 className="text-2xl font-bold text-gray-900">ecscd</h1>
