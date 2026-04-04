@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FilterDomain } from "@/lib/domain/filter";
 import { Search, Save, X, ChevronDown, Trash2 } from "lucide-react";
@@ -83,8 +82,17 @@ export function FilterSelector({ onFilterChange }: FilterSelectorProps) {
     }
   };
 
+  const normalizedFilter = currentFilter.trim().toLowerCase();
+  const visibleFilters = filters.filter((filter) => {
+    if (!normalizedFilter) return true;
+    return (
+      filter.name.toLowerCase().includes(normalizedFilter) ||
+      filter.pattern.toLowerCase().includes(normalizedFilter)
+    );
+  });
+
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center">
       <div className="relative flex-1 min-w-[200px] max-w-md">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
@@ -110,12 +118,30 @@ export function FilterSelector({ onFilterChange }: FilterSelectorProps) {
 
         {showDropdown && (
           <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-zinc-100 rounded-md shadow-[0_8px_20px_-14px_rgba(15,23,42,0.25)] z-50 max-h-60 overflow-auto ui-dropdown-in">
-            {filters.length === 0 ? (
+            {currentFilter.trim() && (
+              <button
+                type="button"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 border-b border-zinc-100"
+                onClick={() => {
+                  setShowDropdown(false);
+                  setShowSaveDialog(true);
+                }}
+              >
+                <Save className="h-3.5 w-3.5 text-gray-500" />
+                <span>
+                  Save <span className="font-medium">&quot;{currentFilter.trim()}&quot;</span>
+                </span>
+              </button>
+            )}
+
+            {visibleFilters.length === 0 ? (
               <div className="px-3 py-2 text-sm text-gray-500">
-                No saved filters
+                {filters.length === 0
+                  ? "No saved filters"
+                  : "No matching saved filters"}
               </div>
             ) : (
-              filters.map((filter) => (
+              visibleFilters.map((filter) => (
                 <div
                   key={filter.id}
                   className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 cursor-pointer"
@@ -137,13 +163,6 @@ export function FilterSelector({ onFilterChange }: FilterSelectorProps) {
           </div>
         )}
       </div>
-
-      {currentFilter && (
-        <Button variant="outline" size="sm" onClick={() => setShowSaveDialog(true)}>
-          <Save className="h-4 w-4 mr-1" />
-          Save
-        </Button>
-      )}
 
       <SaveFilterDialog
         open={showSaveDialog}
