@@ -321,8 +321,8 @@ export default function Home() {
 
   return (
     <div className="h-screen bg-gray-50 grid grid-cols-1 lg:grid-cols-[360px_1fr]">
-      <aside className="bg-white flex flex-col min-h-0 relative z-10">
-        <header className="h-16 shrink-0 px-4 sm:px-6 flex items-center relative z-20">
+      <aside className="bg-white flex flex-col min-h-0 relative">
+        <header className="h-16 shrink-0 px-4 sm:px-6 flex items-center relative">
           <div className="flex items-center gap-3">
             <GitBranch className="h-7 w-7 text-primary" />
             <h1 className="text-2xl font-bold text-gray-900">ecscd</h1>
@@ -330,7 +330,7 @@ export default function Home() {
         </header>
 
         <div
-          className={`p-4 relative z-20 transition-shadow ${
+          className={`p-4 relative transition-shadow ${
             isListScrolled
               ? "shadow-[0_6px_12px_-10px_rgba(15,23,42,0.35)]"
               : "shadow-none"
@@ -350,7 +350,7 @@ export default function Home() {
           onScroll={(event) =>
             setIsListScrolled(event.currentTarget.scrollTop > 0)
           }
-          className="subtle-scrollbar flex-1 overflow-y-auto relative z-10"
+          className="subtle-scrollbar flex-1 overflow-y-auto relative"
         >
           {isLoading && applications.length === 0 ? (
             <div className="flex items-center justify-center py-12 text-gray-600">
@@ -424,7 +424,7 @@ export default function Home() {
         </div>
       </aside>
 
-      <main className="subtle-scrollbar min-h-0 overflow-y-auto relative z-30 shadow-[-4px_0_14px_rgba(15,23,42,0.12)] p-4 sm:p-6 lg:p-8">
+      <main className="subtle-scrollbar min-h-0 overflow-y-auto relative shadow-[-4px_0_14px_rgba(15,23,42,0.12)] p-4 sm:p-6 lg:p-8">
           {!selectedApp ? (
             <div className="h-full flex items-center justify-center text-gray-600">
               Select an application from the left pane.

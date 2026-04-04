@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { createPortal } from "react-dom"
 import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -27,6 +28,12 @@ interface DialogDescriptionProps extends React.HTMLAttributes<HTMLParagraphEleme
 }
 
 const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -45,16 +52,17 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
     }
   }, [open, onOpenChange])
 
-  if (!open) return null
+  if (!open || !mounted) return null
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+  return createPortal(
+    <div className="fixed inset-0 z-[200] flex items-center justify-center">
       <div 
         className="fixed inset-0 bg-black/50 ui-fade-in"
         onClick={() => onOpenChange(false)}
       />
       {children}
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -63,7 +71,7 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
     <div
       ref={ref}
       className={cn(
-        "relative z-50 grid w-full max-w-lg gap-4 bg-white p-6 shadow-lg duration-200 sm:rounded-lg md:w-full ui-pop-in",
+        "relative z-[210] grid w-full max-w-lg gap-4 bg-white p-6 shadow-lg duration-200 sm:rounded-lg md:w-full ui-pop-in",
         className
       )}
       {...props}

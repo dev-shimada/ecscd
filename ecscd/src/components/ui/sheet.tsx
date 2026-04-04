@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { createPortal } from "react-dom"
 import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -32,6 +33,12 @@ interface SheetDescriptionProps extends React.HTMLAttributes<HTMLParagraphElemen
 }
 
 const Sheet = ({ open, onOpenChange, children }: SheetProps) => {
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -50,18 +57,19 @@ const Sheet = ({ open, onOpenChange, children }: SheetProps) => {
     }
   }, [open, onOpenChange])
 
-  if (!open) return null
+  if (!open || !mounted) return null
 
-  return (
+  return createPortal(
     <SheetContext.Provider value={{ onOpenChange }}>
-      <div className="fixed inset-0 z-50">
+      <div className="fixed inset-0 z-[200]">
         <div
           className="fixed inset-0 bg-black/50"
           onClick={() => onOpenChange(false)}
         />
         {children}
       </div>
-    </SheetContext.Provider>
+    </SheetContext.Provider>,
+    document.body
   )
 }
 
@@ -70,7 +78,7 @@ const SheetContent = React.forwardRef<HTMLDivElement, SheetContentProps>(
     <div
       ref={ref}
       className={cn(
-        "fixed z-50 bg-white shadow-lg transition-transform duration-300 ease-in-out",
+        "fixed z-[210] bg-white shadow-lg transition-transform duration-300 ease-in-out",
         side === "right" && "right-0 top-0 h-full w-full sm:w-[600px] lg:w-[800px]",
         side === "left" && "left-0 top-0 h-full w-full sm:w-[600px] lg:w-[800px]",
         "overflow-y-auto",
