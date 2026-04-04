@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "react";
 import { toast } from "sonner";
 import { DiffViewer } from "@/components/diff-viewer";
 import { NewApplicationDialog } from "@/components/new-application-dialog";
@@ -102,6 +102,8 @@ export default function Home() {
   const [deployingApps, setDeployingApps] = useState<Set<string>>(new Set());
   const [filterPattern, setFilterPattern] = useState("");
   const [isFilterInitialized, setIsFilterInitialized] = useState(false);
+  const [isListScrolled, setIsListScrolled] = useState(false);
+  const listContainerRef = useRef<HTMLDivElement | null>(null);
 
   const selectedApp = useMemo(
     () => applications.find((app) => app.name === selectedAppName) || null,
@@ -311,21 +313,29 @@ export default function Home() {
     setShowEditAppDialog(true);
   }, []);
 
+  useEffect(() => {
+    const list = listContainerRef.current;
+    if (!list) return;
+    setIsListScrolled(list.scrollTop > 0);
+  }, [applications.length, isLoading]);
+
   return (
     <div className="h-screen bg-gray-50 grid grid-cols-1 lg:grid-cols-[360px_1fr]">
       <aside className="bg-white flex flex-col min-h-0 relative z-10">
-        <header className="h-16 shrink-0 px-4 sm:px-6 flex items-center justify-between border-b border-zinc-100 relative z-20 shadow-[0_3px_10px_rgba(15,23,42,0.08)]">
+        <header className="h-16 shrink-0 px-4 sm:px-6 flex items-center relative z-20 shadow-[0_3px_10px_rgba(15,23,42,0.08)]">
           <div className="flex items-center gap-3">
             <GitBranch className="h-7 w-7 text-primary" />
             <h1 className="text-2xl font-bold text-gray-900">ecscd</h1>
           </div>
-          <Button size="sm" onClick={() => setShowNewAppDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Application
-          </Button>
         </header>
 
-        <div className="p-4 border-b border-zinc-100">
+        <div
+          className={`p-4 relative z-20 transition-shadow ${
+            isListScrolled
+              ? "shadow-[0_6px_12px_-10px_rgba(15,23,42,0.35)]"
+              : "shadow-none"
+          }`}
+        >
           <Suspense
             fallback={
               <div className="w-full h-10 bg-gray-100 rounded-md animate-pulse" />
@@ -335,7 +345,13 @@ export default function Home() {
           </Suspense>
         </div>
 
-        <div className="flex-1 overflow-y-auto relative z-10 shadow-[0_1px_4px_rgba(15,23,42,0.04)]">
+        <div
+          ref={listContainerRef}
+          onScroll={(event) =>
+            setIsListScrolled(event.currentTarget.scrollTop > 0)
+          }
+          className="subtle-scrollbar flex-1 overflow-y-auto relative z-10"
+        >
           {isLoading && applications.length === 0 ? (
             <div className="flex items-center justify-center py-12 text-gray-600">
               <RefreshCw className="h-6 w-6 animate-spin" />
@@ -345,16 +361,16 @@ export default function Home() {
               No applications configured yet
             </div>
           ) : (
-            <div>
+            <div className="p-2 space-y-1">
               {applications.map((application) => (
                 <button
                   key={application.name}
                   type="button"
                   onClick={() => setSelectedAppName(application.name)}
-                  className={`w-full text-left border-b border-zinc-100 px-4 py-2 transition-colors ${
+                  className={`w-full text-left rounded-md px-3 py-2 transition-colors ${
                     selectedAppName === application.name
-                      ? "bg-zinc-100/80"
-                      : "bg-white hover:bg-zinc-50"
+                      ? "bg-zinc-100"
+                      : "bg-transparent hover:bg-zinc-100/70"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -386,12 +402,22 @@ export default function Home() {
                   </div>
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => setShowNewAppDialog(true)}
+                className="w-full text-left rounded-md px-3 py-2 transition-colors bg-transparent text-zinc-700 hover:bg-zinc-100/70"
+              >
+                <div className="flex items-center gap-2 font-medium">
+                  <Plus className="h-4 w-4" />
+                  New Application
+                </div>
+              </button>
             </div>
           )}
         </div>
       </aside>
 
-      <main className="min-h-0 overflow-y-auto relative z-30 shadow-[-4px_0_14px_rgba(15,23,42,0.12)] p-4 sm:p-6 lg:p-8">
+      <main className="subtle-scrollbar min-h-0 overflow-y-auto relative z-30 shadow-[-4px_0_14px_rgba(15,23,42,0.12)] p-4 sm:p-6 lg:p-8">
           {!selectedApp ? (
             <div className="h-full flex items-center justify-center text-gray-600">
               Select an application from the left pane.
