@@ -109,7 +109,7 @@ export function FilterSelector({ onFilterChange }: FilterSelectorProps) {
         </button>
 
         {showDropdown && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg z-50 max-h-60 overflow-auto">
+          <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg z-50 max-h-60 overflow-auto ui-dropdown-in">
             {filters.length === 0 ? (
               <div className="px-3 py-2 text-sm text-gray-500">
                 No saved filters
