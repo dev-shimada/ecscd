@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DiffDomain } from '@/lib/domain/application';
@@ -61,49 +60,45 @@ export function DiffViewer({ diffs, summary, onSync, isLoading, error }: DiffVie
 
   if (error) {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Badge variant="destructive">Error</Badge>
-            Configuration Diff Error
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <section className="w-full">
+        <div className="flex items-center gap-2">
+          <Badge variant="destructive">Error</Badge>
+          <h3 className="text-base font-semibold text-gray-900">Configuration Diff Error</h3>
+        </div>
+        <div className="mt-3">
           <p className="text-red-600 mb-2">{error}</p>
           <p className="text-muted-foreground text-sm">
             Please check your application configuration and try again.
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     );
   }
 
   if (!diffs || diffs.length === 0) {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Badge variant="success">In Sync</Badge>
-            No Changes Detected
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <section className="w-full">
+        <div className="flex items-center gap-2">
+          <Badge variant="success">In Sync</Badge>
+          <h3 className="text-base font-semibold text-gray-900">No Changes Detected</h3>
+        </div>
+        <div className="mt-3">
           <p className="text-muted-foreground">
             The current task definition matches the target configuration in the repository.
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     );
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
+    <section className="w-full">
+      <div>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+          <h3 className="flex items-center gap-2 text-base font-semibold text-gray-900">
             <Badge variant="warning">Out of Sync</Badge>
             Configuration Diff
-          </CardTitle>
+          </h3>
           {onSync && (
             <Button
               onClick={onSync}
@@ -115,75 +110,73 @@ export function DiffViewer({ diffs, summary, onSync, isLoading, error }: DiffVie
             </Button>
           )}
         </div>
-        <p className="text-sm text-muted-foreground">{summary}</p>
-      </CardHeader>
+        <p className="mt-1 text-sm text-muted-foreground">{summary}</p>
+      </div>
 
-      <CardContent>
-        <div className="space-y-4">
-          {diffs?.map((diff, index) => (
-            <div key={index} className={`border rounded-lg p-4 ${getDiffColor(diff.type)}`}>
-              <div
-                className="flex items-center gap-2 cursor-pointer min-w-0"
-                onClick={() => toggleExpanded(`${index}-${diff.path}`)}
-              >
-                {expandedItems.has(`${index}-${diff.path}`) ? (
-                  <ChevronDown className="h-4 w-4 shrink-0" />
-                ) : (
-                  <ChevronRight className="h-4 w-4 shrink-0" />
-                )}
-                {getDiffIcon(diff.type)}
-                <span className="font-medium min-w-0 break-all">{diff.path}</span>
-                <Badge variant="outline" className="shrink-0">
-                  {diff.type}
-                </Badge>
-              </div>
-
-              {expandedItems.has(`${index}-${diff.path}`) && (
-                <div className="mt-4 ml-6 space-y-3">
-                  {diff.type === 'Removed' && diff.current !== undefined && (
-                    <div>
-                      <div className="text-sm font-medium text-red-700 mb-1">Current (will be removed):</div>
-                      <pre className="text-xs bg-white p-3 rounded border overflow-x-auto">
-                        {formatValue(diff.current)}
-                      </pre>
-                    </div>
-                  )}
-
-                  {diff.type === 'Added' && diff.target !== undefined && (
-                    <div>
-                      <div className="text-sm font-medium text-green-700 mb-1">New (will be added):</div>
-                      <pre className="text-xs bg-white p-3 rounded border overflow-x-auto">
-                        {formatValue(diff.target)}
-                      </pre>
-                    </div>
-                  )}
-
-                  {diff.type === 'Modified' && (
-                    <>
-                      {diff.current !== undefined && (
-                        <div>
-                          <div className="text-sm font-medium text-red-700 mb-1">Current:</div>
-                          <pre className="text-xs bg-white p-3 rounded border overflow-x-auto">
-                            {formatValue(diff.current)}
-                          </pre>
-                        </div>
-                      )}
-                      {diff.target !== undefined && (
-                        <div>
-                          <div className="text-sm font-medium text-green-700 mb-1">Target:</div>
-                          <pre className="text-xs bg-white p-3 rounded border overflow-x-auto">
-                            {formatValue(diff.target)}
-                          </pre>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
+      <div className="mt-4 space-y-4">
+        {diffs?.map((diff, index) => (
+          <div key={index} className={`border rounded-lg p-4 ${getDiffColor(diff.type)}`}>
+            <div
+              className="flex items-center gap-2 cursor-pointer min-w-0"
+              onClick={() => toggleExpanded(`${index}-${diff.path}`)}
+            >
+              {expandedItems.has(`${index}-${diff.path}`) ? (
+                <ChevronDown className="h-4 w-4 shrink-0" />
+              ) : (
+                <ChevronRight className="h-4 w-4 shrink-0" />
               )}
+              {getDiffIcon(diff.type)}
+              <span className="font-medium min-w-0 break-all">{diff.path}</span>
+              <Badge variant="outline" className="shrink-0">
+                {diff.type}
+              </Badge>
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+
+            {expandedItems.has(`${index}-${diff.path}`) && (
+              <div className="mt-4 ml-6 space-y-3">
+                {diff.type === 'Removed' && diff.current !== undefined && (
+                  <div>
+                    <div className="text-sm font-medium text-red-700 mb-1">Current (will be removed):</div>
+                    <pre className="text-xs bg-white p-3 rounded border overflow-x-auto">
+                      {formatValue(diff.current)}
+                    </pre>
+                  </div>
+                )}
+
+                {diff.type === 'Added' && diff.target !== undefined && (
+                  <div>
+                    <div className="text-sm font-medium text-green-700 mb-1">New (will be added):</div>
+                    <pre className="text-xs bg-white p-3 rounded border overflow-x-auto">
+                      {formatValue(diff.target)}
+                    </pre>
+                  </div>
+                )}
+
+                {diff.type === 'Modified' && (
+                  <>
+                    {diff.current !== undefined && (
+                      <div>
+                        <div className="text-sm font-medium text-red-700 mb-1">Current:</div>
+                        <pre className="text-xs bg-white p-3 rounded border overflow-x-auto">
+                          {formatValue(diff.current)}
+                        </pre>
+                      </div>
+                    )}
+                    {diff.target !== undefined && (
+                      <div>
+                        <div className="text-sm font-medium text-green-700 mb-1">Target:</div>
+                        <pre className="text-xs bg-white p-3 rounded border overflow-x-auto">
+                          {formatValue(diff.target)}
+                        </pre>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
