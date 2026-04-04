@@ -363,10 +363,17 @@ export default function Home() {
           ) : (
             <div className="p-2 space-y-1">
               {applications.map((application) => (
-                <button
+                <div
                   key={application.name}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedAppName(application.name)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelectedAppName(application.name);
+                    }
+                  }}
                   className={`w-full text-left rounded-md px-3 py-2 transition-colors ${
                     selectedAppName === application.name
                       ? "bg-zinc-100"
@@ -400,7 +407,7 @@ export default function Home() {
                   <div className="mt-0.5 pl-4 text-xs text-zinc-500 truncate">
                     {application.gitConfig.repo} @{application.gitConfig.branch}
                   </div>
-                </button>
+                </div>
               ))}
               <button
                 type="button"
