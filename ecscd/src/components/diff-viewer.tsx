@@ -104,14 +104,16 @@ export function DiffViewer({ diffs, summary, onSync, isLoading, error }: DiffVie
             <Badge variant="warning">Out of Sync</Badge>
             Configuration Diff
           </CardTitle>
-          <Button
-            onClick={onSync}
-            disabled={isLoading}
-            className="flex items-center gap-2"
-          >
-            <Play className={`h-4 w-4 shrink-0 ${isLoading ? 'animate-spin' : ''}`} />
-            {isLoading ? 'Deploying...' : 'Sync Changes'}
-          </Button>
+          {onSync && (
+            <Button
+              onClick={onSync}
+              disabled={isLoading}
+              className="flex items-center gap-2"
+            >
+              <Play className={`h-4 w-4 shrink-0 ${isLoading ? 'animate-spin' : ''}`} />
+              {isLoading ? 'Deploying...' : 'Sync Changes'}
+            </Button>
+          )}
         </div>
         <p className="text-sm text-muted-foreground">{summary}</p>
       </CardHeader>

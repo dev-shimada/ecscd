@@ -22,6 +22,7 @@ interface EditApplicationDialogProps {
   onOpenChange: (open: boolean) => void;
   application: ApplicationDomain | null;
   onSuccess?: () => void;
+  onDelete?: (applicationName: string) => Promise<void>;
 }
 
 interface ApplicationFormData {
@@ -37,7 +38,7 @@ interface ApplicationFormData {
   sessionName?: string;
 }
 
-export function EditApplicationDialog({ open, onOpenChange, application, onSuccess }: EditApplicationDialogProps) {
+export function EditApplicationDialog({ open, onOpenChange, application, onSuccess, onDelete }: EditApplicationDialogProps) {
   const [formData, setFormData] = useState<ApplicationFormData>({
     name: '',
     clusterName: '',
@@ -51,6 +52,7 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
     sessionName: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [errors, setErrors] = useState<Partial<ApplicationFormData>>({});
 
   // Populate form when application changes
@@ -161,9 +163,37 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
   };
 
   const handleClose = () => {
-    if (!isSubmitting) {
+    if (!isSubmitting && !isDeleting) {
       onOpenChange(false);
       setErrors({});
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!application || !onDelete || isSubmitting || isDeleting) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${application.name}"? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      await onDelete(application.name);
+      onOpenChange(false);
+      onSuccess?.();
+    } catch (error) {
+      console.error("Failed to delete application:", error);
+      setErrors({
+        name:
+          error instanceof Error
+            ? error.message
+            : "Failed to delete application",
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -306,16 +336,35 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex justify-between gap-3 pt-4">
+            {application && onDelete ? (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isSubmitting || isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete"
+                )}
+              </Button>
+            ) : (
+              <div />
+            )}
             <Button
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isDeleting}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || isDeleting}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
