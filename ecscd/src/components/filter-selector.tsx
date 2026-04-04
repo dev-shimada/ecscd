@@ -153,9 +153,9 @@ export function FilterSelector({ onFilterChange }: FilterSelectorProps) {
                   </div>
                   <button
                     onClick={(e) => handleDeleteFilter(e, filter.id)}
-                    className="p-1 hover:bg-gray-200 rounded"
+                    className="group p-1 hover:bg-red-50 rounded"
                   >
-                    <Trash2 className="h-3 w-3 text-gray-400 hover:text-red-500" />
+                    <Trash2 className="h-3 w-3 text-gray-400 transition-colors group-hover:text-red-500" />
                   </button>
                 </div>
               ))
