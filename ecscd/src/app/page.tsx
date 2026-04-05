@@ -18,6 +18,7 @@ import {
   Undo2,
   ExternalLink,
   Clock,
+  ArrowDown,
 } from "lucide-react";
 
 type DiffResponse = {
@@ -105,6 +106,9 @@ export default function Home() {
   const [isListScrolled, setIsListScrolled] = useState(false);
   const [isDetailsScrolled, setIsDetailsScrolled] = useState(false);
   const listContainerRef = useRef<HTMLDivElement | null>(null);
+  const detailsScrollRef = useRef<HTMLElement | null>(null);
+  const syncActionsRef = useRef<HTMLDivElement | null>(null);
+  const [isSyncActionsVisible, setIsSyncActionsVisible] = useState(true);
 
   const selectedApp = useMemo(
     () => applications.find((app) => app.name === selectedAppName) || null,
@@ -320,6 +324,31 @@ export default function Home() {
     setIsListScrolled(list.scrollTop > 0);
   }, [applications.length, isLoading]);
 
+  const updateSyncActionsVisibility = useCallback(() => {
+    if (!selectedApp) {
+      setIsSyncActionsVisible(true);
+      return;
+    }
+    const container = detailsScrollRef.current;
+    const actions = syncActionsRef.current;
+    if (!container || !actions) {
+      setIsSyncActionsVisible(true);
+      return;
+    }
+
+    const containerRect = container.getBoundingClientRect();
+    const actionsRect = actions.getBoundingClientRect();
+    const visible =
+      actionsRect.bottom > containerRect.top &&
+      actionsRect.top < containerRect.bottom;
+    setIsSyncActionsVisible(visible);
+  }, [selectedApp]);
+
+  useEffect(() => {
+    const id = window.requestAnimationFrame(updateSyncActionsVisibility);
+    return () => window.cancelAnimationFrame(id);
+  }, [updateSyncActionsVisibility, selectedApp, isDiffLoading, hasActiveDeployment]);
+
   return (
     <div className="h-screen bg-gray-50 grid grid-cols-1 lg:grid-cols-[360px_1fr]">
       <aside className="bg-white flex flex-col min-h-0 relative">
@@ -426,9 +455,11 @@ export default function Home() {
       </aside>
 
       <main
-        onScroll={(event) =>
-          setIsDetailsScrolled(event.currentTarget.scrollTop > 0)
-        }
+        ref={detailsScrollRef}
+        onScroll={(event) => {
+          setIsDetailsScrolled(event.currentTarget.scrollTop > 0);
+          updateSyncActionsVisibility();
+        }}
         className="subtle-scrollbar min-h-0 overflow-y-auto relative shadow-[-4px_0_14px_rgba(15,23,42,0.12)]"
       >
           {!selectedApp ? (
@@ -455,35 +486,24 @@ export default function Home() {
                       </Badge>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {hasActiveDeployment && (
-                      <Button
-                        variant="destructive"
-                        onClick={() => handleRollback(selectedApp.name)}
-                        disabled={!hasActiveDeployment}
-                        className="ui-soft-in"
-                      >
-                        <Undo2 className="h-4 w-4 mr-2" />
-                        Rollback
-                      </Button>
-                    )}
+                  <div className="min-w-[116px] flex justify-end">
                     <Button
-                      onClick={() => handleSync(selectedApp.name)}
-                      disabled={hasActiveDeployment}
-                      className={`relative min-w-[132px] pl-9 pr-3 justify-center ${
-                        hasActiveDeployment
-                          ? "bg-zinc-200 text-zinc-700 hover:bg-zinc-200"
-                          : ""
+                      onClick={() =>
+                        syncActionsRef.current?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "center",
+                        })
+                      }
+                      aria-hidden={isSyncActionsVisible}
+                      tabIndex={isSyncActionsVisible ? -1 : 0}
+                      className={`transition-all duration-300 ease-out ${
+                        isSyncActionsVisible
+                          ? "pointer-events-none translate-y-3 opacity-0"
+                          : "pointer-events-auto translate-y-0 opacity-100"
                       }`}
                     >
-                      <Play
-                        className={`absolute left-3 h-4 w-4 ${
-                          hasActiveDeployment ? "animate-spin" : ""
-                        }`}
-                      />
-                      <span className="w-full text-center">
-                        {hasActiveDeployment ? "Deploying..." : "Sync"}
-                      </span>
+                      <ArrowDown className="h-4 w-4 mr-2" />
+                      Sync...
                     </Button>
                   </div>
                 </div>
@@ -553,6 +573,40 @@ export default function Home() {
                   />
                 </div>
               )}
+
+              <div ref={syncActionsRef} className="px-4 pb-8 sm:px-6 lg:px-8">
+                <div className="flex justify-end">
+                  <div className="flex items-center gap-2">
+                    {hasActiveDeployment && (
+                      <Button
+                        variant="destructive"
+                        onClick={() => handleRollback(selectedApp.name)}
+                        disabled={!hasActiveDeployment}
+                        className="ui-soft-in"
+                      >
+                        <Undo2 className="h-4 w-4 mr-2" />
+                        Rollback
+                      </Button>
+                    )}
+                    <Button
+                      onClick={() => handleSync(selectedApp.name)}
+                      disabled={hasActiveDeployment}
+                      className={`${
+                        hasActiveDeployment
+                          ? "ui-expand-in bg-zinc-200 text-zinc-700 hover:bg-zinc-200"
+                          : ""
+                      }`}
+                    >
+                      <Play
+                        className={`h-4 w-4 mr-2 ${
+                          hasActiveDeployment ? "animate-spin" : ""
+                        }`}
+                      />
+                      <span>{hasActiveDeployment ? "Deploying..." : "Sync"}</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </>
           )}
       </main>

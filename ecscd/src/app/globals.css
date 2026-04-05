@@ -141,6 +141,17 @@ body {
   }
 }
 
+@keyframes ui-expand-in {
+  from {
+    opacity: 0.92;
+    transform: scaleX(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
 .ui-fade-in {
   animation: ui-fade-in 160ms ease-out both;
 }
@@ -158,11 +169,17 @@ body {
   animation: ui-soft-in 180ms ease-out both;
 }
 
+.ui-expand-in {
+  transform-origin: right center;
+  animation: ui-expand-in 180ms ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ui-fade-in,
   .ui-pop-in,
   .ui-dropdown-in,
-  .ui-soft-in {
+  .ui-soft-in,
+  .ui-expand-in {
     animation: none;
   }
 }
