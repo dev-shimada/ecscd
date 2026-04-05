@@ -4,27 +4,34 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Play, Undo2 } from "lucide-react";
+import { ApplicationStatus } from "@/lib/domain/application";
 
 export function DashboardSyncActions({
   applicationName,
-  initialHasActiveDeployment,
+  status,
+  hasActiveDeployment,
   onApplicationChanged,
 }: {
   applicationName: string;
-  initialHasActiveDeployment: boolean;
+  status: ApplicationStatus;
+  hasActiveDeployment: boolean;
   onApplicationChanged: (name: string) => void;
 }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isRollingBack, setIsRollingBack] = useState(false);
-  const [hasActiveDeployment, setHasActiveDeployment] = useState(
-    initialHasActiveDeployment
-  );
+  const [requestedDeployment, setRequestedDeployment] = useState(false);
   const syncButtonRef = useRef<HTMLButtonElement | null>(null);
   const [syncButtonWidth, setSyncButtonWidth] = useState(88);
 
+  useEffect(() => {
+    if (hasActiveDeployment) {
+      setRequestedDeployment(false);
+    }
+  }, [hasActiveDeployment]);
+
   const handleSync = async () => {
     setIsSyncing(true);
-    setHasActiveDeployment(true);
+    setRequestedDeployment(true);
 
     try {
       const response = await fetch(
@@ -46,7 +53,7 @@ export function DashboardSyncActions({
 
       onApplicationChanged(applicationName);
     } catch (error) {
-      setHasActiveDeployment(initialHasActiveDeployment);
+      setRequestedDeployment(false);
       toast.error(`Sync failed for ${applicationName}`, {
         description:
           error instanceof Error ? error.message : "Unknown error occurred",
@@ -77,7 +84,7 @@ export function DashboardSyncActions({
         throw new Error(errorData.error || "Rollback failed");
       }
 
-      setHasActiveDeployment(false);
+      toast.success(`Rollback requested for ${applicationName}`);
       onApplicationChanged(applicationName);
     } catch (error) {
       toast.error(`Rollback failed for ${applicationName}`, {
@@ -89,8 +96,9 @@ export function DashboardSyncActions({
     }
   };
 
+  const isDeploying =
+    hasActiveDeployment || requestedDeployment || isSyncing || isRollingBack;
   const showRollback = hasActiveDeployment || isSyncing || isRollingBack;
-  const isDeploying = isSyncing || (hasActiveDeployment && !isRollingBack);
   const syncLabel = isDeploying ? "Deploying..." : "Sync";
 
   useEffect(() => {
@@ -129,6 +137,10 @@ export function DashboardSyncActions({
 
     updateSyncButtonWidth();
   }, [syncLabel]);
+
+  if (status === "Loading") {
+    return null;
+  }
 
   return (
     <div className="px-4 pb-8 sm:px-6 lg:px-8">

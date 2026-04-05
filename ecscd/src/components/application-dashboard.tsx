@@ -565,7 +565,10 @@ export function ApplicationDashboard({
           syncActions={
             <DashboardSyncActions
               applicationName={selectedApplicationConfig.name}
-              initialHasActiveDeployment={
+              status={
+                (selectedReadModel?.application || selectedApplicationConfig).status
+              }
+              hasActiveDeployment={
                 (selectedReadModel?.application || selectedApplicationConfig).status ===
                 "Deploying"
               }
