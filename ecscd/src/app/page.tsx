@@ -469,13 +469,13 @@ export default function Home() {
           ) : (
             <>
               <section
-                className={`sticky top-0 z-10 bg-gray-50 px-4 pt-4 pb-4 sm:px-6 lg:px-8 transition-shadow ${
+                className={`sticky top-0 z-10 h-[76px] bg-gray-50 px-4 sm:px-6 lg:px-8 transition-shadow ${
                   isDetailsScrolled
                     ? "shadow-[0_6px_12px_-10px_rgba(15,23,42,0.35)]"
                     : "shadow-none"
                 }`}
               >
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex h-full items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-3">
                       <h1 className="text-2xl font-semibold text-gray-900">
@@ -486,25 +486,38 @@ export default function Home() {
                       </Badge>
                     </div>
                   </div>
-                  <div className="min-w-[116px] flex justify-end">
-                    <Button
-                      onClick={() =>
-                        syncActionsRef.current?.scrollIntoView({
-                          behavior: "smooth",
-                          block: "center",
-                        })
-                      }
-                      aria-hidden={isSyncActionsVisible}
-                      tabIndex={isSyncActionsVisible ? -1 : 0}
-                      className={`transition-all duration-300 ease-out ${
+                  <div className="flex items-center">
+                    <a
+                      href={getEcsConsoleUrl(selectedApp)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      View in AWS Console
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ease-out ${
                         isSyncActionsVisible
-                          ? "pointer-events-none translate-y-3 opacity-0"
-                          : "pointer-events-auto translate-y-0 opacity-100"
+                          ? "ml-0 max-w-0 opacity-0"
+                          : "ml-3 max-w-[140px] opacity-100"
                       }`}
                     >
-                      <ArrowDown className="h-4 w-4 mr-2" />
-                      Sync...
-                    </Button>
+                      <Button
+                        onClick={() =>
+                          syncActionsRef.current?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center",
+                          })
+                        }
+                        aria-hidden={isSyncActionsVisible}
+                        tabIndex={isSyncActionsVisible ? -1 : 0}
+                        className={isSyncActionsVisible ? "pointer-events-none" : ""}
+                      >
+                        <ArrowDown className="h-4 w-4 mr-2" />
+                        Sync...
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </section>
@@ -545,17 +558,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="mt-4">
-                  <a
-                    href={getEcsConsoleUrl(selectedApp)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    View in AWS Console
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                </div>
               </div>
 
               {isDiffLoading ? (
