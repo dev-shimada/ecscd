@@ -105,22 +105,26 @@ export function FilterSelector({
           className="pl-10 pr-20"
           aria-busy={isPending}
         />
-        {currentFilter ? (
+        <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-0.5">
           <button
             type="button"
             onClick={() => handleFilterChange("")}
-            className="absolute right-12 top-1/2 -translate-y-1/2 rounded p-1 hover:bg-gray-100"
+            aria-hidden={!currentFilter}
+            tabIndex={currentFilter ? 0 : -1}
+            className={`rounded p-1 transition-opacity duration-150 hover:bg-gray-100 ${
+              currentFilter ? "opacity-100" : "pointer-events-none opacity-0"
+            }`}
           >
             <X className="h-4 w-4 text-gray-400" />
           </button>
-        ) : null}
-        <button
-          type="button"
-          onClick={() => setShowDropdown((currentValue) => !currentValue)}
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 hover:bg-gray-100"
-        >
-          <ChevronDown className="h-4 w-4 text-gray-400" />
-        </button>
+          <button
+            type="button"
+            onClick={() => setShowDropdown((currentValue) => !currentValue)}
+            className="rounded p-1 hover:bg-gray-100"
+          >
+            <ChevronDown className="h-4 w-4 text-gray-400" />
+          </button>
+        </div>
 
         {showDropdown ? (
           <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-zinc-100 bg-white shadow-[0_8px_20px_-14px_rgba(15,23,42,0.25)] ui-dropdown-in">
