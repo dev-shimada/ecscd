@@ -1,20 +1,70 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { FilterDomain } from "@/lib/domain/filter";
+import { ApplicationStatus } from "@/lib/domain/application";
 import { Search, Save, X, ChevronDown, Trash2 } from "lucide-react";
 import { SaveFilterDialog } from "./save-filter-dialog";
 
 interface FilterSelectorProps {
   initialFilter: string;
   initialFilters: FilterDomain[];
+  initialSelectedStatuses: ApplicationStatus[];
+  statusOptions: {
+    status: ApplicationStatus;
+    count: number;
+    total: number;
+  }[];
+}
+
+const STATUS_ORDER: ApplicationStatus[] = [
+  "Error",
+  "Failed",
+  "Deploying",
+  "OutOfSync",
+  "InSync",
+  "Loading",
+];
+
+function formatStatusLabel(status: ApplicationStatus) {
+  switch (status) {
+    case "InSync":
+      return "In Sync";
+    case "OutOfSync":
+      return "Out Of Sync";
+    default:
+      return status;
+  }
+}
+
+function getStatusDotClass(status: ApplicationStatus) {
+  switch (status) {
+    case "InSync":
+      return "bg-emerald-500";
+    case "OutOfSync":
+    case "Deploying":
+      return "bg-amber-500";
+    case "Error":
+    case "Failed":
+      return "bg-rose-500";
+    default:
+      return "bg-zinc-400";
+  }
 }
 
 export function FilterSelector({
   initialFilter,
   initialFilters,
+  initialSelectedStatuses,
+  statusOptions,
 }: FilterSelectorProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -24,7 +74,13 @@ export function FilterSelector({
   const [filters, setFilters] = useState<FilterDomain[]>(initialFilters);
   const [currentFilter, setCurrentFilter] = useState(initialFilter);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [selectedStatuses, setSelectedStatuses] = useState<ApplicationStatus[]>(
+    initialSelectedStatuses
+  );
+  const statusButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [statusButtonWidth, setStatusButtonWidth] = useState(104);
 
   useEffect(() => {
     setCurrentFilter(initialFilter);
@@ -34,12 +90,82 @@ export function FilterSelector({
     setFilters(initialFilters);
   }, [initialFilters]);
 
-  const navigateWithFilter = (value: string) => {
+  useEffect(() => {
+    setSelectedStatuses(initialSelectedStatuses);
+  }, [initialSelectedStatuses]);
+
+  useEffect(() => {
+    const updateStatusButtonWidth = () => {
+      if (selectedStatuses.length === 0) {
+        setStatusButtonWidth(104);
+        return;
+      }
+
+      const label = selectedStatuses
+        .map((status) => formatStatusLabel(status))
+        .join(", ");
+      const dotsWidth = selectedStatuses.length * 10 + (selectedStatuses.length - 1) * 4;
+      const buttonStyle = statusButtonRef.current
+        ? window.getComputedStyle(statusButtonRef.current)
+        : null;
+      const font = buttonStyle
+        ? [
+            buttonStyle.fontStyle,
+            buttonStyle.fontVariant,
+            buttonStyle.fontWeight,
+            buttonStyle.fontSize,
+            buttonStyle.lineHeight === "normal" ? "" : `/${buttonStyle.lineHeight}`,
+            buttonStyle.fontFamily,
+          ]
+            .filter(Boolean)
+            .join(" ")
+        : "14px sans-serif";
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      const textWidth = (() => {
+        if (!context) return 0;
+        context.font = font;
+        return context.measureText(label).width;
+      })();
+      const horizontalPadding = 24;
+      const chevronWidth = 16;
+      const contentGap = 8;
+      const textGap = 8;
+      const maxWidth = Math.min(window.innerWidth * 0.25, 240);
+      setStatusButtonWidth(
+        Math.min(
+          maxWidth,
+          Math.ceil(
+            horizontalPadding +
+              chevronWidth +
+              contentGap +
+              dotsWidth +
+              textGap +
+              textWidth
+          )
+        )
+      );
+    };
+
+    updateStatusButtonWidth();
+    window.addEventListener("resize", updateStatusButtonWidth);
+    return () => window.removeEventListener("resize", updateStatusButtonWidth);
+  }, [selectedStatuses]);
+
+  const navigateWithFilters = (
+    nameFilter: string,
+    nextStatuses: ApplicationStatus[]
+  ) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (value) {
-      params.set("filter", value);
+    if (nameFilter) {
+      params.set("filter", nameFilter);
     } else {
       params.delete("filter");
+    }
+    if (nextStatuses.length > 0) {
+      params.set("status", nextStatuses.join(","));
+    } else {
+      params.delete("status");
     }
 
     const query = params.toString();
@@ -51,13 +177,24 @@ export function FilterSelector({
 
   const handleFilterChange = (value: string) => {
     setCurrentFilter(value);
-    navigateWithFilter(value);
+    navigateWithFilters(value, selectedStatuses);
   };
 
   const handleSelectFilter = (filter: FilterDomain) => {
     setCurrentFilter(filter.pattern);
     setShowDropdown(false);
-    navigateWithFilter(filter.pattern);
+    navigateWithFilters(filter.pattern, selectedStatuses);
+  };
+
+  const handleToggleStatus = (status: ApplicationStatus) => {
+    const nextStatuses = selectedStatuses.includes(status)
+      ? selectedStatuses.filter((value) => value !== status)
+      : [...selectedStatuses, status].sort(
+          (left, right) =>
+            STATUS_ORDER.indexOf(left) - STATUS_ORDER.indexOf(right)
+        );
+    setSelectedStatuses(nextStatuses);
+    navigateWithFilters(currentFilter, nextStatuses);
   };
 
   const handleDeleteFilter = async (
@@ -82,6 +219,14 @@ export function FilterSelector({
   };
 
   const normalizedFilter = currentFilter.trim().toLowerCase();
+  const normalizedStatusOptions = useMemo(
+    () =>
+      [...statusOptions].sort(
+        (left, right) =>
+          STATUS_ORDER.indexOf(left.status) - STATUS_ORDER.indexOf(right.status)
+      ),
+    [statusOptions]
+  );
   const visibleFilters = useMemo(
     () =>
       filters.filter((filter) => {
@@ -95,7 +240,7 @@ export function FilterSelector({
   );
 
   return (
-    <div className="flex items-center">
+    <div className="flex items-center gap-2">
       <div className="relative w-full flex-1 min-w-0">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <Input
@@ -173,6 +318,92 @@ export function FilterSelector({
                   </button>
                 </div>
               ))
+            )}
+          </div>
+        ) : null}
+      </div>
+
+      <div className="relative shrink-0">
+        <button
+          ref={statusButtonRef}
+          type="button"
+          onClick={() => setShowStatusDropdown((currentValue) => !currentValue)}
+          className={`inline-flex h-10 items-center gap-2 rounded-md border px-3 text-sm transition-[width,background-color,border-color,color] duration-200 ${
+            selectedStatuses.length > 0
+              ? "border-zinc-200 bg-zinc-100 text-zinc-900"
+              : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50"
+          }`}
+          style={{ width: `${statusButtonWidth}px` }}
+        >
+          <span className="min-w-0 overflow-hidden">
+            {selectedStatuses.length === 0 ? (
+              <span className="min-w-0 truncate">Status...</span>
+            ) : (
+              <span className="flex min-w-0 items-center gap-2">
+                <span className="flex shrink-0 items-center gap-1">
+                  {selectedStatuses.map((status) => (
+                    <span
+                      key={status}
+                      className={`h-2.5 w-2.5 rounded-full ${getStatusDotClass(
+                        status
+                      )}`}
+                    />
+                  ))}
+                </span>
+                <span className="truncate">
+                  {selectedStatuses
+                    .map((status) => formatStatusLabel(status))
+                    .join(", ")}
+                </span>
+              </span>
+            )}
+          </span>
+          <ChevronDown className="ml-auto h-4 w-4 shrink-0" />
+        </button>
+
+        {showStatusDropdown ? (
+          <div className="absolute right-0 top-full z-50 mt-1 min-w-[240px] rounded-md border border-zinc-100 bg-white py-1 shadow-[0_8px_20px_-14px_rgba(15,23,42,0.25)] ui-dropdown-in">
+            {normalizedStatusOptions.length === 0 ? (
+              <div className="px-3 py-2 text-sm text-gray-500">
+                No statuses available
+              </div>
+            ) : (
+              normalizedStatusOptions.map((option) => {
+                const percent =
+                  option.total === 0
+                    ? 0
+                    : Math.round((option.count / option.total) * 100);
+                const isSelected = selectedStatuses.includes(option.status);
+
+                return (
+                  <button
+                    key={option.status}
+                    type="button"
+                    onClick={() => handleToggleStatus(option.status)}
+                    className="flex w-full items-start gap-3 px-3 py-2 text-left hover:bg-gray-50"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      readOnly
+                      className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-zinc-900"
+                    />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 text-sm text-zinc-900">
+                        <span
+                          className={`h-2.5 w-2.5 rounded-full ${getStatusDotClass(
+                            option.status
+                          )}`}
+                        />
+                        <span>{formatStatusLabel(option.status)}</span>
+                      </div>
+                      <div className="mt-0.5 text-xs text-zinc-500">
+                        {option.count}/{option.total} ({percent}%)
+                      </div>
+                    </div>
+                  </button>
+                );
+              })
             )}
           </div>
         ) : null}

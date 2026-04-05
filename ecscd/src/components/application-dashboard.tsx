@@ -21,7 +21,11 @@ import { DashboardDetailPane } from "@/components/dashboard-detail-pane";
 import { DashboardNewApplicationButton } from "@/components/dashboard-new-application-button";
 import { DashboardEditApplicationButton } from "@/components/dashboard-edit-application-button";
 import { DashboardSyncActions } from "@/components/dashboard-sync-actions";
-import { ApplicationDomain, DiffDomain } from "@/lib/domain/application";
+import {
+  ApplicationDomain,
+  ApplicationStatus,
+  DiffDomain,
+} from "@/lib/domain/application";
 import { FilterDomain } from "@/lib/domain/filter";
 
 type DiffResponse = {
@@ -47,6 +51,14 @@ type CacheEntry = {
 };
 
 const applicationCache = new Map<string, CacheEntry>();
+const ALL_APPLICATION_STATUSES: ApplicationStatus[] = [
+  "Error",
+  "Failed",
+  "Deploying",
+  "OutOfSync",
+  "InSync",
+  "Loading",
+];
 
 function createApplicationErrorState(
   config: ApplicationDomain,
@@ -91,10 +103,17 @@ function getCachedReadModel(config: ApplicationDomain): ApplicationReadModel | n
   return entry.data;
 }
 
-function buildDashboardHref(appName?: string | null, filterPattern?: string) {
+function buildDashboardHref(
+  appName?: string | null,
+  filterPattern?: string,
+  statuses: ApplicationStatus[] = []
+) {
   const params = new URLSearchParams();
   if (filterPattern) {
     params.set("filter", filterPattern);
+  }
+  if (statuses.length > 0) {
+    params.set("status", statuses.join(","));
   }
 
   const query = params.toString();
@@ -174,11 +193,23 @@ export function ApplicationDashboard({
     return match ? decodeURIComponent(match[1]) : null;
   }, [pathname]);
   const filterPattern = searchParams.get("filter") || "";
+  const selectedStatuses = useMemo(
+    () =>
+      (searchParams.get("status") || "")
+        .split(",")
+        .map((value) => value.trim())
+        .filter((value): value is ApplicationStatus =>
+          ["Loading", "Error", "Deploying", "Failed", "OutOfSync", "InSync"].includes(
+            value
+          )
+        ),
+    [searchParams]
+  );
   const normalizedFilter = filterPattern.trim().toLowerCase();
 
   syncCacheConfigs(applications);
 
-  const visibleApplications = useMemo(() => {
+  const nameFilteredApplications = useMemo(() => {
     if (!normalizedFilter) {
       return applications;
     }
@@ -187,6 +218,36 @@ export function ApplicationDashboard({
       application.name.toLowerCase().includes(normalizedFilter)
     );
   }, [applications, normalizedFilter]);
+
+  const statusOptions = useMemo(() => {
+    const total = nameFilteredApplications.length;
+    const counts = new Map<ApplicationStatus, number>();
+
+    for (const application of nameFilteredApplications) {
+      const status =
+        getCachedReadModel(application)?.application.status || application.status;
+      counts.set(status, (counts.get(status) || 0) + 1);
+    }
+
+    return ALL_APPLICATION_STATUSES.map((status) => ({
+      status,
+      count: counts.get(status) || 0,
+      total,
+    }));
+  }, [cacheVersion, nameFilteredApplications]);
+
+  const visibleApplications = useMemo(() => {
+    if (selectedStatuses.length === 0) {
+      return nameFilteredApplications;
+    }
+
+    const selectedStatusSet = new Set(selectedStatuses);
+    return nameFilteredApplications.filter((application) => {
+      const status =
+        getCachedReadModel(application)?.application.status || application.status;
+      return selectedStatusSet.has(status);
+    });
+  }, [cacheVersion, nameFilteredApplications, selectedStatuses]);
 
   const selectedApplicationConfig = selectedAppName
     ? applications.find((application) => application.name === selectedAppName) ||
@@ -288,6 +349,7 @@ export function ApplicationDashboard({
           <div className="flex w-full items-center justify-between gap-4">
             <Link
               href={buildDashboardHref(null, filterPattern)}
+              href={buildDashboardHref(null, filterPattern, selectedStatuses)}
               className="flex items-center gap-3"
             >
               <GitBranch className="h-7 w-7 text-primary" />
@@ -302,6 +364,8 @@ export function ApplicationDashboard({
             <FilterSelector
               initialFilter={filterPattern}
               initialFilters={filters}
+              initialSelectedStatuses={selectedStatuses}
+              statusOptions={statusOptions}
             />
           }
           list={
@@ -312,7 +376,11 @@ export function ApplicationDashboard({
             ) : (
               <div className="p-2 space-y-1">
                 {visibleApplications.map((application) => {
-                  const href = buildDashboardHref(application.name, filterPattern);
+                  const href = buildDashboardHref(
+                    application.name,
+                    filterPattern,
+                    selectedStatuses
+                  );
                   const readModel = getCachedReadModel(application);
                   const displayApplication = readModel?.application || application;
 
@@ -370,6 +438,11 @@ export function ApplicationDashboard({
               <div className="flex h-full items-center justify-between gap-4">
                 <Link
                   href={buildDashboardHref(null, filterPattern)}
+                  href={buildDashboardHref(
+                    null,
+                    filterPattern,
+                    selectedStatuses
+                  )}
                   className="flex items-center gap-3"
                 >
                   <GitBranch className="h-7 w-7 text-primary" />
@@ -385,6 +458,11 @@ export function ApplicationDashboard({
             <div className="flex items-center gap-3">
               <Link
                 href={buildDashboardHref(null, filterPattern)}
+                href={buildDashboardHref(
+                  null,
+                  filterPattern,
+                  selectedStatuses
+                )}
                 className="inline-flex h-8 w-8 items-center justify-center rounded-md lg:hidden hover:bg-zinc-100"
               >
                 <ArrowLeft className="h-4 w-4" />
