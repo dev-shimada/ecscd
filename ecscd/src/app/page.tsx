@@ -103,6 +103,7 @@ export default function Home() {
   const [filterPattern, setFilterPattern] = useState("");
   const [isFilterInitialized, setIsFilterInitialized] = useState(false);
   const [isListScrolled, setIsListScrolled] = useState(false);
+  const [isDetailsScrolled, setIsDetailsScrolled] = useState(false);
   const listContainerRef = useRef<HTMLDivElement | null>(null);
 
   const selectedApp = useMemo(
@@ -424,14 +425,25 @@ export default function Home() {
         </div>
       </aside>
 
-      <main className="subtle-scrollbar min-h-0 overflow-y-auto relative shadow-[-4px_0_14px_rgba(15,23,42,0.12)] p-4 sm:p-6 lg:p-8">
+      <main
+        onScroll={(event) =>
+          setIsDetailsScrolled(event.currentTarget.scrollTop > 0)
+        }
+        className="subtle-scrollbar min-h-0 overflow-y-auto relative shadow-[-4px_0_14px_rgba(15,23,42,0.12)]"
+      >
           {!selectedApp ? (
             <div className="h-full flex items-center justify-center text-gray-600">
               Select an application from the left pane.
             </div>
           ) : (
-            <div className="space-y-6">
-              <section>
+            <>
+              <section
+                className={`sticky top-0 z-10 bg-gray-50 px-4 pt-4 pb-4 sm:px-6 lg:px-8 transition-shadow ${
+                  isDetailsScrolled
+                    ? "shadow-[0_6px_12px_-10px_rgba(15,23,42,0.35)]"
+                    : "shadow-none"
+                }`}
+              >
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h2 className="text-2xl font-semibold text-gray-900">
@@ -444,13 +456,16 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => handleOpenEditDialog(selectedApp)}
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
+                    {hasActiveDeployment && (
+                      <Button
+                        variant="destructive"
+                        onClick={() => handleRollback(selectedApp.name)}
+                        disabled={!hasActiveDeployment}
+                      >
+                        <Undo2 className="h-4 w-4 mr-2" />
+                        Rollback
+                      </Button>
+                    )}
                     <Button
                       onClick={() => handleSync(selectedApp.name)}
                       disabled={hasActiveDeployment}
@@ -458,17 +473,11 @@ export default function Home() {
                       <Play className="h-4 w-4 mr-2" />
                       {hasActiveDeployment ? "Deploying..." : "Sync"}
                     </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => handleRollback(selectedApp.name)}
-                      disabled={hasActiveDeployment}
-                    >
-                      <Undo2 className="h-4 w-4 mr-2" />
-                      Rollback
-                    </Button>
                   </div>
                 </div>
+              </section>
 
+              <div className="space-y-6 px-4 pb-6 sm:px-6 sm:pb-8 lg:px-8 lg:pb-10">
                 <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                   <div>
                     <div className="text-gray-500 mb-1">GitHub</div>
@@ -515,22 +524,24 @@ export default function Home() {
                     <ExternalLink className="h-3.5 w-3.5" />
                   </a>
                 </div>
-              </section>
+              </div>
 
               {isDiffLoading ? (
-                <div className="py-12 flex items-center justify-center text-gray-600">
+                <div className="px-4 pb-8 sm:px-6 lg:px-8 py-12 flex items-center justify-center text-gray-600">
                   <RefreshCw className="h-6 w-6 animate-spin mr-2" />
                   Loading diff...
                 </div>
               ) : (
-                <DiffViewer
-                  diffs={diffData?.diffs || []}
-                  summary={diffData?.summary || `${(diffData?.diffs || []).length} changes`}
-                  isLoading={hasActiveDeployment}
-                  error={diffData?.error}
-                />
+                <div className="px-4 pb-8 sm:px-6 lg:px-8">
+                  <DiffViewer
+                    diffs={diffData?.diffs || []}
+                    summary={diffData?.summary || `${(diffData?.diffs || []).length} changes`}
+                    isLoading={hasActiveDeployment}
+                    error={diffData?.error}
+                  />
+                </div>
               )}
-            </div>
+            </>
           )}
       </main>
 
