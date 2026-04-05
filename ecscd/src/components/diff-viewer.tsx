@@ -61,10 +61,7 @@ export function DiffViewer({ diffs, summary, onSync, isLoading, error }: DiffVie
   if (error) {
     return (
       <section className="w-full">
-        <div className="flex items-center gap-2">
-          <Badge variant="destructive">Error</Badge>
-          <h3 className="text-base font-semibold text-gray-900">Configuration Diff Error</h3>
-        </div>
+        <h2 className="text-lg font-semibold text-gray-900">Configuration Diff</h2>
         <div className="mt-3">
           <p className="text-red-600 mb-2">{error}</p>
           <p className="text-muted-foreground text-sm">
@@ -78,10 +75,7 @@ export function DiffViewer({ diffs, summary, onSync, isLoading, error }: DiffVie
   if (!diffs || diffs.length === 0) {
     return (
       <section className="w-full">
-        <div className="flex items-center gap-2">
-          <Badge variant="success">In Sync</Badge>
-          <h3 className="text-base font-semibold text-gray-900">No Changes Detected</h3>
-        </div>
+        <h2 className="text-lg font-semibold text-gray-900">Configuration Diff</h2>
         <div className="mt-3">
           <p className="text-muted-foreground">
             The current task definition matches the target configuration in the repository.
@@ -95,10 +89,7 @@ export function DiffViewer({ diffs, summary, onSync, isLoading, error }: DiffVie
     <section className="w-full">
       <div>
         <div className="flex items-center justify-between">
-          <h3 className="flex items-center gap-2 text-base font-semibold text-gray-900">
-            <Badge variant="warning">Out of Sync</Badge>
-            Configuration Diff
-          </h3>
+          <h2 className="text-lg font-semibold text-gray-900">Configuration Diff</h2>
           {onSync && (
             <Button
               onClick={onSync}

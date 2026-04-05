@@ -447,9 +447,9 @@ export default function Home() {
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-3">
-                      <h2 className="text-2xl font-semibold text-gray-900">
+                      <h1 className="text-2xl font-semibold text-gray-900">
                         {selectedApp.name}
-                      </h2>
+                      </h1>
                       <Badge variant={getSyncBadgeVariant(selectedApp.sync.status)}>
                         {formatSyncStatus(selectedApp.sync.status)}
                       </Badge>
