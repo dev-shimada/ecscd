@@ -62,6 +62,7 @@ export function FilterSelector({
   );
   const rootRef = useRef<HTMLDivElement | null>(null);
   const statusButtonRef = useRef<HTMLButtonElement | null>(null);
+  const statusDropdownRef = useRef<HTMLDivElement | null>(null);
   const [statusButtonWidth, setStatusButtonWidth] = useState(104);
 
   useEffect(() => {
@@ -156,6 +157,29 @@ export function FilterSelector({
     nameFilterMinWidth,
     filterGapWidth,
   ]);
+
+  useEffect(() => {
+    if (!showStatusDropdown) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        statusButtonRef.current?.contains(target) ||
+        statusDropdownRef.current?.contains(target)
+      ) {
+        return;
+      }
+
+      setShowStatusDropdown(false);
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, [showStatusDropdown]);
 
   const navigateWithFilters = (
     nameFilter: string,
@@ -331,7 +355,7 @@ export function FilterSelector({
         ) : null}
       </div>
 
-      <div className="relative shrink-0">
+      <div ref={statusDropdownRef} className="relative shrink-0">
         <button
           ref={statusButtonRef}
           type="button"
