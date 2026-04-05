@@ -1,6 +1,8 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useLayoutEffect, useRef, useState } from "react";
+
+let sidebarScrollTop = 0;
 
 export function DashboardSidebarPane({
   filter,
@@ -9,7 +11,18 @@ export function DashboardSidebarPane({
   filter: ReactNode;
   list: ReactNode;
 }) {
-  const [isListScrolled, setIsListScrolled] = useState(false);
+  const [isListScrolled, setIsListScrolled] = useState(sidebarScrollTop > 0);
+  const listRef = useRef<HTMLDivElement | null>(null);
+
+  useLayoutEffect(() => {
+    const listElement = listRef.current;
+    if (!listElement) {
+      return;
+    }
+
+    listElement.scrollTop = sidebarScrollTop;
+    setIsListScrolled(sidebarScrollTop > 0);
+  }, []);
 
   return (
     <>
@@ -23,9 +36,12 @@ export function DashboardSidebarPane({
         {filter}
       </div>
       <div
-        onScroll={(event) =>
-          setIsListScrolled(event.currentTarget.scrollTop > 0)
-        }
+        ref={listRef}
+        onScroll={(event) => {
+          const nextScrollTop = event.currentTarget.scrollTop;
+          sidebarScrollTop = nextScrollTop;
+          setIsListScrolled(nextScrollTop > 0);
+        }}
         className="subtle-scrollbar flex-1 overflow-y-auto relative"
       >
         {list}
