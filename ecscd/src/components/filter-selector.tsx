@@ -277,7 +277,7 @@ export function FilterSelector({
           value={currentFilter}
           onChange={(e) => handleFilterChange(e.target.value)}
           placeholder="Filter by name..."
-          className="pl-10 pr-20"
+          className="border-zinc-200 pl-10 pr-20"
           aria-busy={isPending}
         />
         <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-0.5">
