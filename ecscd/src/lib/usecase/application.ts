@@ -1,4 +1,4 @@
-import { ApplicationDomain } from "../domain/application";
+import { ApplicationDomain, applyApplicationStatus } from "../domain/application";
 import { ApplicationRepository } from "../repository/application";
 import { DeploymentRepository } from "../repository/deployment";
 
@@ -26,9 +26,13 @@ export class ApplicationUsecase implements IApplicationUsecase {
     // 既にErrorステータスのアプリはスキップ
     await Promise.all(
       applications.map(async (app) => {
-        if (app.sync.status === "Error") {
+        app.reason = undefined;
+
+        if (!app.service || app.service.status !== "ACTIVE") {
+          applyApplicationStatus(app);
           return;
         }
+
         try {
           const deployments = await this.deploymentRepository.diff(app);
           if (deployments.length > 0) {
@@ -36,9 +40,15 @@ export class ApplicationUsecase implements IApplicationUsecase {
           } else {
             app.sync.status = "InSync";
           }
-        } catch {
+        } catch (error) {
           app.sync.status = "Error";
+          app.reason =
+            error instanceof Error
+              ? error.message
+              : "Failed to compare ECS and GitHub configuration.";
         }
+
+        applyApplicationStatus(app);
       })
     );
     return applications;
@@ -55,6 +65,12 @@ export class ApplicationUsecase implements IApplicationUsecase {
     }
 
     // diff（同期状態）を取得
+    application.reason = undefined;
+
+    if (!application.service || application.service.status !== "ACTIVE") {
+      return applyApplicationStatus(application);
+    }
+
     if (application.sync.status !== "Error") {
       try {
         const deployments = await this.deploymentRepository.diff(application);
@@ -63,12 +79,16 @@ export class ApplicationUsecase implements IApplicationUsecase {
         } else {
           application.sync.status = "InSync";
         }
-      } catch {
+      } catch (error) {
         application.sync.status = "Error";
+        application.reason =
+          error instanceof Error
+            ? error.message
+            : "Failed to compare ECS and GitHub configuration.";
       }
     }
 
-    return application;
+    return applyApplicationStatus(application);
   }
 
   async createApplication(application: ApplicationDomain): Promise<void> {

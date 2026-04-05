@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
     }
     const newApp = {
       name,
+      status: "Error" as const,
       gitConfig,
       ecsConfig,
       awsConfig,

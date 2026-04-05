@@ -3,12 +3,12 @@ import { cn } from "@/lib/utils"
 
 const badgeVariants = {
   variant: {
-    default: "border-transparent bg-blue-600 text-white hover:bg-blue-700",
-    secondary: "border-transparent bg-gray-100 text-gray-900 hover:bg-gray-200",
-    destructive: "border-transparent bg-red-600 text-white hover:bg-red-700",
+    default: "border-transparent bg-blue-600 text-white",
+    secondary: "border-transparent bg-gray-100 text-gray-900",
+    destructive: "border-transparent bg-red-600 text-white",
     outline: "text-gray-900 border-gray-300",
-    success: "border-transparent bg-green-500 text-white hover:bg-green-600",
-    warning: "border-transparent bg-yellow-500 text-white hover:bg-yellow-600",
+    success: "border-transparent bg-green-500 text-white",
+    warning: "border-transparent bg-yellow-500 text-white",
   },
 }
 

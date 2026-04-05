@@ -219,6 +219,7 @@ export class DynamoDB implements IDatabase {
   ): Promise<ApplicationDomain> {
     return {
       name: item.name,
+      status: "InSync",
       sync: { status: "InSync" },
       gitConfig: {
         repo: item.git_repo,

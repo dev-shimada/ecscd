@@ -1,5 +1,5 @@
 import { ApplicationRepository } from "../repository/application";
-import { ApplicationDomain } from "../domain/application";
+import { ApplicationDomain, applyApplicationStatus } from "../domain/application";
 import { AWS } from "./aws";
 import { IDatabase } from "./interface/database";
 
@@ -27,8 +27,13 @@ export class Application implements ApplicationRepository {
           app.service = ecsResponse;
         } catch (error) {
           console.warn(`Error fetching ECS service for ${app.name}:`, error);
-          app.sync.status = "Error";
+          app.reason =
+            error instanceof Error
+              ? error.message
+              : "Failed to fetch ECS service state.";
         }
+
+        applyApplicationStatus(app);
       })
     );
     return applications;
@@ -58,10 +63,13 @@ export class Application implements ApplicationRepository {
       app.service = ecsResponse;
     } catch (error) {
       console.warn(`Error fetching ECS service for ${app.name}:`, error);
-      app.sync.status = "Error";
+      app.reason =
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch ECS service state.";
     }
 
-    return app;
+    return applyApplicationStatus(app);
   }
 
   async getService(

@@ -8,9 +8,12 @@ import { DiffViewer } from "@/components/diff-viewer";
 import { NewApplicationDialog } from "@/components/new-application-dialog";
 import { EditApplicationDialog } from "@/components/edit-application-dialog";
 import { FilterSelector } from "@/components/filter-selector";
+import {
+  ApplicationStatusBadge,
+  ApplicationStatusDot,
+} from "@/components/application-status-indicator";
 import { ApplicationDomain, DiffDomain } from "@/lib/domain/application";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Plus,
   RefreshCw,
@@ -29,45 +32,6 @@ type DiffResponse = {
   diffs: DiffDomain[];
   summary?: string;
 };
-
-function getSyncBadgeVariant(status: ApplicationDomain["sync"]["status"]) {
-  switch (status) {
-    case "InSync":
-      return "success";
-    case "OutOfSync":
-      return "warning";
-    case "Error":
-      return "destructive";
-    default:
-      return "secondary";
-  }
-}
-
-function formatSyncStatus(status: ApplicationDomain["sync"]["status"]) {
-  switch (status) {
-    case "InSync":
-      return "In Sync";
-    case "OutOfSync":
-      return "Out of Sync";
-    case "Error":
-      return "Error";
-    default:
-      return "Unknown";
-  }
-}
-
-function getSyncDotClass(status: ApplicationDomain["sync"]["status"]) {
-  switch (status) {
-    case "InSync":
-      return "bg-emerald-500";
-    case "OutOfSync":
-      return "bg-amber-500";
-    case "Error":
-      return "bg-rose-500";
-    default:
-      return "bg-zinc-400";
-  }
-}
 
 function formatLastSyncTime(date?: Date) {
   if (!date) return "Never";
@@ -160,18 +124,14 @@ export function ApplicationDashboard() {
   const hasActiveDeployment = useMemo(() => {
     if (!selectedApp) return false;
     return (
-      deployingApps.has(selectedApp.name) ||
-      selectedApp.service?.deployments.some(
-        (deployment) => deployment.rolloutState === "IN_PROGRESS"
-      ) ||
-      false
+      deployingApps.has(selectedApp.name) || selectedApp.status === "Deploying"
     );
   }, [deployingApps, selectedApp]);
 
   const syncStatsLabel = useMemo(() => {
     const total = applications.length;
     const inSyncCount = applications.filter(
-      (app) => app.sync.status === "InSync"
+      (app) => app.status === "InSync"
     ).length;
 
     if (total === 0) {
@@ -526,12 +486,7 @@ export function ApplicationDashboard() {
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0 flex items-center gap-2">
-                      <span
-                        className={`h-2.5 w-2.5 shrink-0 rounded-full ${getSyncDotClass(
-                          application.sync.status
-                        )}`}
-                        aria-label={`sync-status-${application.sync.status}`}
-                      />
+                      <ApplicationStatusDot application={application} />
                       <div className="font-medium text-gray-900 truncate">
                         {application.name}
                       </div>
@@ -614,45 +569,43 @@ export function ApplicationDashboard() {
                       <h1 className="text-2xl font-semibold text-gray-900">
                         {selectedApp.name}
                       </h1>
-                    <Badge variant={getSyncBadgeVariant(selectedApp.sync.status)}>
-                      {formatSyncStatus(selectedApp.sync.status)}
-                    </Badge>
+                      <ApplicationStatusBadge application={selectedApp} />
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center">
-                  <a
-                    href={getEcsDeploymentsConsoleUrl(selectedApp)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    View in AWS Console
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                  <div
-                    className={`overflow-hidden transition-all duration-300 ease-out ${
-                      isSyncActionsVisible
-                        ? "ml-0 max-w-0 opacity-0"
-                        : "ml-3 max-w-[140px] opacity-100"
-                    }`}
-                  >
-                    <Button
-                      onClick={() =>
-                        syncActionsRef.current?.scrollIntoView({
-                          behavior: "smooth",
-                          block: "center",
-                        })
-                      }
-                      aria-hidden={isSyncActionsVisible}
-                      tabIndex={isSyncActionsVisible ? -1 : 0}
-                      className={isSyncActionsVisible ? "pointer-events-none" : ""}
+                  <div className="flex items-center">
+                    <a
+                      href={getEcsDeploymentsConsoleUrl(selectedApp)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm"
                     >
-                      <ArrowDown className="h-4 w-4 mr-2" />
-                      Sync...
-                    </Button>
+                      View in AWS Console
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ease-out ${
+                        isSyncActionsVisible
+                          ? "ml-0 max-w-0 opacity-0"
+                          : "ml-3 max-w-[140px] opacity-100"
+                      }`}
+                    >
+                      <Button
+                        onClick={() =>
+                          syncActionsRef.current?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center",
+                          })
+                        }
+                        aria-hidden={isSyncActionsVisible}
+                        tabIndex={isSyncActionsVisible ? -1 : 0}
+                        className={isSyncActionsVisible ? "pointer-events-none" : ""}
+                      >
+                        <ArrowDown className="h-4 w-4 mr-2" />
+                        Sync...
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
             </section>
 
             <div className="space-y-6 px-4 pb-6 sm:px-6 sm:pb-8 lg:px-8 lg:pb-10">

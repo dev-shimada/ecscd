@@ -206,6 +206,7 @@ export class SQLite implements IDatabase {
   ): Promise<ApplicationDomain> {
     return {
       name: row.name,
+      status: "InSync",
       sync: { status: "InSync" },
       gitConfig: {
         repo: row.git_repo,
