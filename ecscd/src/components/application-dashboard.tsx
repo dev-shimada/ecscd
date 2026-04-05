@@ -293,19 +293,19 @@ export function ApplicationDashboard({
   }, []);
 
   useEffect(() => {
-    for (const application of visibleApplications) {
+    for (const application of nameFilteredApplications) {
       loadApplication(application);
     }
 
     if (
       selectedApplicationConfig &&
-      !visibleApplications.some(
+      !nameFilteredApplications.some(
         (application) => application.name === selectedApplicationConfig.name
       )
     ) {
       loadApplication(selectedApplicationConfig);
     }
-  }, [loadApplication, selectedApplicationConfig, visibleApplications]);
+  }, [loadApplication, nameFilteredApplications, selectedApplicationConfig]);
 
   const handleApplicationChanged = useCallback(
     (name: string) => {
