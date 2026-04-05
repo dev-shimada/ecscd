@@ -150,3 +150,38 @@ body {
     animation: none;
   }
 }
+
+/* Sonner toast layout: header row (icon + title + close) + message row */
+[data-sonner-toaster] [data-sonner-toast] {
+  position: relative;
+  padding-right: 2.25rem;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-icon] {
+  align-self: flex-start;
+  margin-top: 0.125rem;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-content] {
+  display: grid;
+  gap: 0.25rem;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-title] {
+  display: flex;
+  align-items: center;
+  min-height: 1.25rem;
+  font-weight: 600;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-description] {
+  margin: 0;
+  line-height: 1.4;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-close-button] {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  inset-inline-end: 0.5rem;
+}
