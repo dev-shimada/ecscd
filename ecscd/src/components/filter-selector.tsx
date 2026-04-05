@@ -66,6 +66,9 @@ export function FilterSelector({
   initialSelectedStatuses,
   statusOptions,
 }: FilterSelectorProps) {
+  const nameFilterMinWidth = 180;
+  const statusButtonMaxWidth = 168;
+  const filterGapWidth = 8;
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -79,6 +82,7 @@ export function FilterSelector({
   const [selectedStatuses, setSelectedStatuses] = useState<ApplicationStatus[]>(
     initialSelectedStatuses
   );
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const statusButtonRef = useRef<HTMLButtonElement | null>(null);
   const [statusButtonWidth, setStatusButtonWidth] = useState(104);
 
@@ -131,10 +135,18 @@ export function FilterSelector({
       const chevronWidth = 16;
       const contentGap = 8;
       const textGap = 8;
-      const maxWidth = Math.min(window.innerWidth * 0.25, 240);
+      const rootWidth = rootRef.current?.clientWidth ?? 0;
+      const availableMaxWidth =
+        rootWidth > 0
+          ? Math.max(
+              104,
+              rootWidth - nameFilterMinWidth - filterGapWidth
+            )
+          : statusButtonMaxWidth;
       setStatusButtonWidth(
         Math.min(
-          maxWidth,
+          statusButtonMaxWidth,
+          availableMaxWidth,
           Math.ceil(
             horizontalPadding +
               chevronWidth +
@@ -148,9 +160,24 @@ export function FilterSelector({
     };
 
     updateStatusButtonWidth();
-    window.addEventListener("resize", updateStatusButtonWidth);
-    return () => window.removeEventListener("resize", updateStatusButtonWidth);
-  }, [selectedStatuses]);
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(updateStatusButtonWidth)
+        : null;
+
+    if (rootRef.current && resizeObserver) {
+      resizeObserver.observe(rootRef.current);
+    }
+
+    return () => {
+      resizeObserver?.disconnect();
+    };
+  }, [
+    selectedStatuses,
+    statusButtonMaxWidth,
+    nameFilterMinWidth,
+    filterGapWidth,
+  ]);
 
   const navigateWithFilters = (
     nameFilter: string,
@@ -240,8 +267,11 @@ export function FilterSelector({
   );
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="relative w-full flex-1 min-w-0">
+    <div ref={rootRef} className="flex items-center gap-2 min-w-0">
+      <div
+        className="relative w-full flex-1"
+        style={{ minWidth: `${nameFilterMinWidth}px` }}
+      >
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <Input
           value={currentFilter}
