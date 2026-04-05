@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DiffDomain } from '@/lib/domain/application';
 import { ChevronDown, ChevronRight, Plus, Minus, Edit3, Play } from 'lucide-react';
@@ -30,22 +29,44 @@ export function DiffViewer({ diffs, summary, onSync, isLoading, error }: DiffVie
   const getDiffIcon = (type: 'Added' | 'Removed' | 'Modified') => {
     switch (type) {
       case 'Added':
-        return <Plus className="h-4 w-4 shrink-0 text-green-600" />;
+        return <Plus className="h-4 w-4 shrink-0 text-emerald-800" />;
       case 'Removed':
-        return <Minus className="h-4 w-4 shrink-0 text-red-600" />;
+        return <Minus className="h-4 w-4 shrink-0 text-rose-800" />;
       case 'Modified':
-        return <Edit3 className="h-4 w-4 shrink-0 text-yellow-600" />;
+        return <Edit3 className="h-4 w-4 shrink-0 text-amber-800" />;
     }
   };
 
   const getDiffColor = (type: 'Added' | 'Removed' | 'Modified') => {
     switch (type) {
       case 'Added':
-        return 'border-green-200 bg-green-50';
+        return 'border-emerald-800/12 bg-[rgba(16,185,129,0.03)]';
       case 'Removed':
-        return 'border-red-200 bg-red-50';
+        return 'border-rose-800/12 bg-[rgba(244,63,94,0.03)]';
       case 'Modified':
-        return 'border-yellow-200 bg-yellow-50';
+        return 'border-amber-800/12 bg-[rgba(245,158,11,0.04)]';
+    }
+  };
+
+  const getDiffValueClass = (type: 'Added' | 'Removed' | 'Modified') => {
+    switch (type) {
+      case 'Added':
+        return 'border-emerald-800/12';
+      case 'Removed':
+        return 'border-rose-800/12';
+      case 'Modified':
+        return 'border-amber-800/12';
+    }
+  };
+
+  const getDiffTextClass = (type: 'Added' | 'Removed' | 'Modified') => {
+    switch (type) {
+      case 'Added':
+        return 'text-emerald-800';
+      case 'Removed':
+        return 'text-rose-800';
+      case 'Modified':
+        return 'text-amber-800';
     }
   };
 
@@ -118,17 +139,14 @@ export function DiffViewer({ diffs, summary, onSync, isLoading, error }: DiffVie
               )}
               {getDiffIcon(diff.type)}
               <span className="font-medium min-w-0 break-all">{diff.path}</span>
-              <Badge variant="outline" className="shrink-0">
-                {diff.type}
-              </Badge>
             </div>
 
             {expandedItems.has(`${index}-${diff.path}`) && (
               <div className="mt-4 ml-6 space-y-3">
                 {diff.type === 'Removed' && diff.current !== undefined && (
                   <div>
-                    <div className="text-sm font-medium text-red-700 mb-1">Current (will be removed):</div>
-                    <pre className="text-xs bg-white p-3 rounded border overflow-x-auto">
+                    <div className={`text-sm font-medium mb-1 ${getDiffTextClass(diff.type)}`}>Current (will be removed):</div>
+                    <pre className={`text-xs text-gray-900 p-3 rounded border overflow-x-auto ${getDiffValueClass(diff.type)}`}>
                       {formatValue(diff.current)}
                     </pre>
                   </div>
@@ -136,8 +154,8 @@ export function DiffViewer({ diffs, summary, onSync, isLoading, error }: DiffVie
 
                 {diff.type === 'Added' && diff.target !== undefined && (
                   <div>
-                    <div className="text-sm font-medium text-green-700 mb-1">New (will be added):</div>
-                    <pre className="text-xs bg-white p-3 rounded border overflow-x-auto">
+                    <div className={`text-sm font-medium mb-1 ${getDiffTextClass(diff.type)}`}>New (will be added):</div>
+                    <pre className={`text-xs text-gray-900 p-3 rounded border overflow-x-auto ${getDiffValueClass(diff.type)}`}>
                       {formatValue(diff.target)}
                     </pre>
                   </div>
@@ -147,16 +165,16 @@ export function DiffViewer({ diffs, summary, onSync, isLoading, error }: DiffVie
                   <>
                     {diff.current !== undefined && (
                       <div>
-                        <div className="text-sm font-medium text-red-700 mb-1">Current:</div>
-                        <pre className="text-xs bg-white p-3 rounded border overflow-x-auto">
+                        <div className={`text-sm font-medium mb-1 ${getDiffTextClass(diff.type)}`}>Current:</div>
+                        <pre className={`text-xs text-gray-900 p-3 rounded border overflow-x-auto ${getDiffValueClass(diff.type)}`}>
                           {formatValue(diff.current)}
                         </pre>
                       </div>
                     )}
                     {diff.target !== undefined && (
                       <div>
-                        <div className="text-sm font-medium text-green-700 mb-1">Target:</div>
-                        <pre className="text-xs bg-white p-3 rounded border overflow-x-auto">
+                        <div className={`text-sm font-medium mb-1 ${getDiffTextClass(diff.type)}`}>Target:</div>
+                        <pre className={`text-xs text-gray-900 p-3 rounded border overflow-x-auto ${getDiffValueClass(diff.type)}`}>
                           {formatValue(diff.target)}
                         </pre>
                       </div>
