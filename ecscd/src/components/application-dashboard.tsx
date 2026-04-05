@@ -8,7 +8,6 @@ import {
   Clock,
   ExternalLink,
   GitBranch,
-  RefreshCw,
 } from "lucide-react";
 import { DiffViewer } from "@/components/diff-viewer";
 import { FilterSelector } from "@/components/filter-selector";
@@ -546,15 +545,19 @@ export function ApplicationDashboard({
               <div className="px-4 pb-8 sm:px-6 lg:px-8">
                 {selectedReadModel ? (
                   <DiffViewer
+                    application={selectedReadModel.application}
                     diffs={selectedReadModel.diff.diffs || []}
                     summary={selectedReadModel.diff.summary}
                     error={selectedReadModel.diff.error}
+                    deploymentUrl={getEcsDeploymentsConsoleUrl(selectedReadModel.application)}
                   />
                 ) : (
-                  <div className="py-12 flex items-center justify-center text-gray-600">
-                    <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-                    Loading diff...
-                  </div>
+                  <DiffViewer
+                    application={selectedApplicationConfig}
+                    diffs={[]}
+                    summary="0 changes"
+                    deploymentUrl={getEcsDeploymentsConsoleUrl(selectedApplicationConfig)}
+                  />
                 )}
               </div>
             </>

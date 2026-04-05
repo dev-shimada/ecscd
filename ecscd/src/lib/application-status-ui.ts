@@ -30,7 +30,7 @@ export function getApplicationStatusDotClass(status: ApplicationStatus) {
     case "Deploying":
       return "bg-sky-500";
     case "Failed":
-      return "bg-fuchsia-500";
+      return "bg-orange-500";
     case "Error":
       return "bg-rose-500";
     default:
@@ -49,7 +49,7 @@ export function getApplicationStatusTextClass(status: ApplicationStatus) {
     case "Deploying":
       return "text-sky-700";
     case "Failed":
-      return "text-fuchsia-700";
+      return "text-orange-700";
     case "Error":
       return "text-rose-700";
     default:
@@ -68,7 +68,7 @@ export function getApplicationStatusBadgeClass(status: ApplicationStatus) {
     case "Deploying":
       return "border-transparent bg-sky-500 text-white";
     case "Failed":
-      return "border-transparent bg-fuchsia-500 text-white";
+      return "border-transparent bg-orange-500 text-white";
     case "Error":
       return "border-transparent bg-rose-500 text-white";
     default:

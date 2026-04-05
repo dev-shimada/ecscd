@@ -2,18 +2,28 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { DiffDomain } from '@/lib/domain/application';
+import { ApplicationDomain, DiffDomain } from '@/lib/domain/application';
 import { ChevronDown, ChevronRight, Plus, Minus, Edit3, Play } from 'lucide-react';
 
 interface DiffViewerProps {
+  application?: ApplicationDomain;
   diffs: DiffDomain[];
   summary: string;
   onSync?: () => void;
   isLoading?: boolean;
   error?: string;
+  deploymentUrl?: string;
 }
 
-export function DiffViewer({ diffs, summary, onSync, isLoading, error }: DiffViewerProps) {
+export function DiffViewer({
+  application,
+  diffs,
+  summary,
+  onSync,
+  isLoading,
+  error,
+  deploymentUrl,
+}: DiffViewerProps) {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
   const toggleExpanded = (path: string) => {
@@ -94,13 +104,59 @@ export function DiffViewer({ diffs, summary, onSync, isLoading, error }: DiffVie
   }
 
   if (!diffs || diffs.length === 0) {
+    const status = application?.status;
+    const statusTextClass =
+      status === 'Failed'
+        ? 'text-orange-700'
+        : status === 'Deploying'
+          ? 'text-sky-700'
+          : 'text-muted-foreground';
+
     return (
       <section className="w-full">
         <h2 className="text-lg font-semibold text-gray-900">Configuration Diff</h2>
         <div className="mt-3">
-          <p className="text-muted-foreground">
-            The current task definition matches the target configuration in the repository.
-          </p>
+          {status === 'Loading' ? (
+            <p className="text-muted-foreground">
+              Loading configuration diff...
+            </p>
+          ) : status === 'Deploying' ? (
+            <>
+              <p className={statusTextClass}>
+                Deployment is currently in progress.
+              </p>
+              {deploymentUrl ? (
+                <a
+                  href={deploymentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex items-center text-sm text-gray-900 hover:underline"
+                >
+                  View latest deployment
+                </a>
+              ) : null}
+            </>
+          ) : status === 'Failed' ? (
+            <>
+              <p className={statusTextClass}>
+                Last deployment failed.
+              </p>
+              {deploymentUrl ? (
+                <a
+                  href={deploymentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex items-center text-sm text-gray-900 hover:underline"
+                >
+                  View last deployment
+                </a>
+              ) : null}
+            </>
+          ) : (
+            <p className="text-muted-foreground">
+              The current task definition matches the target configuration in the repository.
+            </p>
+          )}
         </div>
       </section>
     );
