@@ -8,76 +8,12 @@ import {
 } from "@/lib/domain/application";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-
-function getApplicationStatusBadgeVariant(status: ApplicationStatus) {
-  switch (status) {
-    case "Loading":
-      return "secondary";
-    case "InSync":
-      return "success";
-    case "OutOfSync":
-    case "Deploying":
-      return "warning";
-    case "Error":
-    case "Failed":
-      return "destructive";
-    default:
-      return "secondary";
-  }
-}
-
-function getApplicationStatusDotClass(status: ApplicationStatus) {
-  switch (status) {
-    case "Loading":
-      return "bg-zinc-400";
-    case "InSync":
-      return "bg-emerald-500";
-    case "OutOfSync":
-    case "Deploying":
-      return "bg-amber-500";
-    case "Error":
-    case "Failed":
-      return "bg-rose-500";
-    default:
-      return "bg-zinc-400";
-  }
-}
-
-function getApplicationStatusTextClass(status: ApplicationStatus) {
-  switch (status) {
-    case "Loading":
-      return "text-zinc-700";
-    case "InSync":
-      return "text-emerald-700";
-    case "OutOfSync":
-    case "Deploying":
-      return "text-amber-700";
-    case "Error":
-    case "Failed":
-      return "text-rose-700";
-    default:
-      return "text-zinc-700";
-  }
-}
-
-function formatApplicationStatus(status: ApplicationStatus) {
-  switch (status) {
-    case "Loading":
-      return "Loading";
-    case "InSync":
-      return "In Sync";
-    case "OutOfSync":
-      return "Out of Sync";
-    case "Deploying":
-      return "Deploying";
-    case "Failed":
-      return "Failed";
-    case "Error":
-      return "Error";
-    default:
-      return status;
-  }
-}
+import {
+  formatApplicationStatus,
+  getApplicationStatusBadgeClass,
+  getApplicationStatusDotClass,
+  getApplicationStatusTextClass,
+} from "@/lib/application-status-ui";
 
 function StatusReasonPopover({
   label,
@@ -227,8 +163,11 @@ export function ApplicationStatusBadge({
       status={application.status}
     >
       <Badge
-        variant={getApplicationStatusBadgeVariant(application.status)}
-        className="cursor-help"
+        variant="secondary"
+        className={cn(
+          "cursor-help",
+          getApplicationStatusBadgeClass(application.status)
+        )}
       >
         {label}
       </Badge>

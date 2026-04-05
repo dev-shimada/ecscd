@@ -11,6 +11,10 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { FilterDomain } from "@/lib/domain/filter";
 import { ApplicationStatus } from "@/lib/domain/application";
+import {
+  formatApplicationStatus,
+  getApplicationStatusDotClass,
+} from "@/lib/application-status-ui";
 import { Search, Save, X, ChevronDown, Trash2 } from "lucide-react";
 import { SaveFilterDialog } from "./save-filter-dialog";
 
@@ -26,39 +30,13 @@ interface FilterSelectorProps {
 }
 
 const STATUS_ORDER: ApplicationStatus[] = [
-  "Error",
-  "Failed",
-  "Deploying",
-  "OutOfSync",
-  "InSync",
   "Loading",
+  "Error",
+  "OutOfSync",
+  "Deploying",
+  "Failed",
+  "InSync",
 ];
-
-function formatStatusLabel(status: ApplicationStatus) {
-  switch (status) {
-    case "InSync":
-      return "In Sync";
-    case "OutOfSync":
-      return "Out Of Sync";
-    default:
-      return status;
-  }
-}
-
-function getStatusDotClass(status: ApplicationStatus) {
-  switch (status) {
-    case "InSync":
-      return "bg-emerald-500";
-    case "OutOfSync":
-    case "Deploying":
-      return "bg-amber-500";
-    case "Error":
-    case "Failed":
-      return "bg-rose-500";
-    default:
-      return "bg-zinc-400";
-  }
-}
 
 export function FilterSelector({
   initialFilter,
@@ -106,7 +84,7 @@ export function FilterSelector({
       }
 
       const label = selectedStatuses
-        .map((status) => formatStatusLabel(status))
+        .map((status) => formatApplicationStatus(status))
         .join(", ");
       const dotsWidth = selectedStatuses.length * 10 + (selectedStatuses.length - 1) * 4;
       const buttonStyle = statusButtonRef.current
@@ -374,7 +352,7 @@ export function FilterSelector({
                   {selectedStatuses.map((status) => (
                     <span
                       key={status}
-                      className={`h-2.5 w-2.5 rounded-full ${getStatusDotClass(
+                      className={`h-2.5 w-2.5 rounded-full ${getApplicationStatusDotClass(
                         status
                       )}`}
                     />
@@ -382,7 +360,7 @@ export function FilterSelector({
                 </span>
                 <span className="truncate">
                   {selectedStatuses
-                    .map((status) => formatStatusLabel(status))
+                    .map((status) => formatApplicationStatus(status))
                     .join(", ")}
                 </span>
               </span>
@@ -421,11 +399,11 @@ export function FilterSelector({
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 text-sm text-zinc-900">
                         <span
-                          className={`h-2.5 w-2.5 rounded-full ${getStatusDotClass(
+                          className={`h-2.5 w-2.5 rounded-full ${getApplicationStatusDotClass(
                             option.status
                           )}`}
                         />
-                        <span>{formatStatusLabel(option.status)}</span>
+                        <span>{formatApplicationStatus(option.status)}</span>
                       </div>
                       <div className="mt-0.5 text-xs text-zinc-500">
                         {option.count}/{option.total} ({percent}%)

@@ -52,12 +52,12 @@ type CacheEntry = {
 
 const applicationCache = new Map<string, CacheEntry>();
 const ALL_APPLICATION_STATUSES: ApplicationStatus[] = [
-  "Error",
-  "Failed",
-  "Deploying",
-  "OutOfSync",
-  "InSync",
   "Loading",
+  "Error",
+  "OutOfSync",
+  "Deploying",
+  "Failed",
+  "InSync",
 ];
 
 function createApplicationErrorState(
