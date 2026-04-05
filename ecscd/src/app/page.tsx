@@ -349,6 +349,28 @@ export default function Home() {
     return () => window.cancelAnimationFrame(id);
   }, [updateSyncActionsVisibility, selectedApp, isDiffLoading, hasActiveDeployment]);
 
+  useEffect(() => {
+    if (!selectedApp) return;
+
+    const handleResize = () => updateSyncActionsVisibility();
+    window.addEventListener("resize", handleResize);
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateSyncActionsVisibility();
+    });
+    if (detailsScrollRef.current) {
+      resizeObserver.observe(detailsScrollRef.current);
+    }
+    if (syncActionsRef.current) {
+      resizeObserver.observe(syncActionsRef.current);
+    }
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      resizeObserver.disconnect();
+    };
+  }, [selectedApp, updateSyncActionsVisibility]);
+
   return (
     <div className="h-screen bg-gray-50 grid grid-cols-1 lg:grid-cols-[360px_1fr]">
       <aside className="bg-white flex flex-col min-h-0 relative">
