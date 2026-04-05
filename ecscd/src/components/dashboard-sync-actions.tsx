@@ -150,7 +150,9 @@ export function DashboardSyncActions({
             variant="destructive"
             onClick={handleRollback}
             disabled={isRollingBack || isSyncing}
-            className="ui-soft-in"
+            className={`ui-soft-in ${
+              isRollingBack ? "bg-zinc-200 text-zinc-700 hover:bg-zinc-200" : ""
+            }`}
           >
             <Undo2 className="h-4 w-4 mr-2" />
             Rollback
