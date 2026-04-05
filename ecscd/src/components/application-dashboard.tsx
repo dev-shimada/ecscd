@@ -168,6 +168,20 @@ export function ApplicationDashboard() {
     );
   }, [deployingApps, selectedApp]);
 
+  const syncStatsLabel = useMemo(() => {
+    const total = applications.length;
+    const inSyncCount = applications.filter(
+      (app) => app.sync.status === "InSync"
+    ).length;
+
+    if (total === 0) {
+      return "0% (0/0) In Sync";
+    }
+
+    const percent = Math.round((inSyncCount / total) * 100);
+    return `${percent}% (${inSyncCount}/${total}) In Sync`;
+  }, [applications]);
+
   const getNavigationUrl = useCallback(
     (appName?: string | null) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -444,10 +458,13 @@ export function ApplicationDashboard() {
         }`}
       >
         <header className="h-16 shrink-0 px-4 sm:px-6 flex items-center relative">
-          <Link href={getNavigationUrl(null)} className="flex items-center gap-3">
-            <GitBranch className="h-7 w-7 text-primary" />
-            <h1 className="text-2xl font-bold text-gray-900">ecscd</h1>
-          </Link>
+          <div className="flex w-full items-center justify-between gap-4">
+            <Link href={getNavigationUrl(null)} className="flex items-center gap-3">
+              <GitBranch className="h-7 w-7 text-primary" />
+              <h1 className="text-2xl font-bold text-gray-900">ecscd</h1>
+            </Link>
+            <div className="text-sm font-medium text-gray-500">{syncStatsLabel}</div>
+          </div>
         </header>
 
         <div
@@ -568,10 +585,13 @@ export function ApplicationDashboard() {
         ) : (
           <>
             <header className="sticky top-0 z-20 h-16 bg-gray-50 px-4 sm:px-6 lg:hidden">
-              <Link href={getNavigationUrl(null)} className="flex h-full items-center gap-3">
-                <GitBranch className="h-7 w-7 text-primary" />
-                <div className="text-2xl font-bold text-gray-900">ecscd</div>
-              </Link>
+              <div className="flex h-full items-center justify-between gap-4">
+                <Link href={getNavigationUrl(null)} className="flex items-center gap-3">
+                  <GitBranch className="h-7 w-7 text-primary" />
+                  <div className="text-2xl font-bold text-gray-900">ecscd</div>
+                </Link>
+                <div className="text-sm font-medium text-gray-500">{syncStatsLabel}</div>
+              </div>
             </header>
             <section
               className={`sticky top-16 z-10 h-[76px] bg-gray-50 px-4 sm:px-6 lg:top-0 lg:px-8 transition-shadow ${
