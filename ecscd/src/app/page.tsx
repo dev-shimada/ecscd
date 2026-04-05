@@ -461,6 +461,7 @@ export default function Home() {
                         variant="destructive"
                         onClick={() => handleRollback(selectedApp.name)}
                         disabled={!hasActiveDeployment}
+                        className="ui-soft-in"
                       >
                         <Undo2 className="h-4 w-4 mr-2" />
                         Rollback
@@ -469,9 +470,20 @@ export default function Home() {
                     <Button
                       onClick={() => handleSync(selectedApp.name)}
                       disabled={hasActiveDeployment}
+                      className={`relative min-w-[132px] pl-9 pr-3 justify-center ${
+                        hasActiveDeployment
+                          ? "bg-zinc-200 text-zinc-700 hover:bg-zinc-200"
+                          : ""
+                      }`}
                     >
-                      <Play className="h-4 w-4 mr-2" />
-                      {hasActiveDeployment ? "Deploying..." : "Sync"}
+                      <Play
+                        className={`absolute left-3 h-4 w-4 ${
+                          hasActiveDeployment ? "animate-spin" : ""
+                        }`}
+                      />
+                      <span className="w-full text-center">
+                        {hasActiveDeployment ? "Deploying..." : "Sync"}
+                      </span>
                     </Button>
                   </div>
                 </div>

@@ -130,6 +130,17 @@ body {
   }
 }
 
+@keyframes ui-soft-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 .ui-fade-in {
   animation: ui-fade-in 160ms ease-out both;
 }
@@ -143,10 +154,15 @@ body {
   animation: ui-dropdown-in 140ms ease-out both;
 }
 
+.ui-soft-in {
+  animation: ui-soft-in 180ms ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ui-fade-in,
   .ui-pop-in,
-  .ui-dropdown-in {
+  .ui-dropdown-in,
+  .ui-soft-in {
     animation: none;
   }
 }
