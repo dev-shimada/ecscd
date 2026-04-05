@@ -108,9 +108,7 @@ export function DiffViewer({
     const statusTextClass =
       status === 'Failed'
         ? 'text-rose-700'
-        : status === 'Deploying'
-          ? 'text-amber-700'
-          : 'text-muted-foreground';
+        : 'text-muted-foreground';
 
     return (
       <section className="w-full">
