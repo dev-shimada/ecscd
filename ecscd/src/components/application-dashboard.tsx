@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { DiffViewer } from "@/components/diff-viewer";
 import { NewApplicationDialog } from "@/components/new-application-dialog";
@@ -119,9 +120,19 @@ function getGitTaskDefinitionUrl(application: ApplicationDomain) {
   return `${repo}/blob/${branch}/${path}`;
 }
 
-export default function Home() {
+export function ApplicationDashboard() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedAppNameFromRoute = useMemo(() => {
+    const match = pathname.match(/^\/apps\/([^/]+)$/);
+    return match ? decodeURIComponent(match[1]) : null;
+  }, [pathname]);
+
   const [applications, setApplications] = useState<ApplicationDomain[]>([]);
-  const [selectedAppName, setSelectedAppName] = useState<string | null>(null);
+  const [selectedAppName, setSelectedAppName] = useState<string | null>(
+    selectedAppNameFromRoute
+  );
   const [diffData, setDiffData] = useState<DiffResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isDiffLoading, setIsDiffLoading] = useState(false);
@@ -154,6 +165,20 @@ export default function Home() {
     );
   }, [deployingApps, selectedApp]);
 
+  const getNavigationUrl = useCallback(
+    (appName?: string | null) => {
+      const params = new URLSearchParams(searchParams.toString());
+      const query = params.toString();
+      const pathname = appName ? `/apps/${encodeURIComponent(appName)}` : "/";
+      return query ? `${pathname}?${query}` : pathname;
+    },
+    [searchParams]
+  );
+
+  useEffect(() => {
+    setSelectedAppName(selectedAppNameFromRoute);
+  }, [selectedAppNameFromRoute]);
+
   const handleFilterChange = useCallback(
     (pattern: string, isInitializing = false) => {
       setFilterPattern(pattern);
@@ -181,11 +206,19 @@ export default function Home() {
         if (loadedApplications.length === 0) {
           return null;
         }
+
+        if (selectedAppNameFromRoute) {
+          const routeAppExists = loadedApplications.some(
+            (app) => app.name === selectedAppNameFromRoute
+          );
+          return routeAppExists ? selectedAppNameFromRoute : null;
+        }
+
         if (!prev) {
-          return loadedApplications[0].name;
+          return null;
         }
         const stillExists = loadedApplications.some((app) => app.name === prev);
-        return stillExists ? prev : loadedApplications[0].name;
+        return stillExists ? prev : null;
       });
     } catch (error) {
       console.error("Failed to load applications:", error);
@@ -193,7 +226,7 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  }, [filterPattern]);
+  }, [filterPattern, selectedAppNameFromRoute]);
 
   const loadDiff = useCallback(async (appName: string) => {
     setIsDiffLoading(true);
@@ -336,9 +369,10 @@ export default function Home() {
       if (selectedAppName === appName) {
         setSelectedAppName(null);
         setDiffData(null);
+        router.push(getNavigationUrl(null), { scroll: false });
       }
     },
-    [loadApplications, selectedAppName]
+    [getNavigationUrl, loadApplications, router, selectedAppName]
   );
 
   const handleOpenEditDialog = useCallback((application: ApplicationDomain) => {
@@ -447,11 +481,17 @@ export default function Home() {
                   key={application.name}
                   role="button"
                   tabIndex={0}
-                  onClick={() => setSelectedAppName(application.name)}
+                  onClick={() =>
+                    router.push(getNavigationUrl(application.name), {
+                      scroll: false,
+                    })
+                  }
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
-                      setSelectedAppName(application.name);
+                      router.push(getNavigationUrl(application.name), {
+                        scroll: false,
+                      });
                     }
                   }}
                   className={`w-full text-left rounded-md px-3 py-2 transition-colors ${
@@ -512,184 +552,183 @@ export default function Home() {
         }}
         className="subtle-scrollbar min-h-0 overflow-y-auto relative shadow-[-4px_0_14px_rgba(15,23,42,0.12)]"
       >
-          {!selectedApp ? (
-            <div className="h-full flex items-center justify-center text-gray-600">
-              Select an application from the left pane.
-            </div>
-          ) : (
-            <>
-              <section
-                className={`sticky top-0 z-10 h-[76px] bg-gray-50 px-4 sm:px-6 lg:px-8 transition-shadow ${
-                  isDetailsScrolled
-                    ? "shadow-[0_6px_12px_-10px_rgba(15,23,42,0.35)]"
-                    : "shadow-none"
-                }`}
-              >
-                <div className="flex h-full items-center justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <h1 className="text-2xl font-semibold text-gray-900">
-                        {selectedApp.name}
-                      </h1>
-                      <Badge variant={getSyncBadgeVariant(selectedApp.sync.status)}>
-                        {formatSyncStatus(selectedApp.sync.status)}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    <a
-                      href={getEcsDeploymentsConsoleUrl(selectedApp)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm"
-                    >
-                      View in AWS Console
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
-                    <div
-                      className={`overflow-hidden transition-all duration-300 ease-out ${
-                        isSyncActionsVisible
-                          ? "ml-0 max-w-0 opacity-0"
-                          : "ml-3 max-w-[140px] opacity-100"
-                      }`}
-                    >
-                      <Button
-                        onClick={() =>
-                          syncActionsRef.current?.scrollIntoView({
-                            behavior: "smooth",
-                            block: "center",
-                          })
-                        }
-                        aria-hidden={isSyncActionsVisible}
-                        tabIndex={isSyncActionsVisible ? -1 : 0}
-                        className={isSyncActionsVisible ? "pointer-events-none" : ""}
-                      >
-                        <ArrowDown className="h-4 w-4 mr-2" />
-                        Sync...
-                      </Button>
-                    </div>
+        {!selectedApp ? (
+          <div className="h-full flex items-center justify-center text-gray-600">
+            Select an application from the left pane.
+          </div>
+        ) : (
+          <>
+            <section
+              className={`sticky top-0 z-10 h-[76px] bg-gray-50 px-4 sm:px-6 lg:px-8 transition-shadow ${
+                isDetailsScrolled
+                  ? "shadow-[0_6px_12px_-10px_rgba(15,23,42,0.35)]"
+                  : "shadow-none"
+              }`}
+            >
+              <div className="flex h-full items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-2xl font-semibold text-gray-900">
+                      {selectedApp.name}
+                    </h1>
+                    <Badge variant={getSyncBadgeVariant(selectedApp.sync.status)}>
+                      {formatSyncStatus(selectedApp.sync.status)}
+                    </Badge>
                   </div>
                 </div>
-              </section>
-
-              <div className="space-y-6 px-4 pb-6 sm:px-6 sm:pb-8 lg:px-8 lg:pb-10">
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                  <div>
-                    <div className="text-gray-500 mb-1">GitHub</div>
-                    <a
-                      href={`${selectedApp.gitConfig.repo.replace(/\/$/, "")}/tree/${encodeURIComponent(
-                        selectedApp.gitConfig.branch
-                      )}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium break-all text-gray-900 hover:underline"
-                    >
-                      {selectedApp.gitConfig.repo} @{selectedApp.gitConfig.branch}
-                    </a>
-                  </div>
-                  <div>
-                    <div className="text-gray-500 mb-1">Task Definition Path</div>
-                    <a
-                      href={getGitTaskDefinitionUrl(selectedApp)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium break-all text-gray-900 hover:underline"
-                    >
-                      {selectedApp.gitConfig.path}
-                    </a>
-                  </div>
-                  <div>
-                    <div className="text-gray-500 mb-1">ECS Cluster</div>
-                    <a
-                      href={getEcsClusterConsoleUrl(selectedApp)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium text-gray-900 hover:underline"
-                    >
-                      {selectedApp.ecsConfig.cluster}
-                    </a>
-                  </div>
-                  <div>
-                    <div className="text-gray-500 mb-1">ECS Service</div>
-                    <a
-                      href={getEcsServiceConsoleUrl(selectedApp)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium text-gray-900 hover:underline"
-                    >
-                      {selectedApp.ecsConfig.service}
-                    </a>
-                  </div>
-                  <div>
-                    <div className="text-gray-500 mb-1">AWS Region</div>
-                    <div className="font-medium">
-                      {selectedApp.awsConfig.region || "us-east-1"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500 mb-1 flex items-center gap-2">
-                      <Clock className="h-3.5 w-3.5" />
-                      Last Synced
-                    </div>
-                    <div className="font-medium">
-                      {formatLastSyncTime(selectedApp.sync.lastSyncedAt)}
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-
-              {isDiffLoading ? (
-                <div className="px-4 pb-8 sm:px-6 lg:px-8 py-12 flex items-center justify-center text-gray-600">
-                  <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-                  Loading diff...
-                </div>
-              ) : (
-                <div className="px-4 pb-8 sm:px-6 lg:px-8">
-                  <DiffViewer
-                    diffs={diffData?.diffs || []}
-                    summary={diffData?.summary || `${(diffData?.diffs || []).length} changes`}
-                    isLoading={hasActiveDeployment}
-                    error={diffData?.error}
-                  />
-                </div>
-              )}
-
-              <div ref={syncActionsRef} className="px-4 pb-8 sm:px-6 lg:px-8">
-                <div className="flex justify-end">
-                  <div className="flex items-center gap-2">
-                    {hasActiveDeployment && (
-                      <Button
-                        variant="destructive"
-                        onClick={() => handleRollback(selectedApp.name)}
-                        disabled={!hasActiveDeployment}
-                        className="ui-soft-in"
-                      >
-                        <Undo2 className="h-4 w-4 mr-2" />
-                        Rollback
-                      </Button>
-                    )}
+                <div className="flex items-center">
+                  <a
+                    href={getEcsDeploymentsConsoleUrl(selectedApp)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    View in AWS Console
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ease-out ${
+                      isSyncActionsVisible
+                        ? "ml-0 max-w-0 opacity-0"
+                        : "ml-3 max-w-[140px] opacity-100"
+                    }`}
+                  >
                     <Button
-                      onClick={() => handleSync(selectedApp.name)}
-                      disabled={hasActiveDeployment}
-                      className={`${
-                        hasActiveDeployment
-                          ? "ui-expand-in bg-zinc-200 text-zinc-700 hover:bg-zinc-200"
-                          : ""
-                      }`}
+                      onClick={() =>
+                        syncActionsRef.current?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "center",
+                        })
+                      }
+                      aria-hidden={isSyncActionsVisible}
+                      tabIndex={isSyncActionsVisible ? -1 : 0}
+                      className={isSyncActionsVisible ? "pointer-events-none" : ""}
                     >
-                      <Play
-                        className={`h-4 w-4 mr-2 ${
-                          hasActiveDeployment ? "animate-spin" : ""
-                        }`}
-                      />
-                      <span>{hasActiveDeployment ? "Deploying..." : "Sync"}</span>
+                      <ArrowDown className="h-4 w-4 mr-2" />
+                      Sync...
                     </Button>
                   </div>
                 </div>
               </div>
-            </>
-          )}
+            </section>
+
+            <div className="space-y-6 px-4 pb-6 sm:px-6 sm:pb-8 lg:px-8 lg:pb-10">
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                <div>
+                  <div className="text-gray-500 mb-1">GitHub</div>
+                  <a
+                    href={`${selectedApp.gitConfig.repo.replace(/\/$/, "")}/tree/${encodeURIComponent(
+                      selectedApp.gitConfig.branch
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium break-all text-gray-900 hover:underline"
+                  >
+                    {selectedApp.gitConfig.repo} @{selectedApp.gitConfig.branch}
+                  </a>
+                </div>
+                <div>
+                  <div className="text-gray-500 mb-1">Task Definition Path</div>
+                  <a
+                    href={getGitTaskDefinitionUrl(selectedApp)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium break-all text-gray-900 hover:underline"
+                  >
+                    {selectedApp.gitConfig.path}
+                  </a>
+                </div>
+                <div>
+                  <div className="text-gray-500 mb-1">ECS Cluster</div>
+                  <a
+                    href={getEcsClusterConsoleUrl(selectedApp)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-gray-900 hover:underline"
+                  >
+                    {selectedApp.ecsConfig.cluster}
+                  </a>
+                </div>
+                <div>
+                  <div className="text-gray-500 mb-1">ECS Service</div>
+                  <a
+                    href={getEcsServiceConsoleUrl(selectedApp)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-gray-900 hover:underline"
+                  >
+                    {selectedApp.ecsConfig.service}
+                  </a>
+                </div>
+                <div>
+                  <div className="text-gray-500 mb-1">AWS Region</div>
+                  <div className="font-medium">
+                    {selectedApp.awsConfig.region || "us-east-1"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-gray-500 mb-1 flex items-center gap-2">
+                    <Clock className="h-3.5 w-3.5" />
+                    Last Synced
+                  </div>
+                  <div className="font-medium">
+                    {formatLastSyncTime(selectedApp.sync.lastSyncedAt)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {isDiffLoading ? (
+              <div className="px-4 pb-8 sm:px-6 lg:px-8 py-12 flex items-center justify-center text-gray-600">
+                <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+                Loading diff...
+              </div>
+            ) : (
+              <div className="px-4 pb-8 sm:px-6 lg:px-8">
+                <DiffViewer
+                  diffs={diffData?.diffs || []}
+                  summary={diffData?.summary || `${(diffData?.diffs || []).length} changes`}
+                  isLoading={hasActiveDeployment}
+                  error={diffData?.error}
+                />
+              </div>
+            )}
+
+            <div ref={syncActionsRef} className="px-4 pb-8 sm:px-6 lg:px-8">
+              <div className="flex justify-end">
+                <div className="flex items-center gap-2">
+                  {hasActiveDeployment && (
+                    <Button
+                      variant="destructive"
+                      onClick={() => handleRollback(selectedApp.name)}
+                      disabled={!hasActiveDeployment}
+                      className="ui-soft-in"
+                    >
+                      <Undo2 className="h-4 w-4 mr-2" />
+                      Rollback
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => handleSync(selectedApp.name)}
+                    disabled={hasActiveDeployment}
+                    className={`${
+                      hasActiveDeployment
+                        ? "ui-expand-in bg-zinc-200 text-zinc-700 hover:bg-zinc-200"
+                        : ""
+                    }`}
+                  >
+                    <Play
+                      className={`h-4 w-4 mr-2 ${
+                        hasActiveDeployment ? "animate-spin" : ""
+                      }`}
+                    />
+                    <span>{hasActiveDeployment ? "Deploying..." : "Sync"}</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </main>
 
       <NewApplicationDialog
