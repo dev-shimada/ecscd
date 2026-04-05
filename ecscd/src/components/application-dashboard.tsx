@@ -321,23 +321,6 @@ export function ApplicationDashboard({
     [applications, loadApplication, router]
   );
 
-  const syncStatsLabel = useMemo(() => {
-    const visibleReadModels = visibleApplications.map(
-      (application) => getCachedReadModel(application)?.application || application
-    );
-    const total = visibleReadModels.length;
-    const inSyncCount = visibleReadModels.filter(
-      (application) => application.status === "InSync"
-    ).length;
-
-    if (total === 0) {
-      return "0% (0/0) In Sync";
-    }
-
-    const percent = Math.round((inSyncCount / total) * 100);
-    return `${percent}% (${inSyncCount}/${total}) In Sync`;
-  }, [cacheVersion, visibleApplications]);
-
   return (
     <div className="h-screen bg-gray-50 grid grid-cols-1 lg:grid-cols-[360px_1fr]">
       <aside
@@ -346,16 +329,14 @@ export function ApplicationDashboard({
         }`}
       >
         <header className="h-16 shrink-0 px-4 sm:px-6 flex items-center relative">
-          <div className="flex w-full items-center justify-between gap-4">
+          <div className="flex w-full items-center gap-4">
             <Link
-              href={buildDashboardHref(null, filterPattern)}
               href={buildDashboardHref(null, filterPattern, selectedStatuses)}
               className="flex items-center gap-3"
             >
               <GitBranch className="h-7 w-7 text-primary" />
               <h1 className="text-2xl font-bold text-gray-900">ecscd</h1>
             </Link>
-            <div className="text-sm font-medium text-gray-500">{syncStatsLabel}</div>
           </div>
         </header>
 
@@ -435,9 +416,8 @@ export function ApplicationDashboard({
           isDetailRoute={isDetailRoute}
           mobileHeader={
             <header className="sticky top-0 z-20 h-16 bg-gray-50 px-4 sm:px-6 lg:hidden">
-              <div className="flex h-full items-center justify-between gap-4">
+              <div className="flex h-full items-center gap-4">
                 <Link
-                  href={buildDashboardHref(null, filterPattern)}
                   href={buildDashboardHref(
                     null,
                     filterPattern,
@@ -448,9 +428,6 @@ export function ApplicationDashboard({
                   <GitBranch className="h-7 w-7 text-primary" />
                   <div className="text-2xl font-bold text-gray-900">ecscd</div>
                 </Link>
-                <div className="text-sm font-medium text-gray-500">
-                  {syncStatsLabel}
-                </div>
               </div>
             </header>
           }
