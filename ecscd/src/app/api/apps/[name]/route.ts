@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { au } from "@/lib/di";
+import { au, du } from "@/lib/di";
 
 export async function GET(
   request: NextRequest,
@@ -22,7 +22,34 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ application });
+    let diffs = [];
+    let diffError: string | undefined;
+
+    if (
+      application.sync.status !== "Error" &&
+      application.service &&
+      application.service.status === "ACTIVE"
+    ) {
+      try {
+        diffs = await du.diff(application);
+      } catch (error) {
+        diffError =
+          error instanceof Error
+            ? error.message
+            : "Failed to load configuration diff.";
+      }
+    } else if (application.reason) {
+      diffError = application.reason;
+    }
+
+    return NextResponse.json({
+      application,
+      diff: {
+        diffs,
+        summary: `${diffs.length} changes`,
+        error: diffError,
+      },
+    });
   } catch (error) {
     console.error("Error fetching application:", error);
     return NextResponse.json(
@@ -47,10 +74,8 @@ export async function PUT(
       );
     }
 
-    // Check if application with the given name exists
-    const existingApps = await au.getApplications();
-    const appIndex = existingApps.findIndex((app) => app.name === name);
-    if (appIndex === -1) {
+    const existingApp = await au.getApplicationConfig(name);
+    if (!existingApp) {
       return NextResponse.json(
         { error: "Application not found" },
         { status: 404 }
@@ -58,7 +83,7 @@ export async function PUT(
     }
 
     const updatedApp = {
-      ...existingApps[appIndex],
+      ...existingApp,
       name,
       gitConfig,
       ecsConfig,
@@ -84,7 +109,6 @@ export async function DELETE(
   { params }: { params: Promise<{ name: string }> }
 ) {
   try {
-    // Check if application with the given name exists
     const { name } = await params;
     if (!name) {
       return NextResponse.json(
@@ -92,9 +116,8 @@ export async function DELETE(
         { status: 400 }
       );
     }
-    const existingApps = await au.getApplications();
-    const appIndex = existingApps.findIndex((app) => app.name === name);
-    if (appIndex === -1) {
+    const existingApp = await au.getApplicationConfig(name);
+    if (!existingApp) {
       return NextResponse.json(
         { error: "Application not found" },
         { status: 404 }

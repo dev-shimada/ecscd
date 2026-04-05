@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ApplicationDomain } from "@/lib/domain/application";
 import { au, du } from "@/lib/di";
 
 export async function POST(
@@ -14,17 +13,13 @@ export async function POST(
         { status: 400 }
       );
     }
-    // Check if application with the given name exists
-    const existingApps = await au.getApplications();
-    const appIndex = existingApps.findIndex((app) => app.name === name);
-    if (appIndex === -1) {
+    const application = await au.getApplicationConfig(name);
+    if (!application) {
       return NextResponse.json(
         { error: "Application not found" },
         { status: 404 }
       );
     }
-
-    const application: ApplicationDomain = existingApps[appIndex];
     await du.syncService(application);
     return NextResponse.json(
       { message: "Service synchronized successfully" },
@@ -33,7 +28,10 @@ export async function POST(
   } catch (error) {
     console.error("Error synchronizing service:", error);
     return NextResponse.json(
-      { error: "Failed to synchronize service" },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to synchronize service",
+      },
       { status: 500 }
     );
   }

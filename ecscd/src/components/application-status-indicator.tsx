@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 
 function getApplicationStatusBadgeVariant(status: ApplicationStatus) {
   switch (status) {
+    case "Loading":
+      return "secondary";
     case "InSync":
       return "success";
     case "OutOfSync":
@@ -26,6 +28,8 @@ function getApplicationStatusBadgeVariant(status: ApplicationStatus) {
 
 function getApplicationStatusDotClass(status: ApplicationStatus) {
   switch (status) {
+    case "Loading":
+      return "bg-zinc-400";
     case "InSync":
       return "bg-emerald-500";
     case "OutOfSync":
@@ -41,6 +45,8 @@ function getApplicationStatusDotClass(status: ApplicationStatus) {
 
 function getApplicationStatusTextClass(status: ApplicationStatus) {
   switch (status) {
+    case "Loading":
+      return "text-zinc-700";
     case "InSync":
       return "text-emerald-700";
     case "OutOfSync":
@@ -56,6 +62,8 @@ function getApplicationStatusTextClass(status: ApplicationStatus) {
 
 function formatApplicationStatus(status: ApplicationStatus) {
   switch (status) {
+    case "Loading":
+      return "Loading";
     case "InSync":
       return "In Sync";
     case "OutOfSync":
@@ -84,12 +92,17 @@ function StatusReasonPopover({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [isPositionReady, setIsPositionReady] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const isVisible = isOpen || isHovered;
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {
@@ -169,7 +182,7 @@ function StatusReasonPopover({
       >
         {children}
       </button>
-      {typeof document !== "undefined"
+      {isMounted
         ? createPortal(
             <div
               className={cn(

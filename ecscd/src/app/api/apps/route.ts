@@ -50,9 +50,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if application with same name already exists
-    const existingApps = await au.getApplications();
-    if (existingApps.find((app) => app.name === name)) {
+    const existingApplication = await au.getApplicationConfig(name);
+    if (existingApplication) {
       return NextResponse.json(
         { error: "Application with this name already exists" },
         { status: 409 }

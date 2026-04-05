@@ -1,6 +1,7 @@
 export type ApplicationSyncStatus = "InSync" | "OutOfSync" | "Error";
 
 export type ApplicationStatus =
+  | "Loading"
   | "Error"
   | "Deploying"
   | "Failed"

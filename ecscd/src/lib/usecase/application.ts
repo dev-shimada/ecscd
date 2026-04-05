@@ -3,8 +3,10 @@ import { ApplicationRepository } from "../repository/application";
 import { DeploymentRepository } from "../repository/deployment";
 
 export interface IApplicationUsecase {
+  getApplicationConfigs(): Promise<ApplicationDomain[]>;
   getApplications(): Promise<ApplicationDomain[]>;
   getApplicationNames(): Promise<string[]>;
+  getApplicationConfig(name: string): Promise<ApplicationDomain | null>;
   getApplication(name: string): Promise<ApplicationDomain | null>;
   getService(
     application: ApplicationDomain
@@ -18,6 +20,10 @@ export class ApplicationUsecase implements IApplicationUsecase {
     private applicationRepository: ApplicationRepository,
     private deploymentRepository: DeploymentRepository
   ) {}
+
+  async getApplicationConfigs(): Promise<ApplicationDomain[]> {
+    return this.applicationRepository.getApplicationConfigs();
+  }
 
   async getApplications(): Promise<ApplicationDomain[]> {
     const applications = await this.applicationRepository.getApplications();
@@ -56,6 +62,10 @@ export class ApplicationUsecase implements IApplicationUsecase {
 
   async getApplicationNames(): Promise<string[]> {
     return this.applicationRepository.getApplicationNames();
+  }
+
+  async getApplicationConfig(name: string): Promise<ApplicationDomain | null> {
+    return this.applicationRepository.getApplicationConfig(name);
   }
 
   async getApplication(name: string): Promise<ApplicationDomain | null> {

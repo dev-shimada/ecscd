@@ -9,8 +9,18 @@ export class Application implements ApplicationRepository {
     this.db = db;
   }
 
-  async getApplications(): Promise<ApplicationDomain[]> {
+  async getApplicationConfigs(): Promise<ApplicationDomain[]> {
     const applications = await this.db.getApplications();
+
+    return applications.map((app) => ({
+      ...app,
+      status: "Loading",
+      reason: "Loading latest status...",
+    }));
+  }
+
+  async getApplications(): Promise<ApplicationDomain[]> {
+    const applications = await this.getApplicationConfigs();
 
     // 並列でECSサービス情報を取得
     await Promise.all(
@@ -43,9 +53,13 @@ export class Application implements ApplicationRepository {
     return this.db.getApplicationNames();
   }
 
+  async getApplicationConfig(name: string): Promise<ApplicationDomain | null> {
+    const applications = await this.getApplicationConfigs();
+    return applications.find((a) => a.name === name) || null;
+  }
+
   async getApplication(name: string): Promise<ApplicationDomain | null> {
-    const applications = await this.db.getApplications();
-    const app = applications.find((a) => a.name === name);
+    const app = await this.getApplicationConfig(name);
     if (!app) {
       return null;
     }
