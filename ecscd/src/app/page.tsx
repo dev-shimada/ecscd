@@ -82,13 +82,41 @@ function formatLastSyncTime(date?: Date) {
   return "Just now";
 }
 
-function getEcsConsoleUrl(application: ApplicationDomain) {
+function getEcsDeploymentsConsoleUrl(application: ApplicationDomain) {
   const region = application.awsConfig.region || "us-east-1";
   const cluster = application.ecsConfig.cluster;
   const service = application.ecsConfig.service;
   return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${encodeURIComponent(
     cluster
   )}/services/${encodeURIComponent(service)}/deployments?region=${region}`;
+}
+
+function getEcsClusterConsoleUrl(application: ApplicationDomain) {
+  const region = application.awsConfig.region || "us-east-1";
+  const cluster = application.ecsConfig.cluster;
+  return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${encodeURIComponent(
+    cluster
+  )}?region=${region}`;
+}
+
+function getEcsServiceConsoleUrl(application: ApplicationDomain) {
+  const region = application.awsConfig.region || "us-east-1";
+  const cluster = application.ecsConfig.cluster;
+  const service = application.ecsConfig.service;
+  return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${encodeURIComponent(
+    cluster
+  )}/services/${encodeURIComponent(service)}?region=${region}`;
+}
+
+function getGitTaskDefinitionUrl(application: ApplicationDomain) {
+  const repo = application.gitConfig.repo.replace(/\/$/, "");
+  const branch = encodeURIComponent(application.gitConfig.branch);
+  const path = application.gitConfig.path
+    .replace(/^\/+/, "")
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+  return `${repo}/blob/${branch}/${path}`;
 }
 
 export default function Home() {
@@ -510,7 +538,7 @@ export default function Home() {
                   </div>
                   <div className="flex items-center">
                     <a
-                      href={getEcsConsoleUrl(selectedApp)}
+                      href={getEcsDeploymentsConsoleUrl(selectedApp)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm"
@@ -548,20 +576,49 @@ export default function Home() {
                 <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                   <div>
                     <div className="text-gray-500 mb-1">GitHub</div>
-                    <div className="font-medium break-all">{selectedApp.gitConfig.repo}</div>
-                    <div className="text-gray-600">@{selectedApp.gitConfig.branch}</div>
+                    <a
+                      href={`${selectedApp.gitConfig.repo.replace(/\/$/, "")}/tree/${encodeURIComponent(
+                        selectedApp.gitConfig.branch
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium break-all text-gray-900 hover:underline"
+                    >
+                      {selectedApp.gitConfig.repo} @{selectedApp.gitConfig.branch}
+                    </a>
                   </div>
                   <div>
                     <div className="text-gray-500 mb-1">Task Definition Path</div>
-                    <div className="font-medium break-all">{selectedApp.gitConfig.path}</div>
+                    <a
+                      href={getGitTaskDefinitionUrl(selectedApp)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium break-all text-gray-900 hover:underline"
+                    >
+                      {selectedApp.gitConfig.path}
+                    </a>
                   </div>
                   <div>
                     <div className="text-gray-500 mb-1">ECS Cluster</div>
-                    <div className="font-medium">{selectedApp.ecsConfig.cluster}</div>
+                    <a
+                      href={getEcsClusterConsoleUrl(selectedApp)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-gray-900 hover:underline"
+                    >
+                      {selectedApp.ecsConfig.cluster}
+                    </a>
                   </div>
                   <div>
                     <div className="text-gray-500 mb-1">ECS Service</div>
-                    <div className="font-medium">{selectedApp.ecsConfig.service}</div>
+                    <a
+                      href={getEcsServiceConsoleUrl(selectedApp)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-gray-900 hover:underline"
+                    >
+                      {selectedApp.ecsConfig.service}
+                    </a>
                   </div>
                   <div>
                     <div className="text-gray-500 mb-1">AWS Region</div>
