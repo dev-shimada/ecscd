@@ -28,9 +28,9 @@ export function getApplicationStatusDotClass(status: ApplicationStatus) {
     case "OutOfSync":
       return "bg-yellow-500";
     case "Deploying":
-      return "bg-sky-500";
+      return "bg-yellow-500";
     case "Failed":
-      return "bg-orange-500";
+      return "bg-rose-500";
     case "Error":
       return "bg-rose-500";
     default:
@@ -45,11 +45,11 @@ export function getApplicationStatusTextClass(status: ApplicationStatus) {
     case "InSync":
       return "text-emerald-700";
     case "OutOfSync":
-      return "text-yellow-700";
+      return "text-amber-700";
     case "Deploying":
-      return "text-sky-700";
+      return "text-amber-700";
     case "Failed":
-      return "text-orange-700";
+      return "text-rose-700";
     case "Error":
       return "text-rose-700";
     default:
@@ -66,9 +66,9 @@ export function getApplicationStatusBadgeClass(status: ApplicationStatus) {
     case "OutOfSync":
       return "border-transparent bg-yellow-500 text-white";
     case "Deploying":
-      return "border-transparent bg-sky-500 text-white";
+      return "border-transparent bg-yellow-500 text-white";
     case "Failed":
-      return "border-transparent bg-orange-500 text-white";
+      return "border-transparent bg-rose-500 text-white";
     case "Error":
       return "border-transparent bg-rose-500 text-white";
     default:

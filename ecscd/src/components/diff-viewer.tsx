@@ -107,9 +107,9 @@ export function DiffViewer({
     const status = application?.status;
     const statusTextClass =
       status === 'Failed'
-        ? 'text-orange-700'
+        ? 'text-rose-700'
         : status === 'Deploying'
-          ? 'text-sky-700'
+          ? 'text-amber-700'
           : 'text-muted-foreground';
 
     return (
