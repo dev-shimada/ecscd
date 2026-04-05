@@ -155,8 +155,14 @@ export function DashboardSyncActions({
           }`}
           style={{ width: `${syncButtonWidth}px` }}
         >
-          <Play className={`h-4 w-4 mr-2 ${isDeploying ? "animate-spin" : ""}`} />
-          {syncLabel}
+          <span className="inline-flex items-center justify-center gap-2 leading-none">
+            <Play
+              className={`h-4 w-4 shrink-0 ${
+                isDeploying ? "animate-spin" : ""
+              }`}
+            />
+            <span className="leading-none">{syncLabel}</span>
+          </span>
         </Button>
       </div>
     </div>

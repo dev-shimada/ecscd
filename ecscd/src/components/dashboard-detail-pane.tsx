@@ -124,8 +124,10 @@ export function DashboardDetailPane({
                   tabIndex={isSyncActionsVisible ? -1 : 0}
                   className={isSyncActionsVisible ? "pointer-events-none" : ""}
                 >
-                  <ArrowDown className="h-4 w-4 mr-2" />
-                  Sync...
+                  <span className="inline-flex items-center justify-center gap-2 leading-none">
+                    <ArrowDown className="h-4 w-4 shrink-0" />
+                    <span className="leading-none">Sync...</span>
+                  </span>
                 </Button>
               </div>
             ) : null}
