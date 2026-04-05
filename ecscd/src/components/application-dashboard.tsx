@@ -352,7 +352,9 @@ export function ApplicationDashboard({
           list={
             visibleApplications.length === 0 ? (
               <div className="p-4 text-sm text-gray-600">
-                No applications configured yet
+                {applications.length === 0
+                  ? "No applications configured yet"
+                  : "No applications match the current filters"}
               </div>
             ) : (
               <div className="p-2 space-y-1">
