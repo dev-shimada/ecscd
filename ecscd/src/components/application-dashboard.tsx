@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { DiffViewer } from "@/components/diff-viewer";
@@ -20,6 +21,7 @@ import {
   ExternalLink,
   Clock,
   ArrowDown,
+  ArrowLeft,
 } from "lucide-react";
 
 type DiffResponse = {
@@ -148,6 +150,7 @@ export function ApplicationDashboard() {
   const detailsScrollRef = useRef<HTMLElement | null>(null);
   const syncActionsRef = useRef<HTMLDivElement | null>(null);
   const [isSyncActionsVisible, setIsSyncActionsVisible] = useState(true);
+  const isDetailRoute = selectedAppNameFromRoute !== null;
 
   const selectedApp = useMemo(
     () => applications.find((app) => app.name === selectedAppName) || null,
@@ -435,12 +438,16 @@ export function ApplicationDashboard() {
 
   return (
     <div className="h-screen bg-gray-50 grid grid-cols-1 lg:grid-cols-[360px_1fr]">
-      <aside className="bg-white flex flex-col min-h-0 relative">
+      <aside
+        className={`bg-white flex flex-col min-h-0 relative ${
+          isDetailRoute ? "hidden lg:flex" : "flex"
+        }`}
+      >
         <header className="h-16 shrink-0 px-4 sm:px-6 flex items-center relative">
-          <div className="flex items-center gap-3">
+          <Link href={getNavigationUrl(null)} className="flex items-center gap-3">
             <GitBranch className="h-7 w-7 text-primary" />
             <h1 className="text-2xl font-bold text-gray-900">ecscd</h1>
-          </div>
+          </Link>
         </header>
 
         <div
@@ -550,27 +557,43 @@ export function ApplicationDashboard() {
           setIsDetailsScrolled(event.currentTarget.scrollTop > 0);
           updateSyncActionsVisibility();
         }}
-        className="subtle-scrollbar min-h-0 overflow-y-auto relative shadow-[-4px_0_14px_rgba(15,23,42,0.12)]"
+        className={`subtle-scrollbar min-h-0 overflow-y-auto relative shadow-[-4px_0_14px_rgba(15,23,42,0.12)] ${
+          isDetailRoute ? "block" : "hidden lg:block"
+        }`}
       >
         {!selectedApp ? (
           <div className="h-full flex items-center justify-center text-gray-600">
-            Select an application from the left pane.
+            {isDetailRoute ? "Application not found." : "Select an application from the left pane."}
           </div>
         ) : (
           <>
+            <header className="sticky top-0 z-20 h-16 bg-gray-50 px-4 sm:px-6 lg:hidden">
+              <Link href={getNavigationUrl(null)} className="flex h-full items-center gap-3">
+                <GitBranch className="h-7 w-7 text-primary" />
+                <div className="text-2xl font-bold text-gray-900">ecscd</div>
+              </Link>
+            </header>
             <section
-              className={`sticky top-0 z-10 h-[76px] bg-gray-50 px-4 sm:px-6 lg:px-8 transition-shadow ${
+              className={`sticky top-16 z-10 h-[76px] bg-gray-50 px-4 sm:px-6 lg:top-0 lg:px-8 transition-shadow ${
                 isDetailsScrolled
                   ? "shadow-[0_6px_12px_-10px_rgba(15,23,42,0.35)]"
                   : "shadow-none"
-              }`}
-            >
-              <div className="flex h-full items-center justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h1 className="text-2xl font-semibold text-gray-900">
-                      {selectedApp.name}
-                    </h1>
+                }`}
+              >
+                <div className="flex h-full items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => router.push(getNavigationUrl(null), { scroll: false })}
+                        className="h-8 w-8 lg:hidden"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                      </Button>
+                      <h1 className="text-2xl font-semibold text-gray-900">
+                        {selectedApp.name}
+                      </h1>
                     <Badge variant={getSyncBadgeVariant(selectedApp.sync.status)}>
                       {formatSyncStatus(selectedApp.sync.status)}
                     </Badge>
