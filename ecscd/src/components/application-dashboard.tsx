@@ -405,12 +405,21 @@ export function ApplicationDashboard({
         <main
           className={`min-h-0 overflow-y-auto relative shadow-[-4px_0_14px_rgba(15,23,42,0.12)] ${
             isDetailRoute ? "block" : "hidden lg:flex"
-          } items-center justify-center`}
+          }`}
         >
-          <div className="text-gray-600">
-            {isDetailRoute
-              ? "Application not found."
-              : "Select an application from the left pane."}
+          <div className="flex min-h-full items-center justify-center px-6 py-10 sm:px-8 lg:px-12">
+            <div className="max-w-md text-center">
+              <div className="text-base font-medium text-gray-900">
+                {isDetailRoute
+                  ? "Application not found"
+                  : "Select an application"}
+              </div>
+              <div className="mt-2 text-sm leading-6 text-gray-600">
+                {isDetailRoute
+                  ? "The requested application does not exist or is no longer available."
+                  : "Choose an application from the left pane to view its configuration and diff."}
+              </div>
+            </div>
           </div>
         </main>
       ) : (
