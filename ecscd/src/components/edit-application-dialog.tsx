@@ -336,7 +336,7 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
             </div>
           </div>
 
-          <div className="flex justify-between gap-3 pt-4">
+          <div className="flex items-center justify-between gap-3 pt-4">
             {application && onDelete ? (
               <Button
                 type="button"
@@ -356,27 +356,29 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
             ) : (
               <div />
             )}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting || isDeleting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting || isDeleting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Updating...
-                </>
-              ) : (
-                <>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Update Application
-                </>
-              )}
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                disabled={isSubmitting || isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting || isDeleting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Update Application
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>
