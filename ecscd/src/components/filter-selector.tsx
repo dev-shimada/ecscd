@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -38,6 +39,8 @@ const STATUS_ORDER: ApplicationStatus[] = [
   "InSync",
 ];
 
+let lastStatusButtonWidth = 104;
+
 export function FilterSelector({
   initialFilter,
   initialFilters,
@@ -63,7 +66,9 @@ export function FilterSelector({
   const rootRef = useRef<HTMLDivElement | null>(null);
   const statusButtonRef = useRef<HTMLButtonElement | null>(null);
   const statusDropdownRef = useRef<HTMLDivElement | null>(null);
-  const [statusButtonWidth, setStatusButtonWidth] = useState(104);
+  const [statusButtonWidth, setStatusButtonWidth] = useState(
+    lastStatusButtonWidth
+  );
 
   useEffect(() => {
     setCurrentFilter(initialFilter);
@@ -77,9 +82,10 @@ export function FilterSelector({
     setSelectedStatuses(initialSelectedStatuses);
   }, [initialSelectedStatuses]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const updateStatusButtonWidth = () => {
       if (selectedStatuses.length === 0) {
+        lastStatusButtonWidth = 104;
         setStatusButtonWidth(104);
         return;
       }
@@ -122,8 +128,7 @@ export function FilterSelector({
               rootWidth - nameFilterMinWidth - filterGapWidth
             )
           : statusButtonMaxWidth;
-      setStatusButtonWidth(
-        Math.min(
+      const nextWidth = Math.min(
           statusButtonMaxWidth,
           availableMaxWidth,
           Math.ceil(
@@ -134,8 +139,10 @@ export function FilterSelector({
               textGap +
               textWidth
           )
-        )
-      );
+        );
+
+      lastStatusButtonWidth = nextWidth;
+      setStatusButtonWidth(nextWidth);
     };
 
     updateStatusButtonWidth();
