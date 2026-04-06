@@ -1,5 +1,5 @@
+import { ApplicationDomain, ServiceDomain } from "../domain/application";
 import { ApplicationRepository } from "../repository/application";
-import { ApplicationDomain, applyApplicationStatus } from "../domain/application";
 import { AWS } from "./aws";
 import { IDatabase } from "./interface/database";
 
@@ -10,20 +10,14 @@ export class Application implements ApplicationRepository {
   }
 
   async getApplicationConfigs(): Promise<ApplicationDomain[]> {
-    const applications = await this.db.getApplications();
-
-    return applications.map((app) => ({
-      ...app,
-      status: "Loading",
-      reason: "Loading latest status...",
-    }));
+    return this.db.getApplications();
   }
 
   async getApplications(): Promise<ApplicationDomain[]> {
     const applications = await this.getApplicationConfigs();
 
     // 並列でECSサービス情報を取得
-    await Promise.all(
+    return Promise.all(
       applications.map(async (app) => {
         try {
           const aws = new AWS();
@@ -32,21 +26,33 @@ export class Application implements ApplicationRepository {
             {
               cluster: app.ecsConfig.cluster,
               service: app.ecsConfig.service,
-            }
+            },
           );
-          app.service = ecsResponse;
+          if (!ecsResponse) {
+            app.service = {
+              status: "Error",
+              reason: "Failed to fetch ECS service state.",
+            };
+            return app;
+          }
+          app.service = {
+            status: "Success",
+            value: ecsResponse,
+          };
+          return app;
         } catch (error) {
           console.warn(`Error fetching ECS service for ${app.name}:`, error);
-          app.reason =
-            error instanceof Error
-              ? error.message
-              : "Failed to fetch ECS service state.";
+          app.service = {
+            status: "Error",
+            reason:
+              error instanceof Error
+                ? error.message
+                : "Failed to fetch ECS service state.",
+          };
+          return app;
         }
-
-        applyApplicationStatus(app);
-      })
+      }),
     );
-    return applications;
   }
 
   async getApplicationNames(): Promise<string[]> {
@@ -72,31 +78,46 @@ export class Application implements ApplicationRepository {
         {
           cluster: app.ecsConfig.cluster,
           service: app.ecsConfig.service,
-        }
+        },
       );
-      app.service = ecsResponse;
+      if (!ecsResponse) {
+        app.service = {
+          status: "Error",
+          reason: "Failed to fetch ECS service state.",
+        };
+        return app;
+      }
+      app.service = {
+        status: "Success",
+        value: ecsResponse,
+      };
+      return app;
     } catch (error) {
       console.warn(`Error fetching ECS service for ${app.name}:`, error);
-      app.reason =
-        error instanceof Error
-          ? error.message
-          : "Failed to fetch ECS service state.";
+      app.service = {
+        status: "Error",
+        reason:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch ECS service state.",
+      };
+      return app;
     }
-
-    return applyApplicationStatus(app);
   }
 
   async getService(
-    application: ApplicationDomain
-  ): Promise<ApplicationDomain["service"]> {
+    application: ApplicationDomain,
+  ): Promise<ServiceDomain | undefined> {
     const applications = await this.db.getApplications();
     const appIndex = applications.findIndex(
-      (app) => app.name === application.name
+      (app) => app.name === application.name,
     );
     if (appIndex === -1) {
       throw new Error("Application not found");
     }
-    return applications[appIndex]["service"];
+    return applications[appIndex].service.status === "Success"
+      ? applications[appIndex].service.value
+      : undefined;
   }
 
   async createApplication(application: ApplicationDomain): Promise<void> {

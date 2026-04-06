@@ -1,31 +1,32 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  ArrowLeft,
-  Clock,
-  ExternalLink,
-  GitBranch,
-} from "lucide-react";
+    ApplicationStatusBadge,
+    ApplicationStatusDot,
+} from "@/components/application-status-indicator";
+import { DashboardDetailPane } from "@/components/dashboard-detail-pane";
+import { DashboardEditApplicationButton } from "@/components/dashboard-edit-application-button";
+import { DashboardNewApplicationButton } from "@/components/dashboard-new-application-button";
+import { DashboardSidebarPane } from "@/components/dashboard-sidebar-pane";
+import { DashboardSyncActions } from "@/components/dashboard-sync-actions";
 import { DiffViewer } from "@/components/diff-viewer";
 import { FilterSelector } from "@/components/filter-selector";
 import {
-  ApplicationStatusBadge,
-  ApplicationStatusDot,
-} from "@/components/application-status-indicator";
-import { DashboardSidebarPane } from "@/components/dashboard-sidebar-pane";
-import { DashboardDetailPane } from "@/components/dashboard-detail-pane";
-import { DashboardNewApplicationButton } from "@/components/dashboard-new-application-button";
-import { DashboardEditApplicationButton } from "@/components/dashboard-edit-application-button";
-import { DashboardSyncActions } from "@/components/dashboard-sync-actions";
-import {
-  ApplicationDomain,
-  ApplicationStatus,
-  DiffDomain,
+    ApplicationDomain,
+    ApplicationStatus,
+    DiffDomain,
+    getApplicationStatus,
 } from "@/lib/domain/application";
 import { FilterDomain } from "@/lib/domain/filter";
+import {
+    ArrowLeft,
+    Clock,
+    ExternalLink,
+    GitBranch,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type DiffResponse = {
   diffs: DiffDomain[];
@@ -65,11 +66,17 @@ function createApplicationErrorState(
 ): ApplicationDomain {
   return {
     ...config,
-    status: "Error",
-    reason,
     sync: {
-      ...config.sync,
       status: "Error",
+      reason,
+    },
+    service: {
+      status: "Error",
+      reason,
+    },
+    diff: {
+      status: "Error",
+      reason,
     },
   };
 }
@@ -224,7 +231,7 @@ export function ApplicationDashboard({
 
     for (const application of nameFilteredApplications) {
       const status =
-        getCachedReadModel(application)?.application.status || application.status;
+        getApplicationStatus(getCachedReadModel(application)?.application || application);
       counts.set(status, (counts.get(status) || 0) + 1);
     }
 
@@ -243,7 +250,7 @@ export function ApplicationDashboard({
     const selectedStatusSet = new Set(selectedStatuses);
     return nameFilteredApplications.filter((application) => {
       const status =
-        getCachedReadModel(application)?.application.status || application.status;
+        getApplicationStatus(getCachedReadModel(application)?.application || application);
       return selectedStatusSet.has(status);
     });
   }, [cacheVersion, nameFilteredApplications, selectedStatuses]);
@@ -444,7 +451,6 @@ export function ApplicationDashboard({
           stickyHeader={
             <div className="flex items-center gap-3">
               <Link
-                href={buildDashboardHref(null, filterPattern)}
                 href={buildDashboardHref(
                   null,
                   filterPattern,
@@ -535,7 +541,9 @@ export function ApplicationDashboard({
                     </div>
                     <div className="font-medium">
                       {formatLastSyncTime(
-                        selectedReadModel?.application.sync.lastSyncedAt
+                        selectedReadModel?.application.sync.status === "Success"
+                          ? selectedReadModel.application.sync.value?.lastSyncedAt
+                          : undefined
                       )}
                     </div>
                   </div>
@@ -565,12 +573,13 @@ export function ApplicationDashboard({
           syncActions={
             <DashboardSyncActions
               applicationName={selectedApplicationConfig.name}
-              status={
-                (selectedReadModel?.application || selectedApplicationConfig).status
-              }
+              status={getApplicationStatus(
+                selectedReadModel?.application || selectedApplicationConfig
+              )}
               hasActiveDeployment={
-                (selectedReadModel?.application || selectedApplicationConfig).status ===
-                "Deploying"
+                getApplicationStatus(
+                  selectedReadModel?.application || selectedApplicationConfig
+                ) === "Deploying"
               }
               onApplicationChanged={handleApplicationChanged}
             />

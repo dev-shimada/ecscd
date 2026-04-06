@@ -1,5 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
 import { au } from "@/lib/di";
+import {
+  ApplicationSyncDomain,
+  createLoadingResource,
+  DiffDomain,
+  ServiceDomain,
+} from "@/lib/domain/application";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +19,7 @@ export async function GET(request: NextRequest) {
       if (filter && filter.trim()) {
         const filterLower = filter.toLowerCase();
         names = names.filter((name) =>
-          name.toLowerCase().includes(filterLower)
+          name.toLowerCase().includes(filterLower),
         );
       }
 
@@ -25,7 +31,7 @@ export async function GET(request: NextRequest) {
     if (filter && filter.trim()) {
       const filterLower = filter.toLowerCase();
       applications = applications.filter((app) =>
-        app.name.toLowerCase().includes(filterLower)
+        app.name.toLowerCase().includes(filterLower),
       );
     }
 
@@ -34,7 +40,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching applications:", error);
     return NextResponse.json(
       { error: "Failed to fetch applications" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -46,7 +52,7 @@ export async function POST(request: NextRequest) {
     if (!name || !gitConfig || !ecsConfig || !awsConfig) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -54,29 +60,30 @@ export async function POST(request: NextRequest) {
     if (existingApplication) {
       return NextResponse.json(
         { error: "Application with this name already exists" },
-        { status: 409 }
+        { status: 409 },
       );
     }
     const newApp = {
       name,
-      status: "Error" as const,
+      sync: createLoadingResource<ApplicationSyncDomain>(),
+      diff: createLoadingResource<DiffDomain[]>(),
       gitConfig,
       ecsConfig,
       awsConfig,
-      sync: { status: "Error" as const },
+      service: createLoadingResource<ServiceDomain>(),
       createdAt: new Date(),
       updatedAt: new Date(),
     };
     await au.createApplication(newApp);
     return NextResponse.json(
       { message: "Application created successfully" },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Error creating application:", error);
     return NextResponse.json(
       { error: "Failed to create application" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

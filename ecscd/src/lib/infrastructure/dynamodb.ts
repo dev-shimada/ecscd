@@ -1,15 +1,15 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
-  DynamoDBDocumentClient,
-  ScanCommand,
-  PutCommand,
-  UpdateCommand,
   DeleteCommand,
+  DynamoDBDocumentClient,
   GetCommand,
+  PutCommand,
+  ScanCommand,
+  UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { IDatabase } from "./interface/database";
-import { ApplicationDomain } from "../domain/application";
+import { ApplicationDomain, createLoadingResource } from "../domain/application";
 import { FilterDomain } from "../domain/filter";
+import { IDatabase } from "./interface/database";
 
 interface ApplicationsModel {
   name: string;
@@ -60,13 +60,13 @@ export class DynamoDB implements IDatabase {
 
       const applications: ApplicationDomain[] = await Promise.all(
         items.map((item) =>
-          this.mapItemToApplication(item as ApplicationsModel)
-        )
+          this.mapItemToApplication(item as ApplicationsModel),
+        ),
       );
 
       return applications.sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
     } catch (error) {
       throw new Error(`Failed to get applications: ${error}`);
@@ -134,7 +134,7 @@ export class DynamoDB implements IDatabase {
         error.name === "ConditionalCheckFailedException"
       ) {
         throw new Error(
-          `Application with name '${application.name}' already exists`
+          `Application with name '${application.name}' already exists`,
         );
       }
       throw new Error(`Failed to create application: ${error}`);
@@ -182,7 +182,7 @@ export class DynamoDB implements IDatabase {
         error.name === "ConditionalCheckFailedException"
       ) {
         throw new Error(
-          `Application with name '${application.name}' does not exist`
+          `Application with name '${application.name}' does not exist`,
         );
       }
       throw new Error(`Failed to update application: ${error}`);
@@ -215,12 +215,12 @@ export class DynamoDB implements IDatabase {
   }
 
   private async mapItemToApplication(
-    item: ApplicationsModel
+    item: ApplicationsModel,
   ): Promise<ApplicationDomain> {
     return {
       name: item.name,
-      status: "InSync",
-      sync: { status: "InSync" },
+      sync: createLoadingResource(),
+      diff: createLoadingResource(),
       gitConfig: {
         repo: item.git_repo,
         branch: item.git_branch,
@@ -235,6 +235,7 @@ export class DynamoDB implements IDatabase {
         roleArn: item.aws_role_arn,
         externalId: item.aws_external_id,
       },
+      service: createLoadingResource(),
       createdAt: new Date(item.created_at),
       updatedAt: new Date(item.updated_at),
     };
@@ -254,12 +255,12 @@ export class DynamoDB implements IDatabase {
       const items = response.Items || [];
 
       const filters: FilterDomain[] = items.map((item) =>
-        this.mapItemToFilter(item as FiltersModel)
+        this.mapItemToFilter(item as FiltersModel),
       );
 
       return filters.sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
     } catch (error) {
       throw new Error(`Failed to get filters: ${error}`);

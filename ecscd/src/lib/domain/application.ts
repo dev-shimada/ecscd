@@ -1,4 +1,5 @@
-export type ApplicationSyncStatus = "InSync" | "OutOfSync" | "Error";
+export type ApplicationSyncStatus = "InSync" | "OutOfSync";
+export type ResourceStatus = "Loading" | "Success" | "Error";
 
 export type ApplicationStatus =
   | "Loading"
@@ -10,12 +11,8 @@ export type ApplicationStatus =
 
 export interface ApplicationDomain {
   name: string;
-  status: ApplicationStatus;
-  reason?: string;
-  sync: {
-    status: ApplicationSyncStatus;
-    lastSyncedAt?: Date;
-  };
+  sync: ResourceResult<ApplicationSyncDomain>;
+  diff: ResourceResult<DiffDomain[]>;
   gitConfig: {
     repo: string;
     branch: string;
@@ -30,9 +27,23 @@ export interface ApplicationDomain {
     roleArn?: string;
     externalId: string;
   };
-  service?: ServiceDomain;
+  service: ResourceResult<ServiceDomain>;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export type ResourceResult<T> =
+  | { status: "Loading" }
+  | { status: "Success"; value: T }
+  | { status: "Error"; reason: string };
+
+export function createLoadingResource<T>(): ResourceResult<T> {
+  return { status: "Loading" };
+}
+
+export interface ApplicationSyncDomain {
+  status: ApplicationSyncStatus;
+  lastSyncedAt?: Date;
 }
 
 export interface ServiceDomain {
@@ -60,37 +71,58 @@ export function deriveApplicationStatus(application: ApplicationDomain): {
   status: ApplicationStatus;
   reason?: string;
 } {
+  if (application.service.status === "Loading") {
+    return {
+      status: "Loading",
+      reason: "Loading ECS service state...",
+    };
+  }
+
+  if (application.service.status === "Error") {
+    return {
+      status: "Error",
+      reason:
+        application.service.reason || "Failed to fetch ECS service state.",
+    };
+  }
+
+  const service = application.service.value;
+
   if (application.sync.status === "Error") {
     return {
       status: "Error",
       reason:
-        application.reason || "Failed to compare ECS and GitHub configuration.",
+        application.sync.reason ||
+        (application.diff.status === "Error"
+          ? application.diff.reason
+          : undefined) ||
+        "Failed to compare ECS and GitHub configuration.",
     };
   }
 
-  if (!application.service) {
+  if (!service) {
     return {
       status: "Error",
-      reason: application.reason || "Failed to fetch ECS service state.",
+      reason: "Failed to fetch ECS service state.",
     };
   }
 
-  if (application.service.status !== "ACTIVE") {
+  if (service.status !== "ACTIVE") {
     return {
       status: "Error",
-      reason: `ECS service is ${application.service.status}. ecscd requires an ACTIVE service.`,
+      reason: `ECS service is ${service.status}. ecscd requires an ACTIVE service.`,
     };
   }
 
   const currentDeployment =
-    application.service.deployments.find(
-      (deployment) => deployment.status === "PRIMARY"
-    ) || application.service.deployments[0];
+    service.deployments.find((deployment) => deployment.status === "PRIMARY") ||
+    service.deployments[0];
 
   if (currentDeployment?.rolloutState === "IN_PROGRESS") {
     return {
       status: "Deploying",
-      reason: currentDeployment.rolloutStateReason || "Deployment is in progress.",
+      reason:
+        currentDeployment.rolloutStateReason || "Deployment is in progress.",
     };
   }
 
@@ -102,7 +134,39 @@ export function deriveApplicationStatus(application: ApplicationDomain): {
     };
   }
 
-  if (application.sync.status === "OutOfSync") {
+  if (application.diff.status === "Loading") {
+    return {
+      status: "Loading",
+      reason: "Loading configuration diff...",
+    };
+  }
+
+  if (application.diff.status === "Error") {
+    return {
+      status: "Error",
+      reason:
+        application.diff.reason ||
+        "Failed to compare ECS and GitHub configuration.",
+    };
+  }
+
+  if (application.sync.status === "Loading") {
+    return {
+      status: "Loading",
+      reason: "Loading sync status...",
+    };
+  }
+
+  const sync = application.sync.value;
+
+  if (!sync) {
+    return {
+      status: "Error",
+      reason: "Failed to determine sync status.",
+    };
+  }
+
+  if (sync.status === "OutOfSync") {
     return {
       status: "OutOfSync",
     };
@@ -113,11 +177,14 @@ export function deriveApplicationStatus(application: ApplicationDomain): {
   };
 }
 
-export function applyApplicationStatus(
-  application: ApplicationDomain
-): ApplicationDomain {
-  const { status, reason } = deriveApplicationStatus(application);
-  application.status = status;
-  application.reason = reason;
-  return application;
+export function getApplicationStatus(
+  application: ApplicationDomain,
+): ApplicationStatus {
+  return deriveApplicationStatus(application).status;
+}
+
+export function getApplicationReason(
+  application: ApplicationDomain,
+): string | undefined {
+  return deriveApplicationStatus(application).reason;
 }

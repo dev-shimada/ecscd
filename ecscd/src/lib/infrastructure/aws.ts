@@ -3,7 +3,7 @@ import {
   DescribeServicesCommand,
   ECSClientConfig,
 } from "@aws-sdk/client-ecs";
-import { ApplicationDomain } from "../domain/application";
+import { ApplicationDomain, ServiceDomain } from "../domain/application";
 import {
   RegisterTaskDefinitionCommand,
   RegisterTaskDefinitionCommandInput,
@@ -75,7 +75,7 @@ export class AWS implements IAws {
   async describeServices(
     client: ECSClient,
     ecsConfig: ApplicationDomain["ecsConfig"]
-  ): Promise<ApplicationDomain["service"]> {
+  ): Promise<ServiceDomain | undefined> {
     const input = {
       cluster: ecsConfig.cluster,
       services: [ecsConfig.service],
@@ -85,7 +85,7 @@ export class AWS implements IAws {
     if (response.failures && response.failures.length > 0) {
       return undefined;
     }
-    const service: ApplicationDomain["service"] = {
+    const service: ServiceDomain = {
       status: response.services?.[0]?.status || "INACTIVE",
       desiredCount: response.services?.[0]?.desiredCount || 0,
       runningCount: response.services?.[0]?.runningCount || 0,

@@ -1,19 +1,21 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
+import {
+    formatApplicationStatus,
+    getApplicationStatusBadgeClass,
+    getApplicationStatusDotClass,
+    getApplicationStatusTextClass,
+} from "@/lib/application-status-ui";
+import {
+    ApplicationDomain,
+    ApplicationStatus,
+    getApplicationReason,
+    getApplicationStatus,
+} from "@/lib/domain/application";
+import { cn } from "@/lib/utils";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import {
-  ApplicationDomain,
-  ApplicationStatus,
-} from "@/lib/domain/application";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import {
-  formatApplicationStatus,
-  getApplicationStatusBadgeClass,
-  getApplicationStatusDotClass,
-  getApplicationStatusTextClass,
-} from "@/lib/application-status-ui";
 
 function StatusReasonPopover({
   label,
@@ -122,7 +124,7 @@ function StatusReasonPopover({
         ? createPortal(
             <div
               className={cn(
-                "pointer-events-none fixed z-[220] w-64 rounded-md border border-zinc-200 bg-white px-3 py-2 text-left text-xs leading-5 text-zinc-700 transition-opacity duration-150 shadow-[0_10px_24px_rgba(15,23,42,0.14)]",
+                "pointer-events-none fixed z-220 w-64 rounded-md border border-zinc-200 bg-white px-3 py-2 text-left text-xs leading-5 text-zinc-700 transition-opacity duration-150 shadow-[0_10px_24px_rgba(15,23,42,0.14)]",
                 isVisible && isPositionReady
                   ? "opacity-100"
                   : "opacity-0"
@@ -154,20 +156,19 @@ export function ApplicationStatusBadge({
 }: {
   application: ApplicationDomain;
 }) {
-  const label = formatApplicationStatus(application.status);
+  const status = getApplicationStatus(application);
+  const reason = getApplicationReason(application);
+  const label = formatApplicationStatus(status);
 
   return (
     <StatusReasonPopover
       label={label}
-      reason={application.reason}
-      status={application.status}
+      reason={reason}
+      status={status}
     >
       <Badge
         variant="secondary"
-        className={cn(
-          "cursor-help",
-          getApplicationStatusBadgeClass(application.status)
-        )}
+        className={cn("cursor-help", getApplicationStatusBadgeClass(status))}
       >
         {label}
       </Badge>
@@ -180,21 +181,23 @@ export function ApplicationStatusDot({
 }: {
   application: ApplicationDomain;
 }) {
-  const label = formatApplicationStatus(application.status);
+  const status = getApplicationStatus(application);
+  const reason = getApplicationReason(application);
+  const label = formatApplicationStatus(status);
 
   return (
     <StatusReasonPopover
       label={label}
-      reason={application.reason}
-      status={application.status}
+      reason={reason}
+      status={status}
     >
       <span
         className={cn(
           "h-2.5 w-2.5 shrink-0 rounded-full",
-          getApplicationStatusDotClass(application.status),
-          application.reason ? "cursor-help" : ""
+          getApplicationStatusDotClass(status),
+          reason ? "cursor-help" : ""
         )}
-        aria-label={`application-status-${application.status}`}
+        aria-label={`application-status-${status}`}
       />
     </StatusReasonPopover>
   );

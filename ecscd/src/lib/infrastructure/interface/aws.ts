@@ -1,4 +1,4 @@
-import { ApplicationDomain } from "../../domain/application";
+import { ApplicationDomain, ServiceDomain } from "../../domain/application";
 import { RegisterTaskDefinitionCommandInput } from "@aws-sdk/client-ecs/dist-types/commands";
 import { ECSClient } from "@aws-sdk/client-ecs";
 
@@ -18,7 +18,7 @@ export interface IAws {
   describeServices(
     client: ECSClient,
     ecsConfig: ApplicationDomain["ecsConfig"]
-  ): Promise<ApplicationDomain["service"]>;
+  ): Promise<ServiceDomain | undefined>;
   describeTaskDefinition(
     client: ECSClient,
     taskDefinitionArn: string

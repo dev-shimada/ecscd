@@ -1,9 +1,13 @@
 'use client';
 
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ApplicationDomain, DiffDomain } from '@/lib/domain/application';
-import { ChevronDown, ChevronRight, Plus, Minus, Edit3, Play } from 'lucide-react';
+import {
+    ApplicationDomain,
+    DiffDomain,
+    getApplicationStatus,
+} from '@/lib/domain/application';
+import { ChevronDown, ChevronRight, Edit3, Minus, Play, Plus } from 'lucide-react';
+import { useState } from 'react';
 
 interface DiffViewerProps {
   application?: ApplicationDomain;
@@ -104,7 +108,7 @@ export function DiffViewer({
   }
 
   if (!diffs || diffs.length === 0) {
-    const status = application?.status;
+    const status = application ? getApplicationStatus(application) : undefined;
     const statusTextClass =
       status === 'Failed'
         ? 'text-rose-700'

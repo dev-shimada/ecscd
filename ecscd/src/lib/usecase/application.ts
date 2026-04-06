@@ -1,4 +1,9 @@
-import { ApplicationDomain, applyApplicationStatus } from "../domain/application";
+import {
+  ApplicationDomain,
+  ApplicationSyncStatus,
+  createLoadingResource,
+  ServiceDomain,
+} from "../domain/application";
 import { ApplicationRepository } from "../repository/application";
 import { DeploymentRepository } from "../repository/deployment";
 
@@ -9,8 +14,8 @@ export interface IApplicationUsecase {
   getApplicationConfig(name: string): Promise<ApplicationDomain | null>;
   getApplication(name: string): Promise<ApplicationDomain | null>;
   getService(
-    application: ApplicationDomain
-  ): Promise<ApplicationDomain["service"]>;
+    application: ApplicationDomain,
+  ): Promise<ServiceDomain | undefined>;
   createApplication(application: ApplicationDomain): Promise<void>;
   updateApplication(application: ApplicationDomain): Promise<void>;
 }
@@ -18,8 +23,71 @@ export interface IApplicationUsecase {
 export class ApplicationUsecase implements IApplicationUsecase {
   constructor(
     private applicationRepository: ApplicationRepository,
-    private deploymentRepository: DeploymentRepository
+    private deploymentRepository: DeploymentRepository,
   ) {}
+
+  private toDiffErrorReason(error: unknown): string {
+    return error instanceof Error
+      ? error.message
+      : "Failed to compare ECS and GitHub configuration.";
+  }
+
+  private toSyncResource(status: ApplicationSyncStatus, lastSyncedAt?: Date) {
+    return {
+      status: "Success" as const,
+      value: {
+        status,
+        lastSyncedAt,
+      },
+    };
+  }
+
+  private async resolveApplication(application: ApplicationDomain) {
+    if (application.service.status !== "Success") {
+      return application;
+    }
+
+    const service = application.service.value;
+    if (!service || service.status !== "ACTIVE") {
+      return application;
+    }
+
+    if (application.sync.status === "Error") {
+      return application;
+    }
+
+    const lastSyncedAt =
+      application.sync.status === "Success"
+        ? application.sync.value?.lastSyncedAt
+        : undefined;
+
+    application.diff = createLoadingResource();
+    application.sync = createLoadingResource();
+
+    try {
+      const deployments = await this.deploymentRepository.diff(application);
+      application.sync = this.toSyncResource(
+        deployments.length > 0 ? "OutOfSync" : "InSync",
+        lastSyncedAt,
+      );
+      application.diff = {
+        status: "Success",
+        value: deployments,
+      };
+      return application;
+    } catch (error) {
+      const reason = this.toDiffErrorReason(error);
+      application.sync = {
+        status: "Error",
+        reason,
+      };
+      application.diff = {
+        status: "Error",
+        reason,
+      };
+      return application;
+    }
+  }
 
   async getApplicationConfigs(): Promise<ApplicationDomain[]> {
     return this.applicationRepository.getApplicationConfigs();
@@ -28,36 +96,7 @@ export class ApplicationUsecase implements IApplicationUsecase {
   async getApplications(): Promise<ApplicationDomain[]> {
     const applications = await this.applicationRepository.getApplications();
 
-    // 並列でdiff（同期状態）を取得
-    // 既にErrorステータスのアプリはスキップ
-    await Promise.all(
-      applications.map(async (app) => {
-        app.reason = undefined;
-
-        if (!app.service || app.service.status !== "ACTIVE") {
-          applyApplicationStatus(app);
-          return;
-        }
-
-        try {
-          const deployments = await this.deploymentRepository.diff(app);
-          if (deployments.length > 0) {
-            app.sync.status = "OutOfSync";
-          } else {
-            app.sync.status = "InSync";
-          }
-        } catch (error) {
-          app.sync.status = "Error";
-          app.reason =
-            error instanceof Error
-              ? error.message
-              : "Failed to compare ECS and GitHub configuration.";
-        }
-
-        applyApplicationStatus(app);
-      })
-    );
-    return applications;
+    return Promise.all(applications.map((app) => this.resolveApplication(app)));
   }
 
   async getApplicationNames(): Promise<string[]> {
@@ -74,31 +113,7 @@ export class ApplicationUsecase implements IApplicationUsecase {
       return null;
     }
 
-    // diff（同期状態）を取得
-    application.reason = undefined;
-
-    if (!application.service || application.service.status !== "ACTIVE") {
-      return applyApplicationStatus(application);
-    }
-
-    if (application.sync.status !== "Error") {
-      try {
-        const deployments = await this.deploymentRepository.diff(application);
-        if (deployments.length > 0) {
-          application.sync.status = "OutOfSync";
-        } else {
-          application.sync.status = "InSync";
-        }
-      } catch (error) {
-        application.sync.status = "Error";
-        application.reason =
-          error instanceof Error
-            ? error.message
-            : "Failed to compare ECS and GitHub configuration.";
-      }
-    }
-
-    return applyApplicationStatus(application);
+    return this.resolveApplication(application);
   }
 
   async createApplication(application: ApplicationDomain): Promise<void> {
@@ -111,8 +126,8 @@ export class ApplicationUsecase implements IApplicationUsecase {
     await this.applicationRepository.deleteApplication(name);
   }
   async getService(
-    application: ApplicationDomain
-  ): Promise<ApplicationDomain["service"]> {
+    application: ApplicationDomain,
+  ): Promise<ServiceDomain | undefined> {
     return this.applicationRepository.getService(application);
   }
 }
