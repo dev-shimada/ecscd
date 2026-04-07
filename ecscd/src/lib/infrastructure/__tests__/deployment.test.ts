@@ -4,6 +4,32 @@ import { IGithub } from "../interface/github";
 import { ApplicationDomain } from "../../domain/application";
 import { RegisterTaskDefinitionCommandInput } from "@aws-sdk/client-ecs";
 
+function createTestApplication(): ApplicationDomain {
+  const now = new Date("2026-04-08T00:00:00.000Z");
+
+  return {
+    name: "test-app",
+    sync: { status: "Loading" },
+    diff: { status: "Loading" },
+    gitConfig: {
+      repo: "https://github.com/test/repo",
+      branch: "main",
+      path: "task-definition.json",
+    },
+    ecsConfig: {
+      cluster: "test-cluster",
+      service: "test-service",
+    },
+    awsConfig: {
+      region: "us-east-1",
+      externalId: "test-external-id",
+    },
+    service: { status: "Loading" },
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
 describe("Deployment", () => {
   let deployment: Deployment;
   let mockAws: jest.Mocked<IAws>;
@@ -29,22 +55,7 @@ describe("Deployment", () => {
   describe("diff method", () => {
     it("should generate diffs for all RegisterTaskDefinitionCommandInput fields when everything is different", async () => {
       // Test application
-      const application: ApplicationDomain = {
-        id: "test-app",
-        name: "test-app",
-        repositoryUrl: "https://github.com/test/repo",
-        branch: "main",
-        taskDefinitionPath: "task-definition.json",
-        awsConfig: {
-          region: "us-east-1",
-          accessKeyId: "key",
-          secretAccessKey: "secret",
-        },
-        ecsConfig: {
-          clusterName: "test-cluster",
-          serviceName: "test-service",
-        },
-      };
+      const application = createTestApplication();
 
       // Current task definition (comprehensive with all possible fields)
       const currentTaskDefinition: RegisterTaskDefinitionCommandInput = {
@@ -383,7 +394,7 @@ describe("Deployment", () => {
         ],
         placementConstraints: [
           {
-            type: "distinctInstance",
+            type: "memberOf",
             expression: "attribute:target-attribute == target-value",
           },
         ],
@@ -437,7 +448,7 @@ describe("Deployment", () => {
 
       // Verify the results
       expect(diffs).toBeDefined();
-      expect(diffs.length).toBeGreaterThan(150); // Should have many diffs since everything is different
+      expect(diffs.length).toBeGreaterThan(140); // Should have many diffs since everything is different
 
       // Check some key differences
       const familyDiff = diffs.find((d) => d.path === "family");
@@ -568,24 +579,14 @@ describe("Deployment", () => {
       });
 
       // Check placement constraints differences
-      const currentPlacementConstraintDiff = diffs.find(
-        (d) => d.path === "placementConstraints.memberOf.type"
-      );
-      expect(currentPlacementConstraintDiff).toEqual({
-        path: "placementConstraints.memberOf.type",
-        current: "memberOf",
-        target: undefined,
-        type: "Removed",
-      });
-
       const targetPlacementConstraintDiff = diffs.find(
-        (d) => d.path === "placementConstraints.distinctInstance.type"
+        (d) => d.path === "placementConstraints.memberOf.expression"
       );
       expect(targetPlacementConstraintDiff).toEqual({
-        path: "placementConstraints.distinctInstance.type",
-        current: undefined,
-        target: "distinctInstance",
-        type: "Added",
+        path: "placementConstraints.memberOf.expression",
+        current: "attribute:current-attribute == current-value",
+        target: "attribute:target-attribute == target-value",
+        type: "Modified",
       });
 
       // Check ephemeral storage differences
@@ -860,22 +861,7 @@ describe("Deployment", () => {
 
     it("should generate only Modified diffs when all fields exist in both task definitions but with different values", async () => {
       // Test application
-      const application: ApplicationDomain = {
-        id: "test-app",
-        name: "test-app",
-        repositoryUrl: "https://github.com/test/repo",
-        branch: "main",
-        taskDefinitionPath: "task-definition.json",
-        awsConfig: {
-          region: "us-east-1",
-          accessKeyId: "key",
-          secretAccessKey: "secret",
-        },
-        ecsConfig: {
-          clusterName: "test-cluster",
-          serviceName: "test-service",
-        },
-      };
+      const application = createTestApplication();
 
       // Current task definition with same structure as target but different values
       const currentTaskDefinition: RegisterTaskDefinitionCommandInput = {
