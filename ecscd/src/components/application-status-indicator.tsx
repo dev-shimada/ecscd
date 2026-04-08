@@ -10,7 +10,6 @@ import {
 import {
     ApplicationDomain,
     ApplicationStatus,
-    getApplicationReason,
     getApplicationStatus,
 } from "@/lib/domain/application";
 import { cn } from "@/lib/utils";
@@ -156,8 +155,12 @@ export function ApplicationStatusBadge({
 }: {
   application: ApplicationDomain;
 }) {
-  const status = getApplicationStatus(application);
-  const reason = getApplicationReason(application);
+  const applicationStatus = getApplicationStatus(application);
+  const { status } = applicationStatus;
+  const reason =
+    status === "InSync" || status === "OutOfSync"
+      ? undefined
+      : applicationStatus.reason;
   const label = formatApplicationStatus(status);
 
   return (
@@ -181,8 +184,12 @@ export function ApplicationStatusDot({
 }: {
   application: ApplicationDomain;
 }) {
-  const status = getApplicationStatus(application);
-  const reason = getApplicationReason(application);
+  const applicationStatus = getApplicationStatus(application);
+  const { status } = applicationStatus;
+  const reason =
+    status === "InSync" || status === "OutOfSync"
+      ? undefined
+      : applicationStatus.reason;
   const label = formatApplicationStatus(status);
 
   return (

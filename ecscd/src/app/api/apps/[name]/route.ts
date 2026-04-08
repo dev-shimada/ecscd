@@ -1,5 +1,4 @@
 import { au } from "@/lib/di";
-import { getApplicationReason } from "@/lib/domain/application";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -23,17 +22,7 @@ export async function GET(
       );
     }
 
-    const diffs = application.diff.status === "Success" ? application.diff.value : [];
-    const diffError = getApplicationReason(application);
-
-    return NextResponse.json({
-      application,
-      diff: {
-        diffs,
-        summary: `${diffs.length} changes`,
-        error: diffError,
-      },
-    });
+    return NextResponse.json(application);
   } catch (error) {
     console.error("Error fetching application:", error);
     return NextResponse.json(

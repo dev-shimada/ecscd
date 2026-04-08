@@ -14,7 +14,6 @@ import { FilterSelector } from "@/components/filter-selector";
 import {
     ApplicationDomain,
     ApplicationStatus,
-    DiffDomain,
     getApplicationStatus,
 } from "@/lib/domain/application";
 import { FilterDomain } from "@/lib/domain/filter";
@@ -28,24 +27,13 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-type DiffResponse = {
-  diffs: DiffDomain[];
-  summary: string;
-  error?: string;
-};
-
-type ApplicationReadModel = {
-  application: ApplicationDomain;
-  diff: DiffResponse;
-};
-
 type ApplicationDashboardProps = {
   applications: ApplicationDomain[];
   filters: FilterDomain[];
 };
 
 type CacheEntry = {
-  data?: ApplicationReadModel;
+  data?: ApplicationDomain;
   promise?: Promise<void>;
 };
 
@@ -80,15 +68,7 @@ function createApplicationErrorState(
   };
 }
 
-function createDiffFallback(error?: string): DiffResponse {
-  return {
-    diffs: [],
-    summary: "0 changes",
-    error: error || "Failed to load configuration diff.",
-  };
-}
-
-function getCachedReadModel(config: ApplicationDomain): ApplicationReadModel | null {
+function getCachedApplication(config: ApplicationDomain): ApplicationDomain | null {
   const entry = applicationCache.get(config.name);
   if (!entry?.data) {
     return null;
@@ -217,7 +197,7 @@ export function ApplicationDashboard({
 
     for (const application of nameFilteredApplications) {
       const status =
-        getApplicationStatus(getCachedReadModel(application)?.application || application);
+        getApplicationStatus(getCachedApplication(application) || application).status;
       counts.set(status, (counts.get(status) || 0) + 1);
     }
 
@@ -236,7 +216,7 @@ export function ApplicationDashboard({
     const selectedStatusSet = new Set(selectedStatuses);
     return nameFilteredApplications.filter((application) => {
       const status =
-        getApplicationStatus(getCachedReadModel(application)?.application || application);
+        getApplicationStatus(getCachedApplication(application) || application).status;
       return selectedStatusSet.has(status);
     });
   }, [cacheVersion, nameFilteredApplications, selectedStatuses]);
@@ -245,9 +225,18 @@ export function ApplicationDashboard({
     ? applications.find((application) => application.name === selectedAppName) ||
       null
     : null;
-  const selectedReadModel = selectedApplicationConfig
-    ? getCachedReadModel(selectedApplicationConfig)
+  const selectedApplication = selectedApplicationConfig
+    ? getCachedApplication(selectedApplicationConfig)
     : null;
+  const selectedApplicationStatus = selectedApplication
+    ? getApplicationStatus(selectedApplication)
+    : null;
+  const selectedApplicationError =
+    selectedApplicationStatus &&
+    selectedApplicationStatus.status !== "InSync" &&
+    selectedApplicationStatus.status !== "OutOfSync"
+      ? selectedApplicationStatus.reason
+      : undefined;
   const isDetailRoute = selectedAppName !== null;
 
   const loadApplication = useCallback((config: ApplicationDomain) => {
@@ -264,16 +253,13 @@ export function ApplicationDashboard({
           throw new Error("Failed to fetch application");
         }
 
-        entry.data = (await response.json()) as ApplicationReadModel;
+        entry.data = (await response.json()) as ApplicationDomain;
       } catch (error) {
         const reason =
           error instanceof Error
             ? error.message
             : "Failed to load latest application state.";
-        entry.data = {
-          application: createApplicationErrorState(config, reason),
-          diff: createDiffFallback(reason),
-        };
+        entry.data = createApplicationErrorState(config, reason);
       } finally {
         entry.promise = undefined;
         applicationCache.set(config.name, entry);
@@ -356,8 +342,8 @@ export function ApplicationDashboard({
                     filterPattern,
                     selectedStatuses
                   );
-                  const readModel = getCachedReadModel(application);
-                  const displayApplication = readModel?.application || application;
+                  const cachedApplication = getCachedApplication(application);
+                  const displayApplication = cachedApplication || application;
 
                   return (
                     <div
@@ -450,7 +436,7 @@ export function ApplicationDashboard({
                 {selectedApplicationConfig.name}
               </h1>
               <ApplicationStatusBadge
-                application={selectedReadModel?.application || selectedApplicationConfig}
+                application={selectedApplication || selectedApplicationConfig}
               />
             </div>
           }
@@ -527,8 +513,8 @@ export function ApplicationDashboard({
                     </div>
                     <div className="font-medium">
                       {formatLastSyncTime(
-                        selectedReadModel?.application.sync.status === "Success"
-                          ? selectedReadModel.application.sync.value?.lastSyncedAt
+                        selectedApplication?.sync.status === "Success"
+                          ? selectedApplication.sync.value?.lastSyncedAt
                           : undefined
                       )}
                     </div>
@@ -537,13 +523,21 @@ export function ApplicationDashboard({
               </div>
 
               <div className="px-4 pb-8 sm:px-6 lg:px-8">
-                {selectedReadModel ? (
+                {selectedApplication ? (
                   <DiffViewer
-                    application={selectedReadModel.application}
-                    diffs={selectedReadModel.diff.diffs || []}
-                    summary={selectedReadModel.diff.summary}
-                    error={selectedReadModel.diff.error}
-                    deploymentUrl={getEcsDeploymentsConsoleUrl(selectedReadModel.application)}
+                    application={selectedApplication}
+                    diffs={
+                      selectedApplication.diff.status === "Success"
+                        ? selectedApplication.diff.value
+                        : []
+                    }
+                    summary={`${
+                      selectedApplication.diff.status === "Success"
+                        ? selectedApplication.diff.value.length
+                        : 0
+                    } changes`}
+                    error={selectedApplicationError}
+                    deploymentUrl={getEcsDeploymentsConsoleUrl(selectedApplication)}
                   />
                 ) : (
                   <DiffViewer
@@ -560,12 +554,12 @@ export function ApplicationDashboard({
             <DashboardSyncActions
               applicationName={selectedApplicationConfig.name}
               status={getApplicationStatus(
-                selectedReadModel?.application || selectedApplicationConfig
-              )}
+                selectedApplication || selectedApplicationConfig
+              ).status}
               hasActiveDeployment={
                 getApplicationStatus(
-                  selectedReadModel?.application || selectedApplicationConfig
-                ) === "Deploying"
+                  selectedApplication || selectedApplicationConfig
+                ).status === "Deploying"
               }
               onApplicationChanged={handleApplicationChanged}
             />

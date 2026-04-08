@@ -2,7 +2,7 @@ import { au, fu } from "@/lib/di";
 import {
   ApplicationDomain,
   DiffDomain,
-  getApplicationReason,
+  getApplicationStatus,
 } from "@/lib/domain/application";
 import { FilterDomain } from "@/lib/domain/filter";
 import { cache } from "react";
@@ -63,11 +63,15 @@ export const getDashboardApplicationDiff = cache(
       application.sync.status === "Error" ||
       application.diff.status === "Error"
     ) {
+      const applicationStatus = getApplicationStatus(application);
+      const error =
+        applicationStatus.status !== "InSync" &&
+        applicationStatus.status !== "OutOfSync"
+          ? applicationStatus.reason
+          : undefined;
       return {
         diffs,
-        error:
-          getApplicationReason(application) ||
-          "Failed to load configuration diff.",
+        error: error || "Failed to load configuration diff.",
         summary: `${diffs.length} changes`,
       };
     }

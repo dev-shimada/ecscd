@@ -9,6 +9,14 @@ export type ApplicationStatus =
   | "OutOfSync"
   | "InSync";
 
+export type ApplicationStatusReason =
+  | { status: "Loading"; reason: string }
+  | { status: "Error"; reason: string }
+  | { status: "Deploying"; reason: string }
+  | { status: "Failed"; reason: string }
+  | { status: "OutOfSync" }
+  | { status: "InSync" };
+
 export interface ApplicationDomain {
   name: string;
   sync: ResourceResult<ApplicationSyncDomain>;
@@ -67,10 +75,9 @@ export interface DiffDomain {
   type: "Added" | "Removed" | "Modified";
 }
 
-export function deriveApplicationStatus(application: ApplicationDomain): {
-  status: ApplicationStatus;
-  reason?: string;
-} {
+export function getApplicationStatus(
+  application: ApplicationDomain,
+): ApplicationStatusReason {
   if (application.service.status === "Loading") {
     return {
       status: "Loading",
@@ -175,16 +182,4 @@ export function deriveApplicationStatus(application: ApplicationDomain): {
   return {
     status: "InSync",
   };
-}
-
-export function getApplicationStatus(
-  application: ApplicationDomain,
-): ApplicationStatus {
-  return deriveApplicationStatus(application).status;
-}
-
-export function getApplicationReason(
-  application: ApplicationDomain,
-): string | undefined {
-  return deriveApplicationStatus(application).reason;
 }

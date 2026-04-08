@@ -2,9 +2,9 @@
 
 import { Button } from '@/components/ui/button';
 import {
-    ApplicationDomain,
-    DiffDomain,
-    getApplicationStatus,
+  ApplicationDomain,
+  DiffDomain,
+  getApplicationStatus,
 } from '@/lib/domain/application';
 import { ChevronDown, ChevronRight, Edit3, Minus, Play, Plus } from 'lucide-react';
 import { useState } from 'react';
@@ -108,7 +108,7 @@ export function DiffViewer({
   }
 
   if (!diffs || diffs.length === 0) {
-    const status = application ? getApplicationStatus(application) : undefined;
+    const status = application ? getApplicationStatus(application).status : undefined;
     const statusTextClass =
       status === 'Failed'
         ? 'text-rose-700'
