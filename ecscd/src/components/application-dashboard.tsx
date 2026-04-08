@@ -45,7 +45,6 @@ type ApplicationDashboardProps = {
 };
 
 type CacheEntry = {
-  config: ApplicationDomain;
   data?: ApplicationReadModel;
   promise?: Promise<void>;
 };
@@ -87,17 +86,6 @@ function createDiffFallback(error?: string): DiffResponse {
     summary: "0 changes",
     error: error || "Failed to load configuration diff.",
   };
-}
-
-function syncCacheConfigs(applications: ApplicationDomain[]) {
-  for (const application of applications) {
-    const existing = applicationCache.get(application.name);
-    if (existing) {
-      existing.config = application;
-    } else {
-      applicationCache.set(application.name, { config: application });
-    }
-  }
 }
 
 function getCachedReadModel(config: ApplicationDomain): ApplicationReadModel | null {
@@ -213,8 +201,6 @@ export function ApplicationDashboard({
   );
   const normalizedFilter = filterPattern.trim().toLowerCase();
 
-  syncCacheConfigs(applications);
-
   const nameFilteredApplications = useMemo(() => {
     if (!normalizedFilter) {
       return applications;
@@ -270,7 +256,7 @@ export function ApplicationDashboard({
       return;
     }
 
-    const entry = existing || { config };
+    const entry = existing || {};
     entry.promise = (async () => {
       try {
         const response = await fetch(`/api/apps/${encodeURIComponent(config.name)}`);
