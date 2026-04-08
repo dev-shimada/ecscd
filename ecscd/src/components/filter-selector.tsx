@@ -146,17 +146,14 @@ export function FilterSelector({
     };
 
     updateStatusButtonWidth();
-    const resizeObserver =
-      typeof ResizeObserver !== "undefined"
-        ? new ResizeObserver(updateStatusButtonWidth)
-        : null;
+    const resizeObserver = new ResizeObserver(updateStatusButtonWidth);
 
-    if (rootRef.current && resizeObserver) {
+    if (rootRef.current) {
       resizeObserver.observe(rootRef.current);
     }
 
     return () => {
-      resizeObserver?.disconnect();
+      resizeObserver.disconnect();
     };
   }, [
     selectedStatuses,
