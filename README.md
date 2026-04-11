@@ -4,7 +4,7 @@ ECS Continuous Deployment - GitOps ベースの Amazon ECS デプロイメント
 
 ## 概要
 
-ececd は、GitHub リポジトリの ECS タスク定義を監視し、ECS サービスの自動デプロイメントを行う Web アプリケーションです。GitOps の原則に従い、宣言的な設定管理と継続的デプロイメントを実現します。
+ecscd は、GitHub リポジトリの ECS タスク定義を監視し、ECS サービスの自動デプロイメントを行う Web アプリケーションです。GitOps の原則に従い、宣言的な設定管理と継続的デプロイメントを実現します。
 
 ## 主な機能
 
