@@ -158,9 +158,7 @@ export function ApplicationStatusBadge({
   const applicationStatus = getApplicationStatus(application);
   const { status } = applicationStatus;
   const reason =
-    status === "InSync" || status === "OutOfSync"
-      ? undefined
-      : applicationStatus.reason;
+    "reason" in applicationStatus ? applicationStatus.reason : undefined;
   const label = formatApplicationStatus(status);
 
   return (
@@ -187,9 +185,7 @@ export function ApplicationStatusDot({
   const applicationStatus = getApplicationStatus(application);
   const { status } = applicationStatus;
   const reason =
-    status === "InSync" || status === "OutOfSync"
-      ? undefined
-      : applicationStatus.reason;
+    "reason" in applicationStatus ? applicationStatus.reason : undefined;
   const label = formatApplicationStatus(status);
 
   return (

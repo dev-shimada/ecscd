@@ -3,32 +3,34 @@
 import { Button } from '@/components/ui/button';
 import {
   ApplicationDomain,
-  DiffDomain,
+  getApplicationDiffSummary,
+  getApplicationDiffs,
   getApplicationStatus,
 } from '@/lib/domain/application';
 import { ChevronDown, ChevronRight, Edit3, Minus, Play, Plus } from 'lucide-react';
 import { useState } from 'react';
 
 interface DiffViewerProps {
-  application?: ApplicationDomain;
-  diffs: DiffDomain[];
-  summary: string;
+  application: ApplicationDomain;
   onSync?: () => void;
   isLoading?: boolean;
-  error?: string;
   deploymentUrl?: string;
 }
 
 export function DiffViewer({
   application,
-  diffs,
-  summary,
   onSync,
   isLoading,
-  error,
   deploymentUrl,
 }: DiffViewerProps) {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const applicationStatus = getApplicationStatus(application);
+  const diffs = getApplicationDiffs(application);
+  const summary = getApplicationDiffSummary(application);
+  const error =
+    applicationStatus.status === "Error"
+      ? applicationStatus.reason
+      : undefined;
 
   const toggleExpanded = (path: string) => {
     const newExpanded = new Set(expandedItems);
@@ -108,7 +110,7 @@ export function DiffViewer({
   }
 
   if (!diffs || diffs.length === 0) {
-    const status = application ? getApplicationStatus(application).status : undefined;
+    const status = applicationStatus.status;
     const statusTextClass =
       status === 'Failed'
         ? 'text-rose-700'

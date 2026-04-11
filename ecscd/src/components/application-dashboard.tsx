@@ -228,15 +228,6 @@ export function ApplicationDashboard({
   const selectedApplication = selectedApplicationConfig
     ? getCachedApplication(selectedApplicationConfig)
     : null;
-  const selectedApplicationStatus = selectedApplication
-    ? getApplicationStatus(selectedApplication)
-    : null;
-  const selectedApplicationError =
-    selectedApplicationStatus &&
-    selectedApplicationStatus.status !== "InSync" &&
-    selectedApplicationStatus.status !== "OutOfSync"
-      ? selectedApplicationStatus.reason
-      : undefined;
   const isDetailRoute = selectedAppName !== null;
 
   const loadApplication = useCallback((config: ApplicationDomain) => {
@@ -526,24 +517,11 @@ export function ApplicationDashboard({
                 {selectedApplication ? (
                   <DiffViewer
                     application={selectedApplication}
-                    diffs={
-                      selectedApplication.diff.status === "Success"
-                        ? selectedApplication.diff.value
-                        : []
-                    }
-                    summary={`${
-                      selectedApplication.diff.status === "Success"
-                        ? selectedApplication.diff.value.length
-                        : 0
-                    } changes`}
-                    error={selectedApplicationError}
                     deploymentUrl={getEcsDeploymentsConsoleUrl(selectedApplication)}
                   />
                 ) : (
                   <DiffViewer
                     application={selectedApplicationConfig}
-                    diffs={[]}
-                    summary="0 changes"
                     deploymentUrl={getEcsDeploymentsConsoleUrl(selectedApplicationConfig)}
                   />
                 )}

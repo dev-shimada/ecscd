@@ -22,7 +22,7 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(application);
+    return NextResponse.json(await au.resolveApplication(application));
   } catch (error) {
     console.error("Error fetching application:", error);
     return NextResponse.json(
@@ -47,7 +47,7 @@ export async function PUT(
       );
     }
 
-    const existingApp = await au.getApplicationConfig(name);
+    const existingApp = await au.getApplication(name);
     if (!existingApp) {
       return NextResponse.json(
         { error: "Application not found" },
@@ -89,7 +89,7 @@ export async function DELETE(
         { status: 400 },
       );
     }
-    const existingApp = await au.getApplicationConfig(name);
+    const existingApp = await au.getApplication(name);
     if (!existingApp) {
       return NextResponse.json(
         { error: "Application not found" },

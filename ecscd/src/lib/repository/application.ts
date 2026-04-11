@@ -1,14 +1,12 @@
-import { ApplicationDomain, ServiceDomain } from "../domain/application";
+import { ApplicationDomain } from "../domain/application";
 
 export interface ApplicationRepository {
-  getApplicationConfigs(): Promise<ApplicationDomain[]>;
   getApplications(): Promise<ApplicationDomain[]>;
   getApplicationNames(): Promise<string[]>;
-  getApplicationConfig(name: string): Promise<ApplicationDomain | null>;
   getApplication(name: string): Promise<ApplicationDomain | null>;
-  getService(
+  fetchService(
     application: ApplicationDomain,
-  ): Promise<ServiceDomain | undefined>;
+  ): Promise<ApplicationDomain>;
   createApplication(application: ApplicationDomain): Promise<void>;
   updateApplication(application: ApplicationDomain): Promise<void>;
   deleteApplication(name: string): Promise<void>;

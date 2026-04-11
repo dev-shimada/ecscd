@@ -2,20 +2,16 @@ import {
   ApplicationDomain,
   ApplicationSyncStatus,
   createLoadingResource,
-  ServiceDomain,
 } from "../domain/application";
 import { ApplicationRepository } from "../repository/application";
 import { DeploymentRepository } from "../repository/deployment";
 
 export interface IApplicationUsecase {
-  getApplicationConfigs(): Promise<ApplicationDomain[]>;
   getApplications(): Promise<ApplicationDomain[]>;
   getApplicationNames(): Promise<string[]>;
-  getApplicationConfig(name: string): Promise<ApplicationDomain | null>;
   getApplication(name: string): Promise<ApplicationDomain | null>;
-  getService(
-    application: ApplicationDomain,
-  ): Promise<ServiceDomain | undefined>;
+  fetchService(application: ApplicationDomain): Promise<ApplicationDomain>;
+  resolveApplication(application: ApplicationDomain): Promise<ApplicationDomain>;
   createApplication(application: ApplicationDomain): Promise<void>;
   updateApplication(application: ApplicationDomain): Promise<void>;
 }
@@ -42,78 +38,76 @@ export class ApplicationUsecase implements IApplicationUsecase {
     };
   }
 
-  private async resolveApplication(application: ApplicationDomain) {
-    if (application.service.status !== "Success") {
-      return application;
+  async fetchService(application: ApplicationDomain): Promise<ApplicationDomain> {
+    return this.applicationRepository.fetchService(application);
+  }
+
+  async resolveApplication(application: ApplicationDomain): Promise<ApplicationDomain> {
+    const serviceResolvedApplication = await this.fetchService(application);
+
+    if (serviceResolvedApplication.service.status !== "Success") {
+      return serviceResolvedApplication;
     }
 
-    const service = application.service.value;
+    const service = serviceResolvedApplication.service.value;
     if (!service || service.status !== "ACTIVE") {
-      return application;
+      return serviceResolvedApplication;
     }
 
-    if (application.sync.status === "Error") {
-      return application;
+    if (serviceResolvedApplication.sync.status === "Error") {
+      return serviceResolvedApplication;
     }
 
     const lastSyncedAt =
-      application.sync.status === "Success"
-        ? application.sync.value?.lastSyncedAt
+      serviceResolvedApplication.sync.status === "Success"
+        ? serviceResolvedApplication.sync.value?.lastSyncedAt
         : undefined;
 
-    application.diff = createLoadingResource();
-    application.sync = createLoadingResource();
+    const loadingApplication: ApplicationDomain = {
+      ...serviceResolvedApplication,
+      diff: createLoadingResource(),
+      sync: createLoadingResource(),
+    };
 
     try {
-      const deployments = await this.deploymentRepository.diff(application);
-      application.sync = this.toSyncResource(
-        deployments.length > 0 ? "OutOfSync" : "InSync",
-        lastSyncedAt,
-      );
-      application.diff = {
-        status: "Success",
-        value: deployments,
+      const deployments = await this.deploymentRepository.diff(loadingApplication);
+      return {
+        ...loadingApplication,
+        sync: this.toSyncResource(
+          deployments.length > 0 ? "OutOfSync" : "InSync",
+          lastSyncedAt,
+        ),
+        diff: {
+          status: "Success",
+          value: deployments,
+        },
       };
-      return application;
     } catch (error) {
       const reason = this.toDiffErrorReason(error);
-      application.sync = {
-        status: "Error",
-        reason,
+      return {
+        ...loadingApplication,
+        sync: {
+          status: "Error",
+          reason,
+        },
+        diff: {
+          status: "Error",
+          reason,
+        },
       };
-      application.diff = {
-        status: "Error",
-        reason,
-      };
-      return application;
     }
   }
 
-  async getApplicationConfigs(): Promise<ApplicationDomain[]> {
-    return this.applicationRepository.getApplicationConfigs();
-  }
-
   async getApplications(): Promise<ApplicationDomain[]> {
-    const applications = await this.applicationRepository.getApplications();
-
-    return Promise.all(applications.map((app) => this.resolveApplication(app)));
+    return this.applicationRepository.getApplications();
   }
 
   async getApplicationNames(): Promise<string[]> {
     return this.applicationRepository.getApplicationNames();
   }
 
-  async getApplicationConfig(name: string): Promise<ApplicationDomain | null> {
-    return this.applicationRepository.getApplicationConfig(name);
-  }
-
   async getApplication(name: string): Promise<ApplicationDomain | null> {
-    const application = await this.applicationRepository.getApplication(name);
-    if (!application) {
-      return null;
-    }
-
-    return this.resolveApplication(application);
+    return this.applicationRepository.getApplication(name);
   }
 
   async createApplication(application: ApplicationDomain): Promise<void> {
@@ -124,10 +118,5 @@ export class ApplicationUsecase implements IApplicationUsecase {
   }
   async deleteApplication(name: string): Promise<void> {
     await this.applicationRepository.deleteApplication(name);
-  }
-  async getService(
-    application: ApplicationDomain,
-  ): Promise<ServiceDomain | undefined> {
-    return this.applicationRepository.getService(application);
   }
 }

@@ -183,3 +183,15 @@ export function getApplicationStatus(
     status: "InSync",
   };
 }
+
+export function getApplicationDiffs(
+  application: ApplicationDomain,
+): DiffDomain[] {
+  return application.diff.status === "Success" ? application.diff.value : [];
+}
+
+export function getApplicationDiffSummary(
+  application: ApplicationDomain,
+): string {
+  return `${getApplicationDiffs(application).length} changes`;
+}

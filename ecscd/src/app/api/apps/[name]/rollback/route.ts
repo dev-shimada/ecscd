@@ -13,7 +13,7 @@ export async function POST(
         { status: 400 }
       );
     }
-    const application = await au.getApplicationConfig(name);
+    const application = await au.getApplication(name);
     if (!application) {
       return NextResponse.json(
         { error: "Application not found" },

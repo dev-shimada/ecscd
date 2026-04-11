@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existingApplication = await au.getApplicationConfig(name);
+    const existingApplication = await au.getApplication(name);
     if (existingApplication) {
       return NextResponse.json(
         { error: "Application with this name already exists" },

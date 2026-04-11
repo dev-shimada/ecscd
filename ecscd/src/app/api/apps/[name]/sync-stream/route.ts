@@ -13,15 +13,23 @@ export async function GET(
         { status: 400 }
       );
     }
-    const application = await au.getApplicationConfig(name);
+    const application = await au.getApplication(name);
     if (!application) {
       return NextResponse.json(
         { error: "Application not found" },
         { status: 404 }
       );
     }
-    const app = await au.getService(application);
-    return NextResponse.json({ service: app }, { status: 200 });
+    const resolvedApplication = await au.fetchService(application);
+    return NextResponse.json(
+      {
+        service:
+          resolvedApplication.service.status === "Success"
+            ? resolvedApplication.service.value
+            : undefined,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Error fetching diffs:", error);
     return NextResponse.json(
