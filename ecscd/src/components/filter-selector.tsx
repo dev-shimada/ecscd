@@ -418,15 +418,21 @@ export function FilterSelector({
                   <button
                     key={option.status}
                     type="button"
+                    role="menuitemcheckbox"
+                    aria-checked={isSelected}
                     onClick={() => handleToggleStatus(option.status)}
                     className="flex w-full items-start gap-3 px-3 py-2 text-left hover:bg-gray-50"
                   >
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      readOnly
-                      className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-zinc-900"
-                    />
+                    <span
+                      aria-hidden="true"
+                      className={`mt-0.5 flex h-4 w-4 items-center justify-center rounded border ${
+                        isSelected
+                          ? "border-zinc-900 bg-zinc-900 text-white"
+                          : "border-zinc-300 bg-white text-transparent"
+                      }`}
+                    >
+                      <span className="text-[10px] leading-none">✓</span>
+                    </span>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 text-sm text-zinc-900">
                         <span
