@@ -61,24 +61,27 @@ export class SQLite implements IDatabase {
           (err: Error | null) => {
             if (err) {
               reject(err);
+              return;
             }
-          },
-        );
-        this.db.run(
-          `
-            CREATE TABLE IF NOT EXISTS filters (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                pattern TEXT NOT NULL,
-                created_at DATETIME NOT NULL,
-                updated_at DATETIME NOT NULL
-            )`,
-          (err: Error | null) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve();
-            }
+
+            this.db.run(
+              `
+                CREATE TABLE IF NOT EXISTS filters (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    pattern TEXT NOT NULL,
+                    created_at DATETIME NOT NULL,
+                    updated_at DATETIME NOT NULL
+                )`,
+              (filterErr: Error | null) => {
+                if (filterErr) {
+                  reject(filterErr);
+                  return;
+                }
+
+                resolve();
+              },
+            );
           },
         );
       });
