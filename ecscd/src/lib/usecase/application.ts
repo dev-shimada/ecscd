@@ -71,7 +71,10 @@ export class ApplicationUsecase implements IApplicationUsecase {
     };
 
     try {
-      const deployments = await this.deploymentRepository.diff(loadingApplication);
+      const deployments = await this.deploymentRepository.diff(
+        loadingApplication,
+        service,
+      );
       return {
         ...loadingApplication,
         sync: this.toSyncResource(

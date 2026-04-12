@@ -1,6 +1,6 @@
 import { IAws } from "./interface/aws";
 import { IGithub } from "./interface/github";
-import { ApplicationDomain, DiffDomain } from "../domain/application";
+import { ApplicationDomain, DiffDomain, ServiceDomain } from "../domain/application";
 import { DeploymentRepository } from "../repository/deployment";
 import { RegisterTaskDefinitionCommandInput } from "@aws-sdk/client-ecs";
 
@@ -28,16 +28,18 @@ export class Deployment implements DeploymentRepository {
     await this.aws.stopServiceDeployment(client, application.ecsConfig);
   }
 
-  async diff(application: ApplicationDomain): Promise<DiffDomain[]> {
+  async diff(
+    application: ApplicationDomain,
+    service?: ServiceDomain,
+  ): Promise<DiffDomain[]> {
     const taskDefinition = await this.github.getFileContent(application);
     if (!taskDefinition) {
       throw new Error("Task definition file not found");
     }
     const client = await this.aws.createECSClient(application.awsConfig);
-    const currentService = await this.aws.describeServices(
-      client,
-      application.ecsConfig
-    );
+    const currentService =
+      service ||
+      (await this.aws.describeServices(client, application.ecsConfig));
     if (!currentService) {
       throw new Error("ECS Service not found");
     }
