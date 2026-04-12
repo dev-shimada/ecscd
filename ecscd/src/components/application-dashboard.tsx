@@ -1,8 +1,8 @@
 "use client";
 
 import {
-    ApplicationStatusBadge,
-    ApplicationStatusDot,
+  ApplicationStatusBadge,
+  ApplicationStatusDot,
 } from "@/components/application-status-indicator";
 import { DashboardDetailPane } from "@/components/dashboard-detail-pane";
 import { DashboardEditApplicationButton } from "@/components/dashboard-edit-application-button";
@@ -12,16 +12,16 @@ import { DashboardSyncActions } from "@/components/dashboard-sync-actions";
 import { DiffViewer } from "@/components/diff-viewer";
 import { FilterSelector } from "@/components/filter-selector";
 import {
-    ApplicationDomain,
-    ApplicationStatus,
-    getApplicationStatus,
+  ApplicationDomain,
+  ApplicationStatus,
+  getApplicationStatus,
 } from "@/lib/domain/application";
 import { FilterDomain } from "@/lib/domain/filter";
 import {
-    ArrowLeft,
-    Clock,
-    ExternalLink,
-    GitBranch,
+  ArrowLeft,
+  Clock,
+  ExternalLink,
+  GitBranch,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -137,13 +137,24 @@ function getEcsServiceConsoleUrl(application: ApplicationDomain) {
   )}/services/${encodeURIComponent(service)}?region=${region}`;
 }
 
+function getNormalizedGitHubRepoUrl(repo: string) {
+  const url = new URL(repo);
+
+  // To prevent XSS, forbid non-http(s) URLs like `javascript:`.
+  if (!["http:", "https:"].includes(url.protocol)) {
+    throw new Error("Git repository URL must use http or https.");
+  }
+
+  return url.toString();
+}
+
 function getGitBranchUrl(application: ApplicationDomain) {
-  const repo = application.gitConfig.repo.replace(/\/$/, "");
+  const repo = getNormalizedGitHubRepoUrl(application.gitConfig.repo);
   return `${repo}/tree/${encodeURIComponent(application.gitConfig.branch)}`;
 }
 
 function getGitTaskDefinitionUrl(application: ApplicationDomain) {
-  const repo = application.gitConfig.repo.replace(/\/$/, "");
+  const repo = getNormalizedGitHubRepoUrl(application.gitConfig.repo);
   const branch = encodeURIComponent(application.gitConfig.branch);
   const path = application.gitConfig.path
     .replace(/^\/+/, "")
@@ -151,6 +162,17 @@ function getGitTaskDefinitionUrl(application: ApplicationDomain) {
     .map((segment) => encodeURIComponent(segment))
     .join("/");
   return `${repo}/blob/${branch}/${path}`;
+}
+
+function getGitLinks(application: ApplicationDomain) {
+  try {
+    return {
+      branchUrl: getGitBranchUrl(application),
+      taskDefinitionUrl: getGitTaskDefinitionUrl(application),
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function ApplicationDashboard({
@@ -229,6 +251,9 @@ export function ApplicationDashboard({
     ? getCachedApplication(selectedApplicationConfig)
     : null;
   const isDetailRoute = selectedAppName !== null;
+  const gitLinks = selectedApplicationConfig
+    ? getGitLinks(selectedApplicationConfig)
+    : null;
 
   const loadApplication = useCallback((config: ApplicationDomain) => {
     const existing = applicationCache.get(config.name);
@@ -448,26 +473,39 @@ export function ApplicationDashboard({
                 <div className="mt-6 grid grid-cols-1 gap-6 text-sm md:grid-cols-2">
                   <div>
                     <div className="text-gray-500 mb-1">GitHub</div>
-                    <a
-                      href={getGitBranchUrl(selectedApplicationConfig)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium break-all text-gray-900 hover:underline"
-                    >
-                      {selectedApplicationConfig.gitConfig.repo} @
-                      {selectedApplicationConfig.gitConfig.branch}
-                    </a>
+                    {gitLinks ? (
+                      <a
+                        href={gitLinks.branchUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium break-all text-gray-900 hover:underline"
+                      >
+                        {selectedApplicationConfig.gitConfig.repo} @
+                        {selectedApplicationConfig.gitConfig.branch}
+                      </a>
+                    ) : (
+                      <div className="font-medium break-all text-gray-900">
+                        {selectedApplicationConfig.gitConfig.repo} @
+                        {selectedApplicationConfig.gitConfig.branch}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <div className="text-gray-500 mb-1">Task Definition Path</div>
-                    <a
-                      href={getGitTaskDefinitionUrl(selectedApplicationConfig)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium break-all text-gray-900 hover:underline"
-                    >
-                      {selectedApplicationConfig.gitConfig.path}
-                    </a>
+                    {gitLinks ? (
+                      <a
+                        href={gitLinks.taskDefinitionUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium break-all text-gray-900 hover:underline"
+                      >
+                        {selectedApplicationConfig.gitConfig.path}
+                      </a>
+                    ) : (
+                      <div className="font-medium break-all text-gray-900">
+                        {selectedApplicationConfig.gitConfig.path}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <div className="text-gray-500 mb-1">ECS Cluster</div>
