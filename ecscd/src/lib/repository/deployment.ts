@@ -1,7 +1,17 @@
-import { ApplicationDomain, DiffDomain, ServiceDomain } from "../domain/application";
+import { RegisterTaskDefinitionCommandInput } from "@aws-sdk/client-ecs";
+
+import { ApplicationDomain, ServiceDomain } from "../domain/application";
+
+export interface TaskDefinitionsForDiff {
+  current: RegisterTaskDefinitionCommandInput;
+  target: RegisterTaskDefinitionCommandInput;
+}
 
 export interface DeploymentRepository {
   syncService(application: ApplicationDomain): Promise<void>;
   rollback(application: ApplicationDomain): Promise<void>;
-  diff(application: ApplicationDomain, service?: ServiceDomain): Promise<DiffDomain[]>;
+  getTaskDefinitionsForDiff(
+    application: ApplicationDomain,
+    service?: ServiceDomain,
+  ): Promise<TaskDefinitionsForDiff>;
 }

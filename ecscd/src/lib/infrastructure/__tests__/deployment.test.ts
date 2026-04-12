@@ -2,6 +2,7 @@ import { Deployment } from "../deployment";
 import { IAws } from "../interface/aws";
 import { IGithub } from "../interface/github";
 import { ApplicationDomain } from "../../domain/application";
+import { compareTaskDefinitions } from "../../domain/task-definition-diff";
 import { RegisterTaskDefinitionCommandInput } from "@aws-sdk/client-ecs";
 
 function createTestApplication(): ApplicationDomain {
@@ -52,7 +53,7 @@ describe("Deployment", () => {
     deployment = new Deployment(mockAws, mockGithub);
   });
 
-  describe("diff method", () => {
+  describe("task definition loading for diff", () => {
     it("should generate diffs for all RegisterTaskDefinitionCommandInput fields when everything is different", async () => {
       // Test application
       const application = createTestApplication();
@@ -444,7 +445,12 @@ describe("Deployment", () => {
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDefinition);
 
       // Execute diff
-      const diffs = await deployment.diff(application);
+      const taskDefinitions =
+        await deployment.getTaskDefinitionsForDiff(application);
+      const diffs = compareTaskDefinitions(
+        taskDefinitions.current,
+        taskDefinitions.target,
+      );
 
       // Verify the results
       expect(diffs).toBeDefined();
@@ -1099,7 +1105,12 @@ describe("Deployment", () => {
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDefinition);
 
       // Execute diff
-      const diffs = await deployment.diff(application);
+      const taskDefinitions =
+        await deployment.getTaskDefinitionsForDiff(application);
+      const diffs = compareTaskDefinitions(
+        taskDefinitions.current,
+        taskDefinitions.target,
+      );
 
       // Verify all diffs are Modified type (no Added or Removed)
       expect(diffs).toBeDefined();

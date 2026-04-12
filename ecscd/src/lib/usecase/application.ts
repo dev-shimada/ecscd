@@ -3,6 +3,7 @@ import {
   ApplicationSyncStatus,
   createLoadingResource,
 } from "../domain/application";
+import { compareTaskDefinitions } from "../domain/task-definition-diff";
 import { ApplicationRepository } from "../repository/application";
 import { DeploymentRepository } from "../repository/deployment";
 
@@ -71,9 +72,14 @@ export class ApplicationUsecase implements IApplicationUsecase {
     };
 
     try {
-      const deployments = await this.deploymentRepository.diff(
-        loadingApplication,
-        service,
+      const taskDefinitions =
+        await this.deploymentRepository.getTaskDefinitionsForDiff(
+          loadingApplication,
+          service,
+        );
+      const deployments = compareTaskDefinitions(
+        taskDefinitions.current,
+        taskDefinitions.target,
       );
       return {
         ...loadingApplication,
