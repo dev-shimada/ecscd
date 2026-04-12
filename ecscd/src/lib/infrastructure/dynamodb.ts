@@ -30,6 +30,7 @@ interface FiltersModel {
   id: string;
   item_type: string;
   name: string;
+  filter_name: string;
   pattern: string;
   created_at: string;
   updated_at: string;
@@ -336,7 +337,7 @@ export class DynamoDB implements IDatabase {
   private mapItemToFilter(item: FiltersModel): FilterDomain {
     return {
       id: item.id,
-      name: (item as unknown as { filter_name: string }).filter_name,
+      name: item.filter_name,
       pattern: item.pattern,
       createdAt: new Date(item.created_at),
       updatedAt: new Date(item.updated_at),
