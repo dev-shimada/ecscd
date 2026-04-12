@@ -315,6 +315,15 @@ export function ApplicationDashboard({
     [applications, loadApplication, router]
   );
 
+  const handleApplicationDeleted = useCallback(
+    (name: string) => {
+      applicationCache.delete(name);
+      setCacheVersion((version) => version + 1);
+      router.refresh();
+    },
+    [router]
+  );
+
   return (
     <div className="h-screen bg-gray-50 grid grid-cols-1 lg:grid-cols-[360px_1fr]">
       <aside
@@ -384,6 +393,7 @@ export function ApplicationDashboard({
                       <DashboardEditApplicationButton
                         application={application}
                         onApplicationChanged={handleApplicationChanged}
+                        onApplicationDeleted={handleApplicationDeleted}
                       />
                     </div>
                   );

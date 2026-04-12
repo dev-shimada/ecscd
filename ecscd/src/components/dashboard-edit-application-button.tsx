@@ -10,9 +10,11 @@ import { ApplicationDomain } from "@/lib/domain/application";
 export function DashboardEditApplicationButton({
   application,
   onApplicationChanged,
+  onApplicationDeleted,
 }: {
   application: ApplicationDomain;
   onApplicationChanged: (name: string) => void;
+  onApplicationDeleted: (name: string) => void;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -39,12 +41,11 @@ export function DashboardEditApplicationButton({
       throw new Error(errorData.error || "Delete failed");
     }
 
+    onApplicationDeleted(applicationName);
+
     if (pathname === `/apps/${encodeURIComponent(applicationName)}`) {
       router.replace(homeHref, { scroll: false });
-      return;
     }
-
-    onApplicationChanged(applicationName);
   };
 
   return (
