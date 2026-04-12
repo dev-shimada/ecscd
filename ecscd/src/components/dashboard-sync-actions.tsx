@@ -30,6 +30,15 @@ export function DashboardSyncActions({
   }, [hasActiveDeployment]);
 
   const handleSync = async () => {
+    if (
+      isSyncing ||
+      isRollingBack ||
+      hasActiveDeployment ||
+      requestedDeployment
+    ) {
+      return;
+    }
+
     setIsSyncing(true);
     setRequestedDeployment(true);
 
@@ -161,7 +170,7 @@ export function DashboardSyncActions({
         <Button
           ref={syncButtonRef}
           onClick={handleSync}
-          disabled={isSyncing || isRollingBack}
+          disabled={isDeploying}
           className={`transition-[width,background-color,color] duration-200 ${
             isDeploying
               ? "bg-zinc-200 text-zinc-700 hover:bg-zinc-200"
