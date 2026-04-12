@@ -14,6 +14,7 @@ export interface IApplicationUsecase {
   resolveApplication(application: ApplicationDomain): Promise<ApplicationDomain>;
   createApplication(application: ApplicationDomain): Promise<void>;
   updateApplication(application: ApplicationDomain): Promise<void>;
+  deleteApplication(name: string): Promise<void>;
 }
 
 export class ApplicationUsecase implements IApplicationUsecase {

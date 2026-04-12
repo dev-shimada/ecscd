@@ -1,5 +1,5 @@
 import { Application } from "./infrastructure/application";
-import { ApplicationUsecase } from "./usecase/application";
+import { ApplicationUsecase, IApplicationUsecase } from "./usecase/application";
 import { DeploymentUsecase } from "./usecase/deployment";
 import { Deployment } from "./infrastructure/deployment";
 import { AWS } from "./infrastructure/aws";
@@ -33,6 +33,6 @@ const dr = new Deployment(
 );
 const fr = new Filter(db);
 
-export const au = new ApplicationUsecase(ar, dr);
+export const au: IApplicationUsecase = new ApplicationUsecase(ar, dr);
 export const du = new DeploymentUsecase(dr);
 export const fu = new FilterUsecase(fr);
