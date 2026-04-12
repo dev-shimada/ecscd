@@ -1,6 +1,8 @@
 import { ApplicationDomain, ServiceDomain } from "../../domain/application";
-import { RegisterTaskDefinitionCommandInput } from "@aws-sdk/client-ecs/dist-types/commands";
-import { ECSClient } from "@aws-sdk/client-ecs";
+import {
+  ECSClient,
+  RegisterTaskDefinitionCommandInput,
+} from "@aws-sdk/client-ecs";
 
 export interface IAws {
   createECSClient(
