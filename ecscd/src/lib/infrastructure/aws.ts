@@ -21,6 +21,17 @@ import {
   STSClientConfig,
 } from "@aws-sdk/client-sts";
 
+function normalizeRolloutStateReason(
+  rolloutState: string | undefined,
+  reason: string | undefined
+) {
+  if (rolloutState !== "FAILED") {
+    return "";
+  }
+
+  return reason?.trim() || "";
+}
+
 export class AWS implements IAws {
   private async getCredentials(
     region: ApplicationDomain["awsConfig"]["region"],
@@ -93,7 +104,10 @@ export class AWS implements IAws {
       deployments: (response.services?.[0]?.deployments || []).map((d) => ({
         status: d.status || "INACTIVE",
         rolloutState: d.rolloutState || "FAILED",
-        rolloutStateReason: d.rolloutStateReason || "",
+        rolloutStateReason: normalizeRolloutStateReason(
+          d.rolloutState,
+          d.rolloutStateReason
+        ),
         createdAt: d.createdAt || new Date(),
         updatedAt: d.updatedAt || new Date(),
       })),

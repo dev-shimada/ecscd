@@ -75,6 +75,21 @@ export interface DiffDomain {
   type: "Added" | "Removed" | "Modified";
 }
 
+export function getApplicationCurrentDeployment(
+  application: ApplicationDomain,
+): ServiceDomain["deployments"][number] | null {
+  if (application.service.status !== "Success") {
+    return null;
+  }
+
+  const service = application.service.value;
+  return (
+    service.deployments.find((deployment) => deployment.status === "PRIMARY") ||
+    service.deployments[0] ||
+    null
+  );
+}
+
 export function getApplicationStatus(
   application: ApplicationDomain,
 ): ApplicationStatusReason {
@@ -121,9 +136,7 @@ export function getApplicationStatus(
     };
   }
 
-  const currentDeployment =
-    service.deployments.find((deployment) => deployment.status === "PRIMARY") ||
-    service.deployments[0];
+  const currentDeployment = getApplicationCurrentDeployment(application);
 
   if (currentDeployment?.rolloutState === "IN_PROGRESS") {
     return {

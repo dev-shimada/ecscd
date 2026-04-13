@@ -14,14 +14,12 @@ interface DiffViewerProps {
   application: ApplicationDomain;
   onSync?: () => void;
   isLoading?: boolean;
-  deploymentUrl?: string;
 }
 
 export function DiffViewer({
   application,
   onSync,
   isLoading,
-  deploymentUrl,
 }: DiffViewerProps) {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const applicationStatus = getApplicationStatus(application);
@@ -125,37 +123,13 @@ export function DiffViewer({
               Loading configuration diff...
             </p>
           ) : status === 'Deploying' ? (
-            <>
-              <p className={statusTextClass}>
-                Deployment is currently in progress.
-              </p>
-              {deploymentUrl ? (
-                <a
-                  href={deploymentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center text-sm text-foreground hover:underline"
-                >
-                  View latest deployment
-                </a>
-              ) : null}
-            </>
+            <p className={statusTextClass}>
+              Deployment is currently in progress.
+            </p>
           ) : status === 'Failed' ? (
-            <>
-              <p className={statusTextClass}>
-                Last deployment failed.
-              </p>
-              {deploymentUrl ? (
-                <a
-                  href={deploymentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center text-sm text-foreground hover:underline"
-                >
-                  View last deployment
-                </a>
-              ) : null}
-            </>
+            <p className={statusTextClass}>
+              Last deployment failed.
+            </p>
           ) : (
             <p className="text-muted-foreground">
               The current task definition matches the target configuration in the repository.
