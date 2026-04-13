@@ -26,6 +26,8 @@
   --header-shadow: rgba(15, 23, 42, 0.35);
   --popover-shadow: rgba(15, 23, 42, 0.18);
   --scrollbar-thumb: rgba(15, 23, 42, 0.24);
+  --deployment-action: #e4e4e7;
+  --deployment-action-foreground: #3f3f46;
   --diff-added: #047857;
   --diff-added-border: rgba(4, 120, 87, 0.14);
   --diff-added-bg: rgba(16, 185, 129, 0.03);
@@ -46,7 +48,7 @@
     --card-foreground: #f4f4f5;
     --popover: #18181b;
     --popover-foreground: #f4f4f5;
-    --primary: #60a5fa;
+    --primary: #2563eb;
     --primary-foreground: #ffffff;
     --secondary: #27272a;
     --secondary-foreground: #f4f4f5;
@@ -58,11 +60,13 @@
     --destructive-foreground: #ffffff;
     --border: #27272a;
     --input: #3f3f46;
-    --ring: #60a5fa;
+    --ring: #2563eb;
     --pane-shadow: rgba(0, 0, 0, 0.45);
     --header-shadow: rgba(0, 0, 0, 0.75);
     --popover-shadow: rgba(0, 0, 0, 0.55);
     --scrollbar-thumb: rgba(244, 244, 245, 0.22);
+    --deployment-action: #52525b;
+    --deployment-action-foreground: #f4f4f5;
     --diff-added: #34d399;
     --diff-added-border: rgba(52, 211, 153, 0.2);
     --diff-added-bg: rgba(52, 211, 153, 0.05);
@@ -83,7 +87,7 @@
   --card-foreground: #f4f4f5;
   --popover: #18181b;
   --popover-foreground: #f4f4f5;
-  --primary: #4285f4;
+  --primary: #2563eb;
   --primary-foreground: #ffffff;
   --secondary: #27272a;
   --secondary-foreground: #f4f4f5;
@@ -95,11 +99,13 @@
   --destructive-foreground: #ffffff;
   --border: #27272a;
   --input: #3f3f46;
-  --ring: #4285f4;
+  --ring: #2563eb;
   --pane-shadow: rgba(0, 0, 0, 0.45);
   --header-shadow: rgba(0, 0, 0, 0.75);
   --popover-shadow: rgba(0, 0, 0, 0.55);
   --scrollbar-thumb: rgba(244, 244, 245, 0.22);
+  --deployment-action: #52525b;
+  --deployment-action-foreground: #f4f4f5;
   --diff-added: #34d399;
   --diff-added-border: rgba(52, 211, 153, 0.2);
   --diff-added-bg: rgba(52, 211, 153, 0.05);
@@ -152,6 +158,15 @@ body {
 
 .status-popover-shadow {
   box-shadow: 0 10px 24px var(--popover-shadow);
+}
+
+.deployment-action-muted {
+  background: var(--deployment-action);
+  color: var(--deployment-action-foreground);
+}
+
+.deployment-action-muted:hover {
+  background: var(--deployment-action);
 }
 
 .diff-added {

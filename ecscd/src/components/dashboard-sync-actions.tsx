@@ -161,7 +161,7 @@ export function DashboardSyncActions({
             disabled={isRollingBack || isSyncing}
             className={`ui-soft-in ${
               isRollingBack
-                ? "bg-secondary text-secondary-foreground hover:bg-secondary"
+                ? "deployment-action-muted opacity-100"
                 : ""
             }`}
           >
@@ -175,7 +175,7 @@ export function DashboardSyncActions({
           disabled={isDeploying}
           className={`transition-[width,background-color,color] duration-200 ${
             isDeploying
-              ? "bg-secondary text-secondary-foreground hover:bg-secondary"
+              ? "deployment-action-muted opacity-100"
               : ""
           }`}
           style={{ width: `${syncButtonWidth}px` }}
