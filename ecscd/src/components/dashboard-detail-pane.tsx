@@ -89,15 +89,15 @@ export function DashboardDetailPane({
         setIsDetailsScrolled(event.currentTarget.scrollTop > 0);
         updateSyncActionsVisibility();
       }}
-      className={`subtle-scrollbar min-h-0 overflow-y-auto relative shadow-[-4px_0_14px_rgba(15,23,42,0.12)] ${
+      className={`subtle-scrollbar min-h-0 overflow-y-auto relative pane-shadow-left ${
         isDetailRoute ? "block" : "hidden lg:block"
       }`}
     >
       {mobileHeader}
       <section
-        className={`sticky top-16 z-10 h-[76px] bg-gray-50 px-4 sm:px-6 lg:top-0 lg:px-8 transition-shadow ${
+        className={`sticky top-16 z-10 h-[76px] bg-background px-4 sm:px-6 lg:top-0 lg:px-8 transition-shadow ${
           isDetailsScrolled
-            ? "shadow-[0_6px_12px_-10px_rgba(15,23,42,0.35)]"
+            ? "header-scroll-shadow"
             : "shadow-none"
         }`}
       >

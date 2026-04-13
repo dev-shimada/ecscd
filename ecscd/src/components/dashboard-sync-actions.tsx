@@ -160,7 +160,9 @@ export function DashboardSyncActions({
             onClick={handleRollback}
             disabled={isRollingBack || isSyncing}
             className={`ui-soft-in ${
-              isRollingBack ? "bg-zinc-200 text-zinc-700 hover:bg-zinc-200" : ""
+              isRollingBack
+                ? "bg-secondary text-secondary-foreground hover:bg-secondary"
+                : ""
             }`}
           >
             <Undo2 className="h-4 w-4 mr-2" />
@@ -173,7 +175,7 @@ export function DashboardSyncActions({
           disabled={isDeploying}
           className={`transition-[width,background-color,color] duration-200 ${
             isDeploying
-              ? "bg-zinc-200 text-zinc-700 hover:bg-zinc-200"
+              ? "bg-secondary text-secondary-foreground hover:bg-secondary"
               : ""
           }`}
           style={{ width: `${syncButtonWidth}px` }}

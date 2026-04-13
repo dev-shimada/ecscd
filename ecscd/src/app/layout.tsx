@@ -35,6 +35,7 @@ export default function RootLayout({
         {children}
         <Toaster
           position="top-right"
+          theme="system"
           duration={10000}
           richColors
           closeButton

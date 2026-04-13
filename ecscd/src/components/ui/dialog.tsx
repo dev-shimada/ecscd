@@ -57,7 +57,7 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
   return createPortal(
     <div className="fixed inset-0 z-[200] flex items-center justify-center">
       <div 
-        className="fixed inset-0 bg-black/50 ui-fade-in"
+        className="fixed inset-0 bg-black/60 ui-fade-in"
         onClick={() => onOpenChange(false)}
       />
       {children}
@@ -71,7 +71,7 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
     <div
       ref={ref}
       className={cn(
-        "relative z-[210] grid w-full max-w-lg gap-4 bg-white p-6 shadow-lg duration-200 sm:rounded-lg md:w-full ui-pop-in",
+        "relative z-[210] grid w-full max-w-lg gap-4 bg-popover p-6 text-popover-foreground shadow-lg duration-200 sm:rounded-lg md:w-full ui-pop-in",
         className
       )}
       {...props}
@@ -105,7 +105,7 @@ const DialogDescription = React.forwardRef<HTMLParagraphElement, DialogDescripti
   ({ className, ...props }, ref) => (
     <p
       ref={ref}
-      className={cn("text-sm text-gray-600", className)}
+      className={cn("text-sm text-muted-foreground", className)}
       {...props}
     />
   )
@@ -119,7 +119,7 @@ const DialogClose = React.forwardRef<
   <button
     ref={ref}
     className={cn(
-      "absolute right-4 top-4 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:pointer-events-none",
+      "absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none",
       className
     )}
     {...props}

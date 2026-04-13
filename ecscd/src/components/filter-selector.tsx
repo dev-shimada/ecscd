@@ -278,12 +278,12 @@ export function FilterSelector({
         className="relative w-full flex-1"
         style={{ minWidth: `${nameFilterMinWidth}px` }}
       >
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={currentFilter}
           onChange={(e) => handleFilterChange(e.target.value)}
           placeholder="Filter by name..."
-          className="border-zinc-200 pl-10 pr-20"
+          className="pl-10 pr-20"
           aria-busy={isPending}
         />
         <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-0.5">
@@ -292,33 +292,33 @@ export function FilterSelector({
             onClick={() => handleFilterChange("")}
             aria-hidden={!currentFilter}
             tabIndex={currentFilter ? 0 : -1}
-            className={`rounded p-1 transition-opacity duration-150 hover:bg-gray-100 ${
+            className={`rounded p-1 transition-opacity duration-150 hover:bg-accent ${
               currentFilter ? "opacity-100" : "pointer-events-none opacity-0"
             }`}
           >
-            <X className="h-4 w-4 text-gray-400" />
+            <X className="h-4 w-4 text-muted-foreground" />
           </button>
           <button
             type="button"
             onClick={() => setShowDropdown((currentValue) => !currentValue)}
-            className="rounded p-1 hover:bg-gray-100"
+            className="rounded p-1 hover:bg-accent"
           >
-            <ChevronDown className="h-4 w-4 text-gray-400" />
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>
 
         {showDropdown ? (
-          <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-zinc-100 bg-white shadow-[0_8px_20px_-14px_rgba(15,23,42,0.25)] ui-dropdown-in">
+          <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-border bg-popover text-popover-foreground popover-soft-shadow ui-dropdown-in">
             {currentFilter.trim() ? (
               <button
                 type="button"
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 border-b border-zinc-100"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent border-b border-border"
                 onClick={() => {
                   setShowDropdown(false);
                   setShowSaveDialog(true);
                 }}
               >
-                <Save className="h-3.5 w-3.5 text-gray-500" />
+                <Save className="h-3.5 w-3.5 text-muted-foreground" />
                 <span>
                   Save{" "}
                   <span className="font-medium">
@@ -329,7 +329,7 @@ export function FilterSelector({
             ) : null}
 
             {visibleFilters.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-gray-500">
+              <div className="px-3 py-2 text-sm text-muted-foreground">
                 {filters.length === 0
                   ? "No saved filters"
                   : "No matching saved filters"}
@@ -338,7 +338,7 @@ export function FilterSelector({
               visibleFilters.map((filter) => (
                 <div
                   key={filter.id}
-                  className="flex items-center justify-between hover:bg-gray-50"
+                  className="flex items-center justify-between hover:bg-accent"
                 >
                   <button
                     type="button"
@@ -346,14 +346,14 @@ export function FilterSelector({
                     onClick={() => handleSelectFilter(filter)}
                   >
                     <div className="font-medium text-sm">{filter.name}</div>
-                    <div className="text-xs text-gray-500">{filter.pattern}</div>
+                    <div className="text-xs text-muted-foreground">{filter.pattern}</div>
                   </button>
                   <button
                     type="button"
                     onClick={(event) => handleDeleteFilter(event, filter.id)}
-                    className="group mr-2 rounded p-1 hover:bg-red-50"
+                    className="group mr-2 rounded p-1 hover:bg-destructive/10"
                   >
-                    <Trash2 className="h-3 w-3 text-gray-400 transition-colors group-hover:text-red-500" />
+                    <Trash2 className="h-3 w-3 text-muted-foreground transition-colors group-hover:text-red-500" />
                   </button>
                 </div>
               ))
@@ -369,8 +369,8 @@ export function FilterSelector({
           onClick={() => setShowStatusDropdown((currentValue) => !currentValue)}
           className={`inline-flex h-10 items-center gap-2 rounded-md border px-3 text-sm transition-[width,background-color,border-color,color] duration-200 ${
             selectedStatuses.length > 0
-              ? "border-zinc-200 bg-zinc-100 text-zinc-900"
-              : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50"
+              ? "border-border bg-accent text-accent-foreground"
+              : "border-input bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground"
           }`}
           style={{ width: `${statusButtonWidth}px` }}
         >
@@ -401,9 +401,9 @@ export function FilterSelector({
         </button>
 
         {showStatusDropdown ? (
-          <div className="absolute right-0 top-full z-50 mt-1 min-w-[240px] rounded-md border border-zinc-100 bg-white py-1 shadow-[0_8px_20px_-14px_rgba(15,23,42,0.25)] ui-dropdown-in">
+          <div className="absolute right-0 top-full z-50 mt-1 min-w-[240px] rounded-md border border-border bg-popover py-1 text-popover-foreground popover-soft-shadow ui-dropdown-in">
             {normalizedStatusOptions.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-gray-500">
+              <div className="px-3 py-2 text-sm text-muted-foreground">
                 No statuses available
               </div>
             ) : (
@@ -421,20 +421,20 @@ export function FilterSelector({
                     role="menuitemcheckbox"
                     aria-checked={isSelected}
                     onClick={() => handleToggleStatus(option.status)}
-                    className="flex w-full items-start gap-3 px-3 py-2 text-left hover:bg-gray-50"
+                    className="flex w-full items-start gap-3 px-3 py-2 text-left hover:bg-accent"
                   >
                     <span
                       aria-hidden="true"
                       className={`mt-0.5 flex h-4 w-4 items-center justify-center rounded border ${
                         isSelected
-                          ? "border-zinc-900 bg-zinc-900 text-white"
-                          : "border-zinc-300 bg-white text-transparent"
+                          ? "border-foreground bg-foreground text-background"
+                          : "border-input bg-card text-transparent"
                       }`}
                     >
                       <span className="text-[10px] leading-none">✓</span>
                     </span>
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2 text-sm text-zinc-900">
+                      <div className="flex items-center gap-2 text-sm text-popover-foreground">
                         <span
                           className={`h-2.5 w-2.5 rounded-full ${getApplicationStatusDotClass(
                             option.status
@@ -442,7 +442,7 @@ export function FilterSelector({
                         />
                         <span>{formatApplicationStatus(option.status)}</span>
                       </div>
-                      <div className="mt-0.5 text-xs text-zinc-500">
+                      <div className="mt-0.5 text-xs text-muted-foreground">
                         {option.count}/{option.total} ({percent}%)
                       </div>
                     </div>

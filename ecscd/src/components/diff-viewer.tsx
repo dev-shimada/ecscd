@@ -45,44 +45,44 @@ export function DiffViewer({
   const getDiffIcon = (type: 'Added' | 'Removed' | 'Modified') => {
     switch (type) {
       case 'Added':
-        return <Plus className="h-4 w-4 shrink-0 text-emerald-800" />;
+        return <Plus className="h-4 w-4 shrink-0 diff-added-text" />;
       case 'Removed':
-        return <Minus className="h-4 w-4 shrink-0 text-rose-800" />;
+        return <Minus className="h-4 w-4 shrink-0 diff-removed-text" />;
       case 'Modified':
-        return <Edit3 className="h-4 w-4 shrink-0 text-amber-800" />;
+        return <Edit3 className="h-4 w-4 shrink-0 diff-modified-text" />;
     }
   };
 
   const getDiffColor = (type: 'Added' | 'Removed' | 'Modified') => {
     switch (type) {
       case 'Added':
-        return 'border-emerald-800/12 bg-[rgba(16,185,129,0.03)]';
+        return 'diff-added';
       case 'Removed':
-        return 'border-rose-800/12 bg-[rgba(244,63,94,0.03)]';
+        return 'diff-removed';
       case 'Modified':
-        return 'border-amber-800/12 bg-[rgba(245,158,11,0.04)]';
+        return 'diff-modified';
     }
   };
 
   const getDiffValueClass = (type: 'Added' | 'Removed' | 'Modified') => {
     switch (type) {
       case 'Added':
-        return 'border-emerald-800/12';
+        return 'diff-added-border';
       case 'Removed':
-        return 'border-rose-800/12';
+        return 'diff-removed-border';
       case 'Modified':
-        return 'border-amber-800/12';
+        return 'diff-modified-border';
     }
   };
 
   const getDiffTextClass = (type: 'Added' | 'Removed' | 'Modified') => {
     switch (type) {
       case 'Added':
-        return 'text-emerald-800';
+        return 'diff-added-text';
       case 'Removed':
-        return 'text-rose-800';
+        return 'diff-removed-text';
       case 'Modified':
-        return 'text-amber-800';
+        return 'diff-modified-text';
     }
   };
 
@@ -98,9 +98,9 @@ export function DiffViewer({
   if (error) {
     return (
       <section className="w-full">
-        <h2 className="text-lg font-semibold text-gray-900">Configuration Diff</h2>
+        <h2 className="text-lg font-semibold text-foreground">Configuration Diff</h2>
         <div className="mt-3">
-          <p className="text-red-600 mb-2">{error}</p>
+          <p className="text-red-500 mb-2">{error}</p>
           <p className="text-muted-foreground text-sm">
             Please check your application configuration and try again.
           </p>
@@ -113,12 +113,12 @@ export function DiffViewer({
     const status = applicationStatus.status;
     const statusTextClass =
       status === 'Failed'
-        ? 'text-rose-700'
+        ? 'text-red-500'
         : 'text-muted-foreground';
 
     return (
       <section className="w-full">
-        <h2 className="text-lg font-semibold text-gray-900">Configuration Diff</h2>
+        <h2 className="text-lg font-semibold text-foreground">Configuration Diff</h2>
         <div className="mt-3">
           {status === 'Loading' ? (
             <p className="text-muted-foreground">
@@ -134,7 +134,7 @@ export function DiffViewer({
                   href={deploymentUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center text-sm text-gray-900 hover:underline"
+                  className="mt-2 inline-flex items-center text-sm text-foreground hover:underline"
                 >
                   View latest deployment
                 </a>
@@ -150,7 +150,7 @@ export function DiffViewer({
                   href={deploymentUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center text-sm text-gray-900 hover:underline"
+                  className="mt-2 inline-flex items-center text-sm text-foreground hover:underline"
                 >
                   View last deployment
                 </a>
@@ -170,7 +170,7 @@ export function DiffViewer({
     <section className="w-full">
       <div>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Configuration Diff</h2>
+          <h2 className="text-lg font-semibold text-foreground">Configuration Diff</h2>
           {onSync && (
             <Button
               onClick={onSync}
@@ -206,7 +206,7 @@ export function DiffViewer({
                 {diff.type === 'Removed' && diff.current !== undefined && (
                   <div>
                     <div className={`text-sm font-medium mb-1 ${getDiffTextClass(diff.type)}`}>Current (will be removed):</div>
-                    <pre className={`text-xs text-gray-900 p-3 rounded border overflow-x-auto ${getDiffValueClass(diff.type)}`}>
+                    <pre className={`text-xs text-foreground p-3 rounded border overflow-x-auto ${getDiffValueClass(diff.type)}`}>
                       {formatValue(diff.current)}
                     </pre>
                   </div>
@@ -215,7 +215,7 @@ export function DiffViewer({
                 {diff.type === 'Added' && diff.target !== undefined && (
                   <div>
                     <div className={`text-sm font-medium mb-1 ${getDiffTextClass(diff.type)}`}>New (will be added):</div>
-                    <pre className={`text-xs text-gray-900 p-3 rounded border overflow-x-auto ${getDiffValueClass(diff.type)}`}>
+                    <pre className={`text-xs text-foreground p-3 rounded border overflow-x-auto ${getDiffValueClass(diff.type)}`}>
                       {formatValue(diff.target)}
                     </pre>
                   </div>
@@ -226,7 +226,7 @@ export function DiffViewer({
                     {diff.current !== undefined && (
                       <div>
                         <div className={`text-sm font-medium mb-1 ${getDiffTextClass(diff.type)}`}>Current:</div>
-                        <pre className={`text-xs text-gray-900 p-3 rounded border overflow-x-auto ${getDiffValueClass(diff.type)}`}>
+                        <pre className={`text-xs text-foreground p-3 rounded border overflow-x-auto ${getDiffValueClass(diff.type)}`}>
                           {formatValue(diff.current)}
                         </pre>
                       </div>
@@ -234,7 +234,7 @@ export function DiffViewer({
                     {diff.target !== undefined && (
                       <div>
                         <div className={`text-sm font-medium mb-1 ${getDiffTextClass(diff.type)}`}>Target:</div>
-                        <pre className={`text-xs text-gray-900 p-3 rounded border overflow-x-auto ${getDiffValueClass(diff.type)}`}>
+                        <pre className={`text-xs text-foreground p-3 rounded border overflow-x-auto ${getDiffValueClass(diff.type)}`}>
                           {formatValue(diff.target)}
                         </pre>
                       </div>

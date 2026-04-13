@@ -191,7 +191,7 @@ export function NewApplicationDialog({ open, onOpenChange, onSuccess }: NewAppli
               disabled={isSubmitting}
             />
             {errors.name && (
-              <p className="text-sm text-red-600">{errors.name}</p>
+              <p className="text-sm text-red-500">{errors.name}</p>
             )}
           </div>
 
@@ -206,7 +206,7 @@ export function NewApplicationDialog({ open, onOpenChange, onSuccess }: NewAppli
                 disabled={isSubmitting}
               />
               {errors.clusterName && (
-                <p className="text-sm text-red-600">{errors.clusterName}</p>
+                <p className="text-sm text-red-500">{errors.clusterName}</p>
               )}
             </div>
 
@@ -220,7 +220,7 @@ export function NewApplicationDialog({ open, onOpenChange, onSuccess }: NewAppli
                 disabled={isSubmitting}
               />
               {errors.serviceName && (
-                <p className="text-sm text-red-600">{errors.serviceName}</p>
+                <p className="text-sm text-red-500">{errors.serviceName}</p>
               )}
             </div>
 
@@ -234,7 +234,7 @@ export function NewApplicationDialog({ open, onOpenChange, onSuccess }: NewAppli
                 disabled={isSubmitting}
               />
               {errors.region && (
-                <p className="text-sm text-red-600">{errors.region}</p>
+                <p className="text-sm text-red-500">{errors.region}</p>
               )}
             </div>
           </div>
@@ -249,7 +249,7 @@ export function NewApplicationDialog({ open, onOpenChange, onSuccess }: NewAppli
               disabled={isSubmitting}
             />
             {errors.repository && (
-              <p className="text-sm text-red-600">{errors.repository}</p>
+              <p className="text-sm text-red-500">{errors.repository}</p>
             )}
           </div>
 
@@ -264,7 +264,7 @@ export function NewApplicationDialog({ open, onOpenChange, onSuccess }: NewAppli
                 disabled={isSubmitting}
               />
               {errors.branch && (
-                <p className="text-sm text-red-600">{errors.branch}</p>
+                <p className="text-sm text-red-500">{errors.branch}</p>
               )}
             </div>
 
@@ -278,7 +278,7 @@ export function NewApplicationDialog({ open, onOpenChange, onSuccess }: NewAppli
                 disabled={isSubmitting}
               />
               {errors.taskDefinitionPath && (
-                <p className="text-sm text-red-600">{errors.taskDefinitionPath}</p>
+                <p className="text-sm text-red-500">{errors.taskDefinitionPath}</p>
               )}
             </div>
           
@@ -292,7 +292,7 @@ export function NewApplicationDialog({ open, onOpenChange, onSuccess }: NewAppli
                 disabled={isSubmitting}
               />
               {errors.roleArn && (
-                <p className="text-sm text-red-600">{errors.roleArn}</p>
+                <p className="text-sm text-red-500">{errors.roleArn}</p>
               )}
             </div>
 
@@ -307,7 +307,7 @@ export function NewApplicationDialog({ open, onOpenChange, onSuccess }: NewAppli
                 disabled={true}
               />
               {errors.externalId && (
-                <p className="text-sm text-red-600">{errors.externalId}</p>
+                <p className="text-sm text-red-500">{errors.externalId}</p>
               )}
             </div>
           </div>

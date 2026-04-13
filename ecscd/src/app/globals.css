@@ -1,48 +1,114 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #0a0a0a;
+  color-scheme: light;
+  --background: #f9fafb;
+  --foreground: #18181b;
   --card: #ffffff;
-  --card-foreground: #0a0a0a;
+  --card-foreground: #18181b;
   --popover: #ffffff;
-  --popover-foreground: #0a0a0a;
+  --popover-foreground: #18181b;
   --primary: #1a73e8;
   --primary-foreground: #ffffff;
   --secondary: #f1f3f4;
   --secondary-foreground: #1f2937;
-  --muted: #f9fafb;
-  --muted-foreground: #6b7280;
-  --accent: #f1f3f4;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #f4f4f5;
   --accent-foreground: #1f2937;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
-  --border: #e5e7eb;
-  --input: #e5e7eb;
+  --border: #e4e4e7;
+  --input: #d4d4d8;
   --ring: #1a73e8;
   --radius: 0.5rem;
+  --pane-shadow: rgba(15, 23, 42, 0.12);
+  --header-shadow: rgba(15, 23, 42, 0.35);
+  --popover-shadow: rgba(15, 23, 42, 0.18);
+  --scrollbar-thumb: rgba(15, 23, 42, 0.24);
+  --diff-added: #047857;
+  --diff-added-border: rgba(4, 120, 87, 0.14);
+  --diff-added-bg: rgba(16, 185, 129, 0.03);
+  --diff-removed: #be123c;
+  --diff-removed-border: rgba(190, 18, 60, 0.14);
+  --diff-removed-bg: rgba(244, 63, 94, 0.03);
+  --diff-modified: #b45309;
+  --diff-modified-border: rgba(180, 83, 9, 0.14);
+  --diff-modified-bg: rgba(245, 158, 11, 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --background: #09090b;
+    --foreground: #f4f4f5;
+    --card: #111113;
+    --card-foreground: #f4f4f5;
+    --popover: #18181b;
+    --popover-foreground: #f4f4f5;
+    --primary: #60a5fa;
+    --primary-foreground: #ffffff;
+    --secondary: #27272a;
+    --secondary-foreground: #f4f4f5;
+    --muted: #18181b;
+    --muted-foreground: #a1a1aa;
+    --accent: #27272a;
+    --accent-foreground: #f4f4f5;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --border: #27272a;
+    --input: #3f3f46;
+    --ring: #60a5fa;
+    --pane-shadow: rgba(0, 0, 0, 0.45);
+    --header-shadow: rgba(0, 0, 0, 0.75);
+    --popover-shadow: rgba(0, 0, 0, 0.55);
+    --scrollbar-thumb: rgba(244, 244, 245, 0.22);
+    --diff-added: #34d399;
+    --diff-added-border: rgba(52, 211, 153, 0.2);
+    --diff-added-bg: rgba(52, 211, 153, 0.05);
+    --diff-removed: #fb7185;
+    --diff-removed-border: rgba(251, 113, 133, 0.2);
+    --diff-removed-bg: rgba(251, 113, 133, 0.05);
+    --diff-modified: #fbbf24;
+    --diff-modified-border: rgba(251, 191, 36, 0.2);
+    --diff-modified-bg: rgba(251, 191, 36, 0.05);
+  }
 }
 
 .dark {
-  --background: #0a0a0a;
-  --foreground: #ffffff;
-  --card: #0a0a0a;
-  --card-foreground: #ffffff;
-  --popover: #0a0a0a;
-  --popover-foreground: #ffffff;
+  color-scheme: dark;
+  --background: #09090b;
+  --foreground: #f4f4f5;
+  --card: #111113;
+  --card-foreground: #f4f4f5;
+  --popover: #18181b;
+  --popover-foreground: #f4f4f5;
   --primary: #4285f4;
   --primary-foreground: #ffffff;
-  --secondary: #1f2937;
-  --secondary-foreground: #ffffff;
-  --muted: #1f2937;
-  --muted-foreground: #9ca3af;
-  --accent: #1f2937;
-  --accent-foreground: #ffffff;
-  --destructive: #dc2626;
+  --secondary: #27272a;
+  --secondary-foreground: #f4f4f5;
+  --muted: #18181b;
+  --muted-foreground: #a1a1aa;
+  --accent: #27272a;
+  --accent-foreground: #f4f4f5;
+  --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #374151;
-  --input: #374151;
+  --border: #27272a;
+  --input: #3f3f46;
   --ring: #4285f4;
+  --pane-shadow: rgba(0, 0, 0, 0.45);
+  --header-shadow: rgba(0, 0, 0, 0.75);
+  --popover-shadow: rgba(0, 0, 0, 0.55);
+  --scrollbar-thumb: rgba(244, 244, 245, 0.22);
+  --diff-added: #34d399;
+  --diff-added-border: rgba(52, 211, 153, 0.2);
+  --diff-added-bg: rgba(52, 211, 153, 0.05);
+  --diff-removed: #fb7185;
+  --diff-removed-border: rgba(251, 113, 133, 0.2);
+  --diff-removed-bg: rgba(251, 113, 133, 0.05);
+  --diff-modified: #fbbf24;
+  --diff-modified-border: rgba(251, 191, 36, 0.2);
+  --diff-modified-bg: rgba(251, 191, 36, 0.05);
 }
 
 @theme inline {
@@ -72,13 +138,68 @@ body {
   color: var(--foreground);
 }
 
+.pane-shadow-left {
+  box-shadow: -4px 0 14px var(--pane-shadow);
+}
+
+.header-scroll-shadow {
+  box-shadow: 0 6px 12px -10px var(--header-shadow);
+}
+
+.popover-soft-shadow {
+  box-shadow: 0 8px 20px -14px var(--popover-shadow);
+}
+
+.status-popover-shadow {
+  box-shadow: 0 10px 24px var(--popover-shadow);
+}
+
+.diff-added {
+  border-color: var(--diff-added-border);
+  background: var(--diff-added-bg);
+}
+
+.diff-removed {
+  border-color: var(--diff-removed-border);
+  background: var(--diff-removed-bg);
+}
+
+.diff-modified {
+  border-color: var(--diff-modified-border);
+  background: var(--diff-modified-bg);
+}
+
+.diff-added-border {
+  border-color: var(--diff-added-border);
+}
+
+.diff-removed-border {
+  border-color: var(--diff-removed-border);
+}
+
+.diff-modified-border {
+  border-color: var(--diff-modified-border);
+}
+
+.diff-added-text {
+  color: var(--diff-added);
+}
+
+.diff-removed-text {
+  color: var(--diff-removed);
+}
+
+.diff-modified-text {
+  color: var(--diff-modified);
+}
+
 .subtle-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
 }
 
 .subtle-scrollbar:hover {
-  scrollbar-color: rgba(15, 23, 42, 0.24) transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 .subtle-scrollbar::-webkit-scrollbar {
@@ -96,7 +217,7 @@ body {
 }
 
 .subtle-scrollbar:hover::-webkit-scrollbar-thumb {
-  background: rgba(15, 23, 42, 0.24);
+  background: var(--scrollbar-thumb);
 }
 
 @keyframes ui-fade-in {

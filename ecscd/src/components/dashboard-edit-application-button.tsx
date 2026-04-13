@@ -57,7 +57,7 @@ export function DashboardEditApplicationButton({
           event.stopPropagation();
           setIsOpen(true);
         }}
-        className="h-7 w-7 shrink-0 text-zinc-600 hover:text-zinc-900"
+        className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
       >
         <Edit className="h-3.5 w-3.5" />
       </Button>

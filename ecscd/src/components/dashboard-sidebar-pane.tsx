@@ -29,7 +29,7 @@ export function DashboardSidebarPane({
       <div
         className={`p-4 relative transition-shadow ${
           isListScrolled
-            ? "shadow-[0_6px_12px_-10px_rgba(15,23,42,0.35)]"
+            ? "header-scroll-shadow"
             : "shadow-none"
         }`}
       >

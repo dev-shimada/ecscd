@@ -95,12 +95,12 @@ export function SaveFilterDialog({
               placeholder="e.g., Production Apps"
               disabled={isSubmitting}
             />
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-red-500">{error}</p>}
           </div>
 
           <div className="space-y-2">
             <Label>Filter Pattern</Label>
-            <div className="px-3 py-2 bg-gray-50 rounded-md text-sm text-gray-600">
+            <div className="px-3 py-2 bg-muted rounded-md text-sm text-muted-foreground">
               {pattern}
             </div>
           </div>

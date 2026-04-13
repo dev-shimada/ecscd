@@ -325,9 +325,9 @@ export function ApplicationDashboard({
   );
 
   return (
-    <div className="h-screen bg-gray-50 grid grid-cols-1 lg:grid-cols-[360px_1fr]">
+    <div className="h-screen bg-background text-foreground grid grid-cols-1 lg:grid-cols-[360px_1fr]">
       <aside
-        className={`bg-white flex flex-col min-h-0 relative ${
+        className={`bg-card flex flex-col min-h-0 relative ${
           isDetailRoute ? "hidden lg:flex" : "flex"
         }`}
       >
@@ -338,7 +338,7 @@ export function ApplicationDashboard({
               className="flex items-center gap-3"
             >
               <GitBranch className="h-7 w-7 text-primary" />
-              <h1 className="text-2xl font-bold text-gray-900">ecscd</h1>
+              <h1 className="text-2xl font-bold text-foreground">ecscd</h1>
             </Link>
           </div>
         </header>
@@ -354,7 +354,7 @@ export function ApplicationDashboard({
           }
           list={
             visibleApplications.length === 0 ? (
-              <div className="p-4 text-sm text-gray-600">
+              <div className="p-4 text-sm text-muted-foreground">
                 {applications.length === 0
                   ? "No applications configured yet"
                   : "No applications match the current filters"}
@@ -375,18 +375,18 @@ export function ApplicationDashboard({
                       key={application.name}
                       className={`flex items-start gap-3 rounded-md px-3 py-2 transition-colors ${
                         selectedAppName === application.name
-                          ? "bg-zinc-100"
-                          : "bg-transparent hover:bg-zinc-100/70"
+                          ? "bg-accent"
+                          : "bg-transparent hover:bg-accent/70"
                       }`}
                     >
                       <Link href={href} className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 min-w-0">
                           <ApplicationStatusDot application={displayApplication} />
-                          <div className="font-medium text-gray-900 truncate">
+                          <div className="font-medium text-foreground truncate">
                             {application.name}
                           </div>
                         </div>
-                        <div className="mt-0.5 pl-4 text-xs text-zinc-500 truncate">
+                        <div className="mt-0.5 pl-4 text-xs text-muted-foreground truncate">
                           {application.gitConfig.repo} @{application.gitConfig.branch}
                         </div>
                       </Link>
@@ -407,18 +407,18 @@ export function ApplicationDashboard({
 
       {!selectedApplicationConfig ? (
         <main
-          className={`min-h-0 overflow-y-auto relative shadow-[-4px_0_14px_rgba(15,23,42,0.12)] ${
+          className={`min-h-0 overflow-y-auto relative pane-shadow-left ${
             isDetailRoute ? "block" : "hidden lg:flex"
           }`}
         >
           <div className="flex min-h-full items-center justify-center px-6 py-10 sm:px-8 lg:px-12">
             <div className="max-w-md text-center">
-              <div className="text-base font-medium text-gray-900">
+              <div className="text-base font-medium text-foreground">
                 {isDetailRoute
                   ? "Application not found"
                   : "Select an application"}
               </div>
-              <div className="mt-2 text-sm leading-6 text-gray-600">
+              <div className="mt-2 text-sm leading-6 text-muted-foreground">
                 {isDetailRoute
                   ? "The requested application does not exist or is no longer available."
                   : "Choose an application from the left pane to view its configuration and diff."}
@@ -430,7 +430,7 @@ export function ApplicationDashboard({
         <DashboardDetailPane
           isDetailRoute={isDetailRoute}
           mobileHeader={
-            <header className="sticky top-0 z-20 h-16 bg-gray-50 px-4 sm:px-6 lg:hidden">
+            <header className="sticky top-0 z-20 h-16 bg-background px-4 sm:px-6 lg:hidden">
               <div className="flex h-full items-center gap-4">
                 <Link
                   href={buildDashboardHref(
@@ -441,7 +441,7 @@ export function ApplicationDashboard({
                   className="flex items-center gap-3"
                 >
                   <GitBranch className="h-7 w-7 text-primary" />
-                  <div className="text-2xl font-bold text-gray-900">ecscd</div>
+                  <div className="text-2xl font-bold text-foreground">ecscd</div>
                 </Link>
               </div>
             </header>
@@ -454,11 +454,11 @@ export function ApplicationDashboard({
                   filterPattern,
                   selectedStatuses
                 )}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md lg:hidden hover:bg-zinc-100"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md lg:hidden hover:bg-accent"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Link>
-              <h1 className="text-2xl font-semibold text-gray-900">
+              <h1 className="text-2xl font-semibold text-foreground">
                 {selectedApplicationConfig.name}
               </h1>
               <ApplicationStatusBadge
@@ -471,7 +471,7 @@ export function ApplicationDashboard({
               href={getEcsDeploymentsConsoleUrl(selectedApplicationConfig)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-gray-900 hover:underline text-sm"
+              className="inline-flex items-center gap-2 text-foreground hover:underline text-sm"
             >
               View in AWS Console
               <ExternalLink className="h-3.5 w-3.5" />
@@ -482,71 +482,71 @@ export function ApplicationDashboard({
               <div className="space-y-6 px-4 pb-6 sm:px-6 sm:pb-8 lg:px-8 lg:pb-10">
                 <div className="mt-6 grid grid-cols-1 gap-6 text-sm md:grid-cols-2">
                   <div>
-                    <div className="text-gray-500 mb-1">GitHub</div>
+                    <div className="text-muted-foreground mb-1">GitHub</div>
                     {gitLinks ? (
                       <a
                         href={gitLinks.branchUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-medium break-all text-gray-900 hover:underline"
+                        className="font-medium break-all text-foreground hover:underline"
                       >
                         {selectedApplicationConfig.gitConfig.repo} @
                         {selectedApplicationConfig.gitConfig.branch}
                       </a>
                     ) : (
-                      <div className="font-medium break-all text-gray-900">
+                      <div className="font-medium break-all text-foreground">
                         {selectedApplicationConfig.gitConfig.repo} @
                         {selectedApplicationConfig.gitConfig.branch}
                       </div>
                     )}
                   </div>
                   <div>
-                    <div className="text-gray-500 mb-1">Task Definition Path</div>
+                    <div className="text-muted-foreground mb-1">Task Definition Path</div>
                     {gitLinks ? (
                       <a
                         href={gitLinks.taskDefinitionUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-medium break-all text-gray-900 hover:underline"
+                        className="font-medium break-all text-foreground hover:underline"
                       >
                         {selectedApplicationConfig.gitConfig.path}
                       </a>
                     ) : (
-                      <div className="font-medium break-all text-gray-900">
+                      <div className="font-medium break-all text-foreground">
                         {selectedApplicationConfig.gitConfig.path}
                       </div>
                     )}
                   </div>
                   <div>
-                    <div className="text-gray-500 mb-1">ECS Cluster</div>
+                    <div className="text-muted-foreground mb-1">ECS Cluster</div>
                     <a
                       href={getEcsClusterConsoleUrl(selectedApplicationConfig)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-medium text-gray-900 hover:underline"
+                      className="font-medium text-foreground hover:underline"
                     >
                       {selectedApplicationConfig.ecsConfig.cluster}
                     </a>
                   </div>
                   <div>
-                    <div className="text-gray-500 mb-1">ECS Service</div>
+                    <div className="text-muted-foreground mb-1">ECS Service</div>
                     <a
                       href={getEcsServiceConsoleUrl(selectedApplicationConfig)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-medium text-gray-900 hover:underline"
+                      className="font-medium text-foreground hover:underline"
                     >
                       {selectedApplicationConfig.ecsConfig.service}
                     </a>
                   </div>
                   <div>
-                    <div className="text-gray-500 mb-1">AWS Region</div>
+                    <div className="text-muted-foreground mb-1">AWS Region</div>
                     <div className="font-medium">
                       {selectedApplicationConfig.awsConfig.region || "us-east-1"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-500 mb-1 flex items-center gap-2">
+                    <div className="text-muted-foreground mb-1 flex items-center gap-2">
                       <Clock className="h-3.5 w-3.5" />
                       Last Synced
                     </div>

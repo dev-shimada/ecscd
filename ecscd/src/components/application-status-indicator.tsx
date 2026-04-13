@@ -123,7 +123,7 @@ function StatusReasonPopover({
         ? createPortal(
             <div
               className={cn(
-                "pointer-events-none fixed z-220 w-64 rounded-md border border-zinc-200 bg-white px-3 py-2 text-left text-xs leading-5 text-zinc-700 transition-opacity duration-150 shadow-[0_10px_24px_rgba(15,23,42,0.14)]",
+                "pointer-events-none fixed z-220 w-64 rounded-md border border-border bg-popover px-3 py-2 text-left text-xs leading-5 text-popover-foreground transition-opacity duration-150 status-popover-shadow",
                 isVisible && isPositionReady
                   ? "opacity-100"
                   : "opacity-0"

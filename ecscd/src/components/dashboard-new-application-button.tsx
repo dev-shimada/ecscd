@@ -14,7 +14,7 @@ export function DashboardNewApplicationButton() {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="w-full text-left rounded-md px-3 py-2 transition-colors bg-transparent text-zinc-700 hover:bg-zinc-100/70"
+        className="w-full text-left rounded-md px-3 py-2 transition-colors bg-transparent text-muted-foreground hover:bg-accent/70 hover:text-accent-foreground"
       >
         <div className="flex items-center gap-2 font-medium">
           <Plus className="h-4 w-4" />

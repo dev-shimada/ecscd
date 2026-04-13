@@ -41,26 +41,26 @@ export function getApplicationStatusDotClass(status: ApplicationStatus) {
 export function getApplicationStatusTextClass(status: ApplicationStatus) {
   switch (status) {
     case "Loading":
-      return "text-zinc-700";
+      return "text-muted-foreground";
     case "InSync":
-      return "text-emerald-700";
+      return "text-emerald-600";
     case "OutOfSync":
-      return "text-amber-700";
+      return "text-amber-600";
     case "Deploying":
-      return "text-amber-700";
+      return "text-amber-600";
     case "Failed":
-      return "text-rose-700";
+      return "text-rose-600";
     case "Error":
-      return "text-rose-700";
+      return "text-rose-600";
     default:
-      return "text-zinc-700";
+      return "text-muted-foreground";
   }
 }
 
 export function getApplicationStatusBadgeClass(status: ApplicationStatus) {
   switch (status) {
     case "Loading":
-      return "border-transparent bg-zinc-100 text-zinc-700";
+      return "border-transparent bg-secondary text-secondary-foreground";
     case "InSync":
       return "border-transparent bg-emerald-500 text-white";
     case "OutOfSync":
@@ -72,6 +72,6 @@ export function getApplicationStatusBadgeClass(status: ApplicationStatus) {
     case "Error":
       return "border-transparent bg-rose-500 text-white";
     default:
-      return "border-transparent bg-zinc-100 text-zinc-700";
+      return "border-transparent bg-secondary text-secondary-foreground";
   }
 }
