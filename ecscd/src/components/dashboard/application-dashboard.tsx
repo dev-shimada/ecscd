@@ -3,18 +3,26 @@
 import {
   ApplicationStatusBadge,
   ApplicationStatusDot,
-} from "@/components/application-status-indicator";
-import { DashboardDetailPane } from "@/components/dashboard-detail-pane";
-import { DashboardEditApplicationButton } from "@/components/dashboard-edit-application-button";
-import { DashboardNewApplicationButton } from "@/components/dashboard-new-application-button";
-import { DashboardSidebarPane } from "@/components/dashboard-sidebar-pane";
-import { DashboardSyncActions } from "@/components/dashboard-sync-actions";
-import { DiffViewer } from "@/components/diff-viewer";
-import { FilterSelector } from "@/components/filter-selector";
+} from "@/components/application/status-indicator";
+import { DashboardDetailPane } from "@/components/dashboard/detail-pane";
+import { DashboardEditApplicationButton } from "@/components/dashboard/edit-application-button";
+import { DashboardLastDeployment } from "@/components/dashboard/last-deployment";
+import {
+  buildDashboardHref,
+  getEcsClusterConsoleUrl,
+  getEcsDeploymentsConsoleUrl,
+  getEcsServiceConsoleUrl,
+  getGitLinks,
+} from "@/components/dashboard/links";
+import { DashboardNewApplicationButton } from "@/components/dashboard/new-application-button";
+import { DashboardSidebarPane } from "@/components/dashboard/sidebar-pane";
+import { DashboardSyncActions } from "@/components/dashboard/sync-actions";
+import { DiffViewer } from "@/components/diff/diff-viewer";
+import { FilterSelector } from "@/components/filter/filter-selector";
+import { formatRelativeTime } from "@/components/dashboard/format";
 import {
   ApplicationDomain,
   ApplicationStatus,
-  getApplicationCurrentDeployment,
   getApplicationStatus,
 } from "@/lib/domain/application";
 import { FilterDomain } from "@/lib/domain/filter";
@@ -23,7 +31,6 @@ import {
   Clock,
   ExternalLink,
   GitBranch,
-  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -78,243 +85,6 @@ function getCachedApplication(config: ApplicationDomain): ApplicationDomain | nu
   }
 
   return entry.data;
-}
-
-function buildDashboardHref(
-  appName?: string | null,
-  filterPattern?: string,
-  statuses: ApplicationStatus[] = []
-) {
-  const params = new URLSearchParams();
-  if (filterPattern) {
-    params.set("filter", filterPattern);
-  }
-  if (statuses.length > 0) {
-    params.set("status", statuses.join(","));
-  }
-
-  const query = params.toString();
-  const pathname = appName ? `/apps/${encodeURIComponent(appName)}` : "/";
-  return query ? `${pathname}?${query}` : pathname;
-}
-
-function formatLastSyncTime(date?: Date) {
-  if (!date) return "Never";
-
-  const now = new Date();
-  const dateObj = date instanceof Date ? date : new Date(date);
-  const diff = now.getTime() - dateObj.getTime();
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-
-  if (days > 0) return `${days}d ago`;
-  if (hours > 0) return `${hours}h ago`;
-  if (minutes > 0) return `${minutes}m ago`;
-  return "Just now";
-}
-
-function formatDeploymentState(state: string) {
-  switch (state) {
-    case "IN_PROGRESS":
-      return "In Progress";
-    case "COMPLETED":
-      return "Completed";
-    case "FAILED":
-      return "Failed";
-    default:
-      return state;
-  }
-}
-
-function getDeploymentStateClass(state: string) {
-  switch (state) {
-    case "IN_PROGRESS":
-      return "text-yellow-600 dark:text-yellow-400";
-    case "FAILED":
-      return "text-red-600 dark:text-red-400";
-    case "COMPLETED":
-      return "text-green-600 dark:text-green-400";
-    default:
-      return "text-muted-foreground";
-  }
-}
-
-function DashboardTaskGauge({
-  runningCount,
-  desiredCount,
-  isDeploying,
-}: {
-  runningCount: number;
-  desiredCount: number;
-  isDeploying: boolean;
-}) {
-  const roomCount = Math.max(runningCount, desiredCount, 1);
-
-  return (
-    <div className="flex items-center gap-2">
-      <div
-        className="grid h-4 min-w-0 flex-1 gap-1"
-        style={{
-          gridTemplateColumns: `repeat(${roomCount}, minmax(0, 1fr))`,
-        }}
-      >
-        {Array.from({ length: roomCount }).map((_, index) => {
-          const isFilled = index < runningCount;
-          const isExtraDeployingTask = isDeploying && index >= desiredCount;
-          return (
-            <div
-              key={index}
-              className={`rounded-[3px] border transition-colors ${
-                isFilled
-                  ? isExtraDeployingTask
-                    ? "border-blue-500 bg-blue-500"
-                    : "border-green-500 bg-green-500"
-                  : "border-border bg-transparent"
-              }`}
-            />
-          );
-        })}
-      </div>
-      <div className="shrink-0 font-medium text-foreground">
-        {runningCount}/{desiredCount}
-      </div>
-    </div>
-  );
-}
-
-function getEcsDeploymentsConsoleUrl(application: ApplicationDomain) {
-  const region = application.awsConfig.region || "us-east-1";
-  const cluster = application.ecsConfig.cluster;
-  const service = application.ecsConfig.service;
-  return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${encodeURIComponent(
-    cluster
-  )}/services/${encodeURIComponent(service)}/deployments?region=${region}`;
-}
-
-function getEcsClusterConsoleUrl(application: ApplicationDomain) {
-  const region = application.awsConfig.region || "us-east-1";
-  const cluster = application.ecsConfig.cluster;
-  return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${encodeURIComponent(
-    cluster
-  )}?region=${region}`;
-}
-
-function getEcsServiceConsoleUrl(application: ApplicationDomain) {
-  const region = application.awsConfig.region || "us-east-1";
-  const cluster = application.ecsConfig.cluster;
-  const service = application.ecsConfig.service;
-  return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${encodeURIComponent(
-    cluster
-  )}/services/${encodeURIComponent(service)}?region=${region}`;
-}
-
-function getNormalizedGitHubRepoUrl(repo: string) {
-  const url = new URL(repo);
-
-  // To prevent XSS, forbid non-http(s) URLs like `javascript:`.
-  if (!["http:", "https:"].includes(url.protocol)) {
-    throw new Error("Git repository URL must use http or https.");
-  }
-
-  return url.toString();
-}
-
-function getGitBranchUrl(application: ApplicationDomain) {
-  const repo = getNormalizedGitHubRepoUrl(application.gitConfig.repo);
-  return `${repo}/tree/${encodeURIComponent(application.gitConfig.branch)}`;
-}
-
-function getGitTaskDefinitionUrl(application: ApplicationDomain) {
-  const repo = getNormalizedGitHubRepoUrl(application.gitConfig.repo);
-  const branch = encodeURIComponent(application.gitConfig.branch);
-  const path = application.gitConfig.path
-    .replace(/^\/+/, "")
-    .split("/")
-    .map((segment) => encodeURIComponent(segment))
-    .join("/");
-  return `${repo}/blob/${branch}/${path}`;
-}
-
-function getGitLinks(application: ApplicationDomain) {
-  try {
-    return {
-      branchUrl: getGitBranchUrl(application),
-      taskDefinitionUrl: getGitTaskDefinitionUrl(application),
-    };
-  } catch {
-    return null;
-  }
-}
-
-function DashboardLastDeployment({
-  application,
-  deploymentUrl,
-}: {
-  application: ApplicationDomain;
-  deploymentUrl: string;
-}) {
-  const deployment = getApplicationCurrentDeployment(application);
-  if (!deployment || application.service.status !== "Success") {
-    return null;
-  }
-
-  const service = application.service.value;
-  const isDeploying = deployment.rolloutState === "IN_PROGRESS";
-  const stateClass = getDeploymentStateClass(deployment.rolloutState);
-
-  return (
-    <section className="w-full">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-lg font-semibold text-foreground">Last Deployment</h2>
-        <a
-          href={deploymentUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-sm text-foreground hover:underline"
-        >
-          View in AWS Console
-          <ExternalLink className="h-3.5 w-3.5" />
-        </a>
-      </div>
-      <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-3 text-sm md:grid-cols-2">
-        <div>
-          <div className="text-muted-foreground mb-1">Rollout</div>
-          <div className={`inline-flex items-center gap-2 font-medium ${stateClass}`}>
-            {isDeploying ? (
-              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-            ) : null}
-            {formatDeploymentState(deployment.rolloutState)}
-          </div>
-        </div>
-        <div>
-          <div className="text-muted-foreground mb-1">Tasks</div>
-          <DashboardTaskGauge
-            runningCount={service.runningCount}
-            desiredCount={service.desiredCount}
-            isDeploying={isDeploying}
-          />
-        </div>
-        <div>
-          <div className="text-muted-foreground mb-1">Started</div>
-          <div className="font-medium text-foreground">
-            {formatLastSyncTime(deployment.createdAt)}
-          </div>
-        </div>
-        <div>
-          <div className="text-muted-foreground mb-1">Last Updated</div>
-          <div className="font-medium text-foreground">
-            {formatLastSyncTime(deployment.updatedAt)}
-          </div>
-        </div>
-      </div>
-      {deployment.rolloutStateReason ? (
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          {deployment.rolloutStateReason}
-        </p>
-      ) : null}
-    </section>
-  );
 }
 
 export function ApplicationDashboard({
@@ -718,7 +488,7 @@ export function ApplicationDashboard({
                       Last Synced
                     </div>
                     <div className="font-medium">
-                      {formatLastSyncTime(
+                      {formatRelativeTime(
                         selectedApplication?.sync.status === "Success"
                           ? selectedApplication.sync.value?.lastSyncedAt
                           : undefined

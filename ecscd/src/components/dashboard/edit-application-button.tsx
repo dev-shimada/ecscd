@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { EditApplicationDialog } from "@/components/edit-application-dialog";
+import { EditApplicationDialog } from "@/components/application/edit-application-dialog";
 import { ApplicationDomain } from "@/lib/domain/application";
 
 export function DashboardEditApplicationButton({

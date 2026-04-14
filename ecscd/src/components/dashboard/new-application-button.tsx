@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { NewApplicationDialog } from "@/components/new-application-dialog";
+import { NewApplicationDialog } from "@/components/application/new-application-dialog";
 
 export function DashboardNewApplicationButton() {
   const router = useRouter();

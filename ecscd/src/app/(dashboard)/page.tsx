@@ -1,4 +1,4 @@
-import { ApplicationDashboard } from "@/components/application-dashboard";
+import { ApplicationDashboard } from "@/components/dashboard/application-dashboard";
 import { getDashboardConfigs, getDashboardFilters } from "@/lib/server/dashboard";
 
 export default async function DashboardIndexPage() {
