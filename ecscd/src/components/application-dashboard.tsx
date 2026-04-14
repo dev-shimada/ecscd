@@ -40,6 +40,7 @@ type CacheEntry = {
 };
 
 const applicationCache = new Map<string, CacheEntry>();
+const DEPLOYMENT_POLLING_INTERVAL_MS = 5_000;
 const ALL_APPLICATION_STATUSES: ApplicationStatus[] = [
   "Loading",
   "Error",
@@ -400,9 +401,12 @@ export function ApplicationDashboard({
     ? getGitLinks(selectedApplicationConfig)
     : null;
 
-  const loadApplication = useCallback((config: ApplicationDomain) => {
+  const loadApplication = useCallback((
+    config: ApplicationDomain,
+    options: { force?: boolean } = {}
+  ) => {
     const existing = applicationCache.get(config.name);
-    if (existing?.data || existing?.promise) {
+    if (existing?.promise || (existing?.data && !options.force)) {
       return;
     }
 
@@ -445,6 +449,24 @@ export function ApplicationDashboard({
       loadApplication(selectedApplicationConfig);
     }
   }, [loadApplication, nameFilteredApplications, selectedApplicationConfig]);
+
+  useEffect(() => {
+    if (
+      !selectedApplicationConfig ||
+      displayApplicationStatus !== "Deploying"
+    ) {
+      return;
+    }
+
+    loadApplication(selectedApplicationConfig, { force: true });
+    const intervalId = window.setInterval(() => {
+      loadApplication(selectedApplicationConfig, { force: true });
+    }, DEPLOYMENT_POLLING_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [displayApplicationStatus, loadApplication, selectedApplicationConfig]);
 
   const handleApplicationChanged = useCallback(
     (name: string) => {
