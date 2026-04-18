@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  ApplicationDomain,
+  ObservedApplicationDomain,
   getApplicationCurrentDeployment,
 } from "@/lib/domain/application";
 import { formatRelativeTime } from "@/components/dashboard/format";
@@ -80,7 +80,7 @@ export function DashboardLastDeployment({
   application,
   deploymentUrl,
 }: {
-  application: ApplicationDomain;
+  application: ObservedApplicationDomain;
   deploymentUrl: string;
 }) {
   const deployment = getApplicationCurrentDeployment(application);

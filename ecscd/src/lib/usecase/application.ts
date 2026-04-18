@@ -1,18 +1,17 @@
 import {
   ApplicationDomain,
-  ApplicationSyncStatus,
-  createLoadingResource,
+  ObservedApplicationDomain,
 } from "../domain/application";
-import { compareTaskDefinitions } from "../domain/task-definition-diff";
 import { ApplicationRepository } from "../repository/application";
-import { DeploymentRepository } from "../repository/deployment";
+import { ApplicationObserver } from "../repository/application-observer";
 
 export interface IApplicationUsecase {
   getApplications(): Promise<ApplicationDomain[]>;
   getApplicationNames(): Promise<string[]>;
   getApplication(name: string): Promise<ApplicationDomain | null>;
-  fetchService(application: ApplicationDomain): Promise<ApplicationDomain>;
-  resolveApplication(application: ApplicationDomain): Promise<ApplicationDomain>;
+  observeApplication(
+    application: ApplicationDomain,
+  ): Promise<ObservedApplicationDomain>;
   createApplication(application: ApplicationDomain): Promise<void>;
   updateApplication(application: ApplicationDomain): Promise<void>;
   deleteApplication(name: string): Promise<void>;
@@ -21,91 +20,13 @@ export interface IApplicationUsecase {
 export class ApplicationUsecase implements IApplicationUsecase {
   constructor(
     private applicationRepository: ApplicationRepository,
-    private deploymentRepository: DeploymentRepository,
+    private applicationObserver: ApplicationObserver,
   ) {}
 
-  private toDiffErrorReason(error: unknown): string {
-    return error instanceof Error
-      ? error.message
-      : "Failed to compare ECS and GitHub configuration.";
-  }
-
-  private toSyncResource(status: ApplicationSyncStatus, lastSyncedAt?: Date) {
-    return {
-      status: "Success" as const,
-      value: {
-        status,
-        lastSyncedAt,
-      },
-    };
-  }
-
-  async fetchService(application: ApplicationDomain): Promise<ApplicationDomain> {
-    return this.applicationRepository.fetchService(application);
-  }
-
-  async resolveApplication(application: ApplicationDomain): Promise<ApplicationDomain> {
-    const serviceResolvedApplication = await this.fetchService(application);
-
-    if (serviceResolvedApplication.service.status !== "Success") {
-      return serviceResolvedApplication;
-    }
-
-    const service = serviceResolvedApplication.service.value;
-    if (!service || service.status !== "ACTIVE") {
-      return serviceResolvedApplication;
-    }
-
-    if (serviceResolvedApplication.sync.status === "Error") {
-      return serviceResolvedApplication;
-    }
-
-    const lastSyncedAt =
-      serviceResolvedApplication.sync.status === "Success"
-        ? serviceResolvedApplication.sync.value?.lastSyncedAt
-        : undefined;
-
-    const loadingApplication: ApplicationDomain = {
-      ...serviceResolvedApplication,
-      diff: createLoadingResource(),
-      sync: createLoadingResource(),
-    };
-
-    try {
-      const taskDefinitions =
-        await this.deploymentRepository.getTaskDefinitionsForDiff(
-          loadingApplication,
-          service,
-        );
-      const deployments = compareTaskDefinitions(
-        taskDefinitions.current,
-        taskDefinitions.target,
-      );
-      return {
-        ...loadingApplication,
-        sync: this.toSyncResource(
-          deployments.length > 0 ? "OutOfSync" : "InSync",
-          lastSyncedAt,
-        ),
-        diff: {
-          status: "Success",
-          value: deployments,
-        },
-      };
-    } catch (error) {
-      const reason = this.toDiffErrorReason(error);
-      return {
-        ...loadingApplication,
-        sync: {
-          status: "Error",
-          reason,
-        },
-        diff: {
-          status: "Error",
-          reason,
-        },
-      };
-    }
+  async observeApplication(
+    application: ApplicationDomain,
+  ): Promise<ObservedApplicationDomain> {
+    return this.applicationObserver.observe(application);
   }
 
   async getApplications(): Promise<ApplicationDomain[]> {

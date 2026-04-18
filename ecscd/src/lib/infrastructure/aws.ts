@@ -3,7 +3,13 @@ import {
   DescribeServicesCommand,
   ECSClientConfig,
 } from "@aws-sdk/client-ecs";
-import { ApplicationDomain, ServiceDomain } from "../domain/application";
+import {
+  ApplicationDomain,
+  EcsDeploymentStatus,
+  EcsRolloutState,
+  EcsServiceStatus,
+  ServiceDomain,
+} from "../domain/application";
 import {
   RegisterTaskDefinitionCommand,
   RegisterTaskDefinitionCommandInput,
@@ -30,6 +36,34 @@ function normalizeRolloutStateReason(
   }
 
   return reason?.trim() || "";
+}
+
+function toEcsServiceStatus(status: string | undefined): EcsServiceStatus {
+  if (status === "ACTIVE" || status === "DRAINING" || status === "INACTIVE") {
+    return status;
+  }
+
+  return "INACTIVE";
+}
+
+function toEcsDeploymentStatus(status: string | undefined): EcsDeploymentStatus {
+  if (status === "PRIMARY" || status === "ACTIVE" || status === "INACTIVE") {
+    return status;
+  }
+
+  return "INACTIVE";
+}
+
+function toEcsRolloutState(status: string | undefined): EcsRolloutState {
+  if (
+    status === "COMPLETED" ||
+    status === "FAILED" ||
+    status === "IN_PROGRESS"
+  ) {
+    return status;
+  }
+
+  return "FAILED";
 }
 
 export class AWS implements IAws {
@@ -97,13 +131,13 @@ export class AWS implements IAws {
       return undefined;
     }
     const service: ServiceDomain = {
-      status: response.services?.[0]?.status || "INACTIVE",
+      status: toEcsServiceStatus(response.services?.[0]?.status),
       desiredCount: response.services?.[0]?.desiredCount || 0,
       runningCount: response.services?.[0]?.runningCount || 0,
       taskDefinition: response.services?.[0]?.taskDefinition || "",
       deployments: (response.services?.[0]?.deployments || []).map((d) => ({
-        status: d.status || "INACTIVE",
-        rolloutState: d.rolloutState || "FAILED",
+        status: toEcsDeploymentStatus(d.status),
+        rolloutState: toEcsRolloutState(d.rolloutState),
         rolloutStateReason: normalizeRolloutStateReason(
           d.rolloutState,
           d.rolloutStateReason

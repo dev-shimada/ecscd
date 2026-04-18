@@ -7,7 +7,7 @@ import {
   ScanCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { ApplicationDomain, createLoadingResource } from "../domain/application";
+import { ApplicationDomain } from "../domain/application";
 import { FilterDomain } from "../domain/filter";
 import { IDatabase } from "./interface/database";
 
@@ -220,8 +220,6 @@ export class DynamoDB implements IDatabase {
   ): Promise<ApplicationDomain> {
     return {
       name: item.name,
-      sync: createLoadingResource(),
-      diff: createLoadingResource(),
       gitConfig: {
         repo: item.git_repo,
         branch: item.git_branch,
@@ -236,7 +234,6 @@ export class DynamoDB implements IDatabase {
         roleArn: item.aws_role_arn,
         externalId: item.aws_external_id,
       },
-      service: createLoadingResource(),
       createdAt: new Date(item.created_at),
       updatedAt: new Date(item.updated_at),
     };

@@ -1,4 +1,5 @@
 import { au } from "@/lib/di";
+import * as Applications from "@/lib/domain/application";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -22,7 +23,7 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(await au.resolveApplication(application));
+    return NextResponse.json(await au.observeApplication(application));
   } catch (error) {
     console.error("Error fetching application:", error);
     return NextResponse.json(
@@ -55,14 +56,12 @@ export async function PUT(
       );
     }
 
-    const updatedApp = {
-      ...existingApp,
-      name,
+    const updatedApp = Applications.updateSettings(existingApp, {
       gitConfig,
       ecsConfig,
       awsConfig,
-      updatedAt: new Date(),
-    };
+      now: new Date(),
+    });
     await au.updateApplication(updatedApp);
     return NextResponse.json(
       { message: "Application updated successfully" },

@@ -22,6 +22,7 @@ import { FilterSelector } from "@/components/filter/filter-selector";
 import { formatRelativeTime } from "@/components/dashboard/format";
 import {
   ApplicationDomain,
+  ObservedApplicationDomain,
   ApplicationStatus,
   getApplicationStatus,
 } from "@/lib/domain/application";
@@ -42,7 +43,7 @@ type ApplicationDashboardProps = {
 };
 
 type CacheEntry = {
-  data?: ApplicationDomain;
+  data?: ObservedApplicationDomain;
   promise?: Promise<void>;
 };
 
@@ -60,7 +61,7 @@ const ALL_APPLICATION_STATUSES: ApplicationStatus[] = [
 function createApplicationErrorState(
   config: ApplicationDomain,
   reason: string
-): ApplicationDomain {
+): ObservedApplicationDomain {
   return {
     ...config,
     sync: {
@@ -75,10 +76,13 @@ function createApplicationErrorState(
       status: "Error",
       reason,
     },
+    observedAt: new Date(),
   };
 }
 
-function getCachedApplication(config: ApplicationDomain): ApplicationDomain | null {
+function getCachedApplication(
+  config: ApplicationDomain,
+): ObservedApplicationDomain | null {
   const entry = applicationCache.get(config.name);
   if (!entry?.data) {
     return null;
@@ -188,7 +192,7 @@ export function ApplicationDashboard({
           throw new Error("Failed to fetch application");
         }
 
-        entry.data = (await response.json()) as ApplicationDomain;
+        entry.data = (await response.json()) as ObservedApplicationDomain;
       } catch (error) {
         const reason =
           error instanceof Error

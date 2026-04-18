@@ -1,5 +1,8 @@
 export type ApplicationSyncStatus = "InSync" | "OutOfSync";
 export type ResourceStatus = "Loading" | "Success" | "Error";
+export type EcsServiceStatus = "ACTIVE" | "DRAINING" | "INACTIVE";
+export type EcsDeploymentStatus = "PRIMARY" | "ACTIVE" | "INACTIVE";
+export type EcsRolloutState = "COMPLETED" | "FAILED" | "IN_PROGRESS";
 
 export type ApplicationStatus =
   | "Loading"
@@ -17,27 +20,52 @@ export type ApplicationStatusReason =
   | { status: "OutOfSync" }
   | { status: "InSync" };
 
+export interface GitTaskDefinitionSource {
+  repo: string;
+  branch: string;
+  path: string;
+}
+
+export interface EcsServiceTarget {
+  cluster: string;
+  service: string;
+}
+
+export interface AwsAccessProfile {
+  region?: string;
+  roleArn?: string;
+  externalId: string;
+}
+
 export interface ApplicationDomain {
   name: string;
-  sync: ResourceResult<ApplicationSyncDomain>;
-  diff: ResourceResult<DiffDomain[]>;
-  gitConfig: {
-    repo: string;
-    branch: string;
-    path: string;
-  };
-  ecsConfig: {
-    cluster: string;
-    service: string;
-  };
-  awsConfig: {
-    region?: string;
-    roleArn?: string;
-    externalId: string;
-  };
-  service: ResourceResult<ServiceDomain>;
+  gitConfig: GitTaskDefinitionSource;
+  ecsConfig: EcsServiceTarget;
+  awsConfig: AwsAccessProfile;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface ObservedApplicationDomain extends ApplicationDomain {
+  sync: ResourceResult<ApplicationSyncDomain>;
+  diff: ResourceResult<DiffDomain[]>;
+  service: ResourceResult<ServiceDomain>;
+  observedAt: Date;
+}
+
+export interface CreateApplicationInput {
+  name: string;
+  gitConfig: GitTaskDefinitionSource;
+  ecsConfig: EcsServiceTarget;
+  awsConfig: AwsAccessProfile;
+  now: Date;
+}
+
+export interface UpdateApplicationSettingsInput {
+  gitConfig: GitTaskDefinitionSource;
+  ecsConfig: EcsServiceTarget;
+  awsConfig: AwsAccessProfile;
+  now: Date;
 }
 
 export type ResourceResult<T> =
@@ -49,21 +77,64 @@ export function createLoadingResource<T>(): ResourceResult<T> {
   return { status: "Loading" };
 }
 
+export function create(input: CreateApplicationInput): ApplicationDomain {
+  return {
+    name: input.name,
+    gitConfig: input.gitConfig,
+    ecsConfig: input.ecsConfig,
+    awsConfig: input.awsConfig,
+    createdAt: input.now,
+    updatedAt: input.now,
+  };
+}
+
+export function updateSettings(
+  application: ApplicationDomain,
+  input: UpdateApplicationSettingsInput,
+): ApplicationDomain {
+  return {
+    ...application,
+    gitConfig: input.gitConfig,
+    ecsConfig: input.ecsConfig,
+    awsConfig: input.awsConfig,
+    updatedAt: input.now,
+  };
+}
+
+export function createLoadingObserved(
+  application: ApplicationDomain,
+  observedAt: Date = new Date(),
+): ObservedApplicationDomain {
+  return {
+    ...application,
+    sync: createLoadingResource(),
+    diff: createLoadingResource(),
+    service: createLoadingResource(),
+    observedAt,
+  };
+}
+
+export function isObservedApplication(
+  application: ApplicationDomain | ObservedApplicationDomain,
+): application is ObservedApplicationDomain {
+  return "sync" in application && "diff" in application && "service" in application;
+}
+
 export interface ApplicationSyncDomain {
   status: ApplicationSyncStatus;
   lastSyncedAt?: Date;
 }
 
 export interface ServiceDomain {
-  status: string;
+  status: EcsServiceStatus;
   desiredCount: number;
   runningCount: number;
   taskDefinition: string;
   deployments: {
-    status: string;
+    status: EcsDeploymentStatus;
     createdAt: Date;
     updatedAt: Date;
-    rolloutState: "COMPLETED" | "FAILED" | "IN_PROGRESS";
+    rolloutState: EcsRolloutState;
     rolloutStateReason: string;
   }[];
 }
@@ -76,8 +147,12 @@ export interface DiffDomain {
 }
 
 export function getApplicationCurrentDeployment(
-  application: ApplicationDomain,
+  application: ApplicationDomain | ObservedApplicationDomain,
 ): ServiceDomain["deployments"][number] | null {
+  if (!isObservedApplication(application)) {
+    return null;
+  }
+
   if (application.service.status !== "Success") {
     return null;
   }
@@ -91,8 +166,15 @@ export function getApplicationCurrentDeployment(
 }
 
 export function getApplicationStatus(
-  application: ApplicationDomain,
+  application: ApplicationDomain | ObservedApplicationDomain,
 ): ApplicationStatusReason {
+  if (!isObservedApplication(application)) {
+    return {
+      status: "Loading",
+      reason: "Loading ECS service state...",
+    };
+  }
+
   if (application.service.status === "Loading") {
     return {
       status: "Loading",
@@ -198,13 +280,17 @@ export function getApplicationStatus(
 }
 
 export function getApplicationDiffs(
-  application: ApplicationDomain,
+  application: ApplicationDomain | ObservedApplicationDomain,
 ): DiffDomain[] {
+  if (!isObservedApplication(application)) {
+    return [];
+  }
+
   return application.diff.status === "Success" ? application.diff.value : [];
 }
 
 export function getApplicationDiffSummary(
-  application: ApplicationDomain,
+  application: ApplicationDomain | ObservedApplicationDomain,
 ): string {
   return `${getApplicationDiffs(application).length} changes`;
 }

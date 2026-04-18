@@ -1,10 +1,5 @@
 import { au } from "@/lib/di";
-import {
-  ApplicationSyncDomain,
-  createLoadingResource,
-  DiffDomain,
-  ServiceDomain,
-} from "@/lib/domain/application";
+import * as Applications from "@/lib/domain/application";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -63,17 +58,13 @@ export async function POST(request: NextRequest) {
         { status: 409 },
       );
     }
-    const newApp = {
+    const newApp = Applications.create({
       name,
-      sync: createLoadingResource<ApplicationSyncDomain>(),
-      diff: createLoadingResource<DiffDomain[]>(),
       gitConfig,
       ecsConfig,
       awsConfig,
-      service: createLoadingResource<ServiceDomain>(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+      now: new Date(),
+    });
     await au.createApplication(newApp);
     return NextResponse.json(
       { message: "Application created successfully" },

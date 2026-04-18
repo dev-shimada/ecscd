@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
 import { au } from "@/lib/di";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
@@ -20,7 +20,7 @@ export async function GET(
         { status: 404 }
       );
     }
-    const resolvedApplication = await au.fetchService(application);
+    const resolvedApplication = await au.observeApplication(application);
     return NextResponse.json(
       {
         service:

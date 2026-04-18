@@ -10,8 +10,6 @@ function createTestApplication(): ApplicationDomain {
 
   return {
     name: "test-app",
-    sync: { status: "Loading" },
-    diff: { status: "Loading" },
     gitConfig: {
       repo: "https://github.com/test/repo",
       branch: "main",
@@ -25,7 +23,6 @@ function createTestApplication(): ApplicationDomain {
       region: "us-east-1",
       externalId: "test-external-id",
     },
-    service: { status: "Loading" },
     createdAt: now,
     updatedAt: now,
   };
