@@ -14,11 +14,8 @@ export class AwsServiceStateProvider implements ServiceStateProvider {
   ): Promise<ResourceResult<ServiceDomain>> {
     try {
       const ecsResponse = await this.aws.describeServices(
-        await this.aws.createECSClient(application.awsConfig),
-        {
-          cluster: application.ecsConfig.cluster,
-          service: application.ecsConfig.service,
-        },
+        application.awsConfig,
+        application.ecsConfig,
       );
 
       if (!ecsResponse) {

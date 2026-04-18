@@ -1,6 +1,6 @@
 import { Octokit } from "@octokit/rest";
-import { RegisterTaskDefinitionCommandInput } from "@aws-sdk/client-ecs";
 import { ApplicationDomain } from "../domain/application";
+import { TaskDefinitionSpec } from "../domain/task-definition";
 import { IGithub } from "./interface/github";
 
 export class GitHub implements IGithub {
@@ -14,7 +14,7 @@ export class GitHub implements IGithub {
 
   async getFileContent(
     application: ApplicationDomain
-  ): Promise<RegisterTaskDefinitionCommandInput | null> {
+  ): Promise<TaskDefinitionSpec | null> {
     try {
       // リポジトリurl から owner, repoを取得
       const repoUrl = application.gitConfig?.repo || "";
@@ -45,7 +45,7 @@ export class GitHub implements IGithub {
           response.data.content,
           "base64"
         ).toString("utf8");
-        return this.parseServiceDeployment(fileContent);
+        return this.parseTaskDefinition(fileContent);
       }
 
       return null;
@@ -86,15 +86,14 @@ export class GitHub implements IGithub {
       return null;
     }
   }
-  private async parseServiceDeployment(
+  private async parseTaskDefinition(
     content: string
-  ): Promise<RegisterTaskDefinitionCommandInput | null> {
+  ): Promise<TaskDefinitionSpec | null> {
     try {
       const parsed = JSON.parse(content);
-      // Add validation logic if necessary
-      return parsed as RegisterTaskDefinitionCommandInput;
+      return parsed as TaskDefinitionSpec;
     } catch (error) {
-      console.error("Error parsing service deployment content:", error);
+      console.error("Error parsing task definition content:", error);
       return null;
     }
   }

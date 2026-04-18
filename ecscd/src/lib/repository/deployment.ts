@@ -1,10 +1,9 @@
-import { RegisterTaskDefinitionCommandInput } from "@aws-sdk/client-ecs";
-
 import { ApplicationDomain, ServiceDomain } from "../domain/application";
+import { TaskDefinitionSpec } from "../domain/task-definition";
 
 export interface TaskDefinitionsForDiff {
-  current: RegisterTaskDefinitionCommandInput;
-  target: RegisterTaskDefinitionCommandInput;
+  current: TaskDefinitionSpec;
+  target: TaskDefinitionSpec;
 }
 
 export interface DeploymentRepository {

@@ -1,8 +1,8 @@
-import { RegisterTaskDefinitionCommandInput } from "@aws-sdk/client-ecs";
 import { ApplicationDomain } from "../../domain/application";
+import { TaskDefinitionSpec } from "../../domain/task-definition";
 
 export interface IGithub {
   getFileContent(
     application: ApplicationDomain
-  ): Promise<RegisterTaskDefinitionCommandInput | null>;
+  ): Promise<TaskDefinitionSpec | null>;
 }

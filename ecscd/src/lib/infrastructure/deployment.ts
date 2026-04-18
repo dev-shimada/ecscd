@@ -13,21 +13,22 @@ export class Deployment implements DeploymentRepository {
     if (!taskDefinition) {
       throw new Error("Task definition file not found");
     }
-    const client = await this.aws.createECSClient(application.awsConfig);
     const taskDefinitionArn = await this.aws.registerTaskDefinition(
-      client,
+      application.awsConfig,
       taskDefinition
     );
     await this.aws.updateService(
-      client,
+      application.awsConfig,
       application.ecsConfig,
       taskDefinitionArn
     );
   }
 
   async rollback(application: ApplicationDomain): Promise<void> {
-    const client = await this.aws.createECSClient(application.awsConfig);
-    await this.aws.stopServiceDeployment(client, application.ecsConfig);
+    await this.aws.stopServiceDeployment(
+      application.awsConfig,
+      application.ecsConfig
+    );
   }
 
   async getTaskDefinitionsForDiff(
@@ -38,10 +39,12 @@ export class Deployment implements DeploymentRepository {
     if (!taskDefinition) {
       throw new Error("Task definition file not found");
     }
-    const client = await this.aws.createECSClient(application.awsConfig);
     const currentService =
       service ||
-      (await this.aws.describeServices(client, application.ecsConfig));
+      (await this.aws.describeServices(
+        application.awsConfig,
+        application.ecsConfig
+      ));
     if (!currentService) {
       throw new Error("ECS Service not found");
     }
@@ -50,7 +53,7 @@ export class Deployment implements DeploymentRepository {
       throw new Error("Current task definition ARN not found");
     }
     const currentTaskDef = await this.aws.describeTaskDefinition(
-      client,
+      application.awsConfig,
       currentTaskDefArn
     );
     if (!currentTaskDef) {

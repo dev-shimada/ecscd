@@ -2,8 +2,8 @@ import { Deployment } from "../deployment";
 import { IAws } from "../interface/aws";
 import { IGithub } from "../interface/github";
 import { ApplicationDomain } from "../../domain/application";
+import { TaskDefinitionSpec } from "../../domain/task-definition";
 import { compareTaskDefinitions } from "../../domain/task-definition-diff";
-import { RegisterTaskDefinitionCommandInput } from "@aws-sdk/client-ecs";
 
 function createTestApplication(): ApplicationDomain {
   const now = new Date("2026-04-08T00:00:00.000Z");
@@ -35,7 +35,6 @@ describe("Deployment", () => {
 
   beforeEach(() => {
     mockAws = {
-      createECSClient: jest.fn(),
       registerTaskDefinition: jest.fn(),
       updateService: jest.fn(),
       stopServiceDeployment: jest.fn(),
@@ -51,12 +50,12 @@ describe("Deployment", () => {
   });
 
   describe("task definition loading for diff", () => {
-    it("should generate diffs for all RegisterTaskDefinitionCommandInput fields when everything is different", async () => {
+    it("should generate diffs for all TaskDefinitionSpec fields when everything is different", async () => {
       // Test application
       const application = createTestApplication();
 
       // Current task definition (comprehensive with all possible fields)
-      const currentTaskDefinition: RegisterTaskDefinitionCommandInput = {
+      const currentTaskDefinition: TaskDefinitionSpec = {
         family: "current-family",
         taskRoleArn: "arn:aws:iam::123456789012:role/current-task-role",
         executionRoleArn:
@@ -243,7 +242,7 @@ describe("Deployment", () => {
       };
 
       // Target task definition (different in all possible fields)
-      const targetTaskDefinition: RegisterTaskDefinitionCommandInput = {
+      const targetTaskDefinition: TaskDefinitionSpec = {
         family: "target-family",
         taskRoleArn: "arn:aws:iam::123456789012:role/target-task-role",
         executionRoleArn:
@@ -437,7 +436,6 @@ describe("Deployment", () => {
 
       // Setup mocks
       mockGithub.getFileContent.mockResolvedValue(targetTaskDefinition);
-      mockAws.createECSClient.mockResolvedValue({} as any);
       mockAws.describeServices.mockResolvedValue(mockService as any);
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDefinition);
 
@@ -849,15 +847,12 @@ describe("Deployment", () => {
 
       // Verify mocks were called correctly
       expect(mockGithub.getFileContent).toHaveBeenCalledWith(application);
-      expect(mockAws.createECSClient).toHaveBeenCalledWith(
-        application.awsConfig
-      );
       expect(mockAws.describeServices).toHaveBeenCalledWith(
-        expect.anything(),
+        application.awsConfig,
         application.ecsConfig
       );
       expect(mockAws.describeTaskDefinition).toHaveBeenCalledWith(
-        expect.anything(),
+        application.awsConfig,
         "arn:aws:ecs:us-east-1:123456789012:task-definition/current-family:1"
       );
     });
@@ -867,7 +862,7 @@ describe("Deployment", () => {
       const application = createTestApplication();
 
       // Current task definition with same structure as target but different values
-      const currentTaskDefinition: RegisterTaskDefinitionCommandInput = {
+      const currentTaskDefinition: TaskDefinitionSpec = {
         family: "web-app",
         taskRoleArn: "arn:aws:iam::123456789012:role/web-task-role",
         executionRoleArn: "arn:aws:iam::123456789012:role/web-execution-role",
@@ -978,7 +973,7 @@ describe("Deployment", () => {
       };
 
       // Target task definition with same structure but all different values
-      const targetTaskDefinition: RegisterTaskDefinitionCommandInput = {
+      const targetTaskDefinition: TaskDefinitionSpec = {
         family: "web-app-v2",
         taskRoleArn: "arn:aws:iam::123456789012:role/web-task-role-v2",
         executionRoleArn:
@@ -1097,7 +1092,6 @@ describe("Deployment", () => {
 
       // Setup mocks
       mockGithub.getFileContent.mockResolvedValue(targetTaskDefinition);
-      mockAws.createECSClient.mockResolvedValue({} as any);
       mockAws.describeServices.mockResolvedValue(mockService as any);
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDefinition);
 
@@ -1476,15 +1470,12 @@ describe("Deployment", () => {
 
       // Verify mocks were called correctly
       expect(mockGithub.getFileContent).toHaveBeenCalledWith(application);
-      expect(mockAws.createECSClient).toHaveBeenCalledWith(
-        application.awsConfig
-      );
       expect(mockAws.describeServices).toHaveBeenCalledWith(
-        expect.anything(),
+        application.awsConfig,
         application.ecsConfig
       );
       expect(mockAws.describeTaskDefinition).toHaveBeenCalledWith(
-        expect.anything(),
+        application.awsConfig,
         "arn:aws:ecs:us-east-1:123456789012:task-definition/web-app:1"
       );
     });

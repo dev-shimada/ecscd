@@ -1,14 +1,5 @@
 import { DiffDomain } from "./application";
-
-const AWS_GENERATED_TASK_DEFINITION_FIELDS = [
-  "revision",
-  "taskDefinitionArn",
-  "registeredAt",
-  "registeredBy",
-  "status",
-  "requiresAttributes",
-  "compatibilities",
-] as const;
+import { TaskDefinitionSpec } from "./task-definition";
 
 /**
  * Recursively flatten an object/array into a Map with dot-notation paths.
@@ -239,26 +230,9 @@ function compareMaps(
   return diffs;
 }
 
-function cleanTaskDefinitionForComparison(
-  taskDefinition: object,
-): Record<string, unknown> {
-  const cleanedTaskDefinition: Record<string, unknown> = {
-    ...taskDefinition,
-  };
-
-  for (const field of AWS_GENERATED_TASK_DEFINITION_FIELDS) {
-    delete cleanedTaskDefinition[field];
-  }
-
-  return cleanedTaskDefinition;
-}
-
 export function compareTaskDefinitions(
-  current: object,
-  target: object,
+  current: TaskDefinitionSpec,
+  target: TaskDefinitionSpec,
 ): DiffDomain[] {
-  const cleanedCurrent = cleanTaskDefinitionForComparison(current);
-  const cleanedTarget = cleanTaskDefinitionForComparison(target);
-
-  return compareMaps(flattenToMap(cleanedCurrent), flattenToMap(cleanedTarget));
+  return compareMaps(flattenToMap(current), flattenToMap(target));
 }

@@ -1,32 +1,26 @@
 import { ApplicationDomain, ServiceDomain } from "../../domain/application";
-import {
-  ECSClient,
-  RegisterTaskDefinitionCommandInput,
-} from "@aws-sdk/client-ecs";
+import { TaskDefinitionSpec } from "../../domain/task-definition";
 
 export interface IAws {
-  createECSClient(
-    awsConfig: ApplicationDomain["awsConfig"]
-  ): Promise<ECSClient>;
   registerTaskDefinition(
-    client: ECSClient,
-    taskDef: RegisterTaskDefinitionCommandInput
+    awsConfig: ApplicationDomain["awsConfig"],
+    taskDef: TaskDefinitionSpec
   ): Promise<string>;
   updateService(
-    client: ECSClient,
+    awsConfig: ApplicationDomain["awsConfig"],
     ecsConfig: ApplicationDomain["ecsConfig"],
     taskDefinitionArn: string
   ): Promise<void>;
   describeServices(
-    client: ECSClient,
+    awsConfig: ApplicationDomain["awsConfig"],
     ecsConfig: ApplicationDomain["ecsConfig"]
   ): Promise<ServiceDomain | undefined>;
   describeTaskDefinition(
-    client: ECSClient,
+    awsConfig: ApplicationDomain["awsConfig"],
     taskDefinitionArn: string
-  ): Promise<RegisterTaskDefinitionCommandInput | undefined>;
+  ): Promise<TaskDefinitionSpec | undefined>;
   stopServiceDeployment(
-    client: ECSClient,
+    awsConfig: ApplicationDomain["awsConfig"],
     ecsConfig: ApplicationDomain["ecsConfig"]
   ): Promise<void>;
 }
