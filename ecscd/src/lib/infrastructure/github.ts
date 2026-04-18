@@ -2,6 +2,7 @@ import { Octokit } from "@octokit/rest";
 import { ApplicationDomain } from "../domain/application";
 import { TaskDefinitionSpec } from "../domain/task-definition";
 import { IGithub } from "./interface/github";
+import { toTaskDefinitionSpec } from "./task-definition-normalizer";
 
 export class GitHub implements IGithub {
   private octokit: Octokit;
@@ -91,7 +92,11 @@ export class GitHub implements IGithub {
   ): Promise<TaskDefinitionSpec | null> {
     try {
       const parsed = JSON.parse(content);
-      return parsed as TaskDefinitionSpec;
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+        console.error("Task definition must be a JSON object.");
+        return null;
+      }
+      return toTaskDefinitionSpec(parsed as Record<string, unknown>);
     } catch (error) {
       console.error("Error parsing task definition content:", error);
       return null;

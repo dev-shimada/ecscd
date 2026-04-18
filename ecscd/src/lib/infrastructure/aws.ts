@@ -18,6 +18,7 @@ import {
 } from "../domain/application";
 import { TaskDefinitionSpec } from "../domain/task-definition";
 import { IAws } from "./interface/aws";
+import { toTaskDefinitionSpec } from "./task-definition-normalizer";
 
 import {
   STSClient,
@@ -25,16 +26,6 @@ import {
   Credentials,
   STSClientConfig,
 } from "@aws-sdk/client-sts";
-
-const AWS_GENERATED_TASK_DEFINITION_FIELDS = [
-  "revision",
-  "taskDefinitionArn",
-  "registeredAt",
-  "registeredBy",
-  "status",
-  "requiresAttributes",
-  "compatibilities",
-] as const;
 
 function normalizeRolloutStateReason(
   rolloutState: string | undefined,
@@ -73,18 +64,6 @@ function toEcsRolloutState(status: string | undefined): EcsRolloutState {
   }
 
   return "FAILED";
-}
-
-function toTaskDefinitionSpec(
-  taskDefinition: Record<string, unknown>,
-): TaskDefinitionSpec {
-  const spec: Record<string, unknown> = { ...taskDefinition };
-
-  for (const field of AWS_GENERATED_TASK_DEFINITION_FIELDS) {
-    delete spec[field];
-  }
-
-  return spec as TaskDefinitionSpec;
 }
 
 function toRegisterTaskDefinitionInput(
@@ -205,21 +184,19 @@ export class AWS implements IAws {
       delete cleanedInput.tags;
     }
 
-    // Clean up containerDefinitions to remove empty or invalid arrays
+    // AWS API は空配列を渡すと拒否するので、シリアライズ時だけ空配列を取り除く。
+    // ユーザーが宣言した desired state の意味を変える変更 (例: 無効要素の黙示 filter) は
+    // ここで行わない。
     if (cleanedInput.containerDefinitions) {
       cleanedInput.containerDefinitions = cleanedInput.containerDefinitions.map(
         (container) => {
           const cleanedContainer = { ...container };
 
-          if (cleanedContainer.secrets) {
-            const validSecrets = cleanedContainer.secrets.filter(
-              (secret) => secret?.name && secret.name.trim() !== ""
-            );
-            if (validSecrets.length === 0) {
-              delete cleanedContainer.secrets;
-            } else {
-              cleanedContainer.secrets = validSecrets;
-            }
+          if (
+            cleanedContainer.secrets &&
+            cleanedContainer.secrets.length === 0
+          ) {
+            delete cleanedContainer.secrets;
           }
 
           if (
