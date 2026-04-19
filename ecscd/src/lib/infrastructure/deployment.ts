@@ -1,6 +1,10 @@
 import { IAws } from "./interface/aws";
-import { IGithub } from "./interface/github";
+import {
+  GitTaskDefinitionError,
+  IGithub,
+} from "./interface/github";
 import { ApplicationDomain, ServiceDomain } from "../domain/application";
+import { TaskDefinitionSpec } from "../domain/task-definition";
 import {
   DeploymentRepository,
   TaskDefinitionsForDiff,
@@ -8,11 +12,19 @@ import {
 
 export class Deployment implements DeploymentRepository {
   constructor(private aws: IAws, private github: IGithub) {}
-  async syncService(application: ApplicationDomain): Promise<void> {
-    const taskDefinition = await this.github.getFileContent(application);
-    if (!taskDefinition) {
-      throw new Error("Task definition file not found");
+
+  private async resolveTargetTaskDefinition(
+    application: ApplicationDomain
+  ): Promise<TaskDefinitionSpec> {
+    const result = await this.github.getTaskDefinition(application.gitConfig);
+    if (result.status === "Error") {
+      throw new Error(formatGitTaskDefinitionError(result.error));
     }
+    return result.taskDefinition;
+  }
+
+  async syncService(application: ApplicationDomain): Promise<void> {
+    const taskDefinition = await this.resolveTargetTaskDefinition(application);
     const taskDefinitionArn = await this.aws.registerTaskDefinition(
       application.awsConfig,
       taskDefinition
@@ -35,10 +47,7 @@ export class Deployment implements DeploymentRepository {
     application: ApplicationDomain,
     service?: ServiceDomain,
   ): Promise<TaskDefinitionsForDiff> {
-    const taskDefinition = await this.github.getFileContent(application);
-    if (!taskDefinition) {
-      throw new Error("Task definition file not found");
-    }
+    const taskDefinition = await this.resolveTargetTaskDefinition(application);
     const currentService =
       service ||
       (await this.aws.describeServices(
@@ -64,5 +73,20 @@ export class Deployment implements DeploymentRepository {
       current: currentTaskDef,
       target: taskDefinition,
     };
+  }
+}
+
+function formatGitTaskDefinitionError(error: GitTaskDefinitionError): string {
+  switch (error.type) {
+    case "InvalidRepositoryUrl":
+      return `Invalid GitHub repository URL: "${error.url}"`;
+    case "CommitNotFound":
+      return `No commits found on branch "${error.branch}".`;
+    case "FileNotFound":
+      return `Task definition file not found at "${error.path}".`;
+    case "InvalidTaskDefinition":
+      return `Invalid task definition: ${error.reason}`;
+    case "FetchFailed":
+      return `Failed to fetch task definition from GitHub: ${error.reason}`;
   }
 }

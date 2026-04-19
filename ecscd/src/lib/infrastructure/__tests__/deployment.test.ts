@@ -43,7 +43,7 @@ describe("Deployment", () => {
     };
 
     mockGithub = {
-      getFileContent: jest.fn(),
+      getTaskDefinition: jest.fn(),
     };
 
     deployment = new Deployment(mockAws, mockGithub);
@@ -435,7 +435,10 @@ describe("Deployment", () => {
       };
 
       // Setup mocks
-      mockGithub.getFileContent.mockResolvedValue(targetTaskDefinition);
+      mockGithub.getTaskDefinition.mockResolvedValue({
+        status: "Success",
+        taskDefinition: targetTaskDefinition,
+      });
       mockAws.describeServices.mockResolvedValue(mockService as any);
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDefinition);
 
@@ -846,7 +849,9 @@ describe("Deployment", () => {
       });
 
       // Verify mocks were called correctly
-      expect(mockGithub.getFileContent).toHaveBeenCalledWith(application);
+      expect(mockGithub.getTaskDefinition).toHaveBeenCalledWith(
+        application.gitConfig
+      );
       expect(mockAws.describeServices).toHaveBeenCalledWith(
         application.awsConfig,
         application.ecsConfig
@@ -1091,7 +1096,10 @@ describe("Deployment", () => {
       };
 
       // Setup mocks
-      mockGithub.getFileContent.mockResolvedValue(targetTaskDefinition);
+      mockGithub.getTaskDefinition.mockResolvedValue({
+        status: "Success",
+        taskDefinition: targetTaskDefinition,
+      });
       mockAws.describeServices.mockResolvedValue(mockService as any);
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDefinition);
 
@@ -1469,7 +1477,9 @@ describe("Deployment", () => {
       });
 
       // Verify mocks were called correctly
-      expect(mockGithub.getFileContent).toHaveBeenCalledWith(application);
+      expect(mockGithub.getTaskDefinition).toHaveBeenCalledWith(
+        application.gitConfig
+      );
       expect(mockAws.describeServices).toHaveBeenCalledWith(
         application.awsConfig,
         application.ecsConfig
