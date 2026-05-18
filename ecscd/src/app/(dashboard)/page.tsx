@@ -1,5 +1,6 @@
 import { ApplicationDashboard } from "@/components/dashboard/application-dashboard";
 import { getDashboardConfigs, getDashboardFilters } from "@/lib/server/dashboard";
+import { Suspense } from "react";
 
 export default async function DashboardIndexPage() {
   const [applications, filters] = await Promise.all([
@@ -8,9 +9,11 @@ export default async function DashboardIndexPage() {
   ]);
 
   return (
-    <ApplicationDashboard
-      applications={applications}
-      filters={filters}
-    />
+    <Suspense fallback={null}>
+      <ApplicationDashboard
+        applications={applications}
+        filters={filters}
+      />
+    </Suspense>
   );
 }
