@@ -2,6 +2,8 @@ import { ApplicationDashboard } from "@/components/dashboard/application-dashboa
 import { getDashboardConfigs, getDashboardFilters } from "@/lib/server/dashboard";
 import { Suspense } from "react";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardIndexPage() {
   const [applications, filters] = await Promise.all([
     getDashboardConfigs(),
