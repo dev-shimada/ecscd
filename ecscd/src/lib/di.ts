@@ -32,7 +32,7 @@ const aws = new AWS();
 const ar = new Application(db);
 const dr = new Deployment(
   aws,
-  new GitHub(process.env.GITHUB_TOKEN || "")
+  new GitHub(process.env.GITHUB_TOKEN || "", process.env.GITHUB_API_URL)
 );
 const observer = new DefaultApplicationObserver(
   new AwsServiceStateProvider(aws),

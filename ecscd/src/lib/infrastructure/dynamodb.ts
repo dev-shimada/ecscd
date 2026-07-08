@@ -48,6 +48,12 @@ export class DynamoDB implements IDatabase {
 
   async getApplications(): Promise<ApplicationDomain[]> {
     try {
+      // FIXME(review): main が書き込んだ既存アイテムには item_type 属性が無いため、
+      // このフィルタで既存アプリケーションが全件除外される(バックフィルも無い)。
+      // アップグレード直後にダッシュボードが空になり、getApplication 経由の
+      // 全 API ルートも 404 になる。getApplicationNames も同様。修正例:
+      //   FilterExpression: "attribute_not_exists(item_type) OR item_type = :item_type",
+      // (filter アイテムは item_type="filter" を必ず持つため、属性なし = 旧アプリ行)
       const command = new ScanCommand({
         TableName: this.tableName,
         FilterExpression: "item_type = :item_type",
@@ -76,6 +82,7 @@ export class DynamoDB implements IDatabase {
 
   async getApplicationNames(): Promise<string[]> {
     try {
+      // FIXME(review): getApplications と同じ item_type フィルタ問題(上のコメント参照)。
       const command = new ScanCommand({
         TableName: this.tableName,
         FilterExpression: "item_type = :item_type",

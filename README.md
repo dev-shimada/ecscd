@@ -72,6 +72,21 @@ npm run dev
 
 アプリケーションは `http://localhost:3000` でアクセスできます。
 
+### ローカル動作確認 / 統合テスト (MiniStack)
+
+実 AWS アカウントなしで、AWS エミュレータ ([MiniStack](https://github.com/ministackorg/ministack)) と
+GitHub API スタブを使った動作確認・統合テストができます。すべてコンテナで完結します。
+
+```bash
+# 動作確認 (http://localhost:3000 に demo-app が表示される)
+docker compose up -d --build
+
+# 統合テスト
+docker compose --profile test run --rm integration-test
+```
+
+詳細は [docs/local-verification.md](docs/local-verification.md) を参照してください。
+
 ## アーキテクチャ
 
 ```

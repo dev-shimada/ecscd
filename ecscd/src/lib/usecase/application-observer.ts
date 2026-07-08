@@ -53,6 +53,11 @@ export class DefaultApplicationObserver implements ApplicationObserver {
       return serviceObservedApplication;
     }
 
+    // FIXME(review): serviceObservedApplication.sync は直前の createLoadingObserved で
+    // { status: "Loading" } に初期化されたばかりなので、この条件は常に false となり
+    // lastSyncedAt は常に undefined(UI の "Last Synced" は Sync 直後でも常に "Never")。
+    // 直前の観測結果から引き継げる値はここに存在しないため、修正には最終 Sync 時刻の
+    // 永続化(例: sync 実行時に DB へ記録し、ここで読み出す)が必要。
     const lastSyncedAt =
       serviceObservedApplication.sync.status === "Success"
         ? serviceObservedApplication.sync.value?.lastSyncedAt

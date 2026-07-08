@@ -64,6 +64,16 @@ export class SQLite implements IDatabase {
               return;
             }
 
+            // FIXME(review): この CREATE は applications CREATE 完了後のコールバック内で
+            // 初めて enqueue される。一方 constructor は initializeDatabase() を await
+            // しないため、初回リクエストの getFilters() の SELECT が先にキューへ入り、
+            // 新規 DB では確定的に "SQLITE_ERROR: no such table: filters" になる
+            // (トップページが 500)。修正例: serialize() 内で両方の CREATE を
+            // 同期的に連続 enqueue する:
+            //   this.db.serialize(() => {
+            //     this.db.run(CREATE_APPLICATIONS_SQL);
+            //     this.db.run(CREATE_FILTERS_SQL, (err) => (err ? reject(err) : resolve()));
+            //   });
             this.db.run(
               `
                 CREATE TABLE IF NOT EXISTS filters (

@@ -192,6 +192,11 @@ export function getApplicationStatus(
 
   const service = application.service.value;
 
+  // FIXME(review): この Error 判定が下の rolloutState IN_PROGRESS 判定より先に
+  // 評価されるため、デプロイ中に GitHub 側の一時エラー(レートリミット等)が
+  // 1 回起きるだけで状態が "Deploying" → "Error" に反転し、UI の Deploying 限定
+  // ポーリングが恒久停止する(application-dashboard.tsx の polling effect 参照)。
+  // 修正例: currentDeployment の IN_PROGRESS / FAILED 判定をこのブロックの前に移動する。
   if (application.sync.status === "Error") {
     return {
       status: "Error",

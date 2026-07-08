@@ -183,6 +183,11 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
     try {
       await onDelete(application.name);
       onOpenChange(false);
+      // FIXME(review): 削除後に onSuccess を呼ぶと、ダッシュボード側の
+      // handleApplicationChanged が削除済みアプリを再フェッチして 404 を Error として
+      // モジュールキャッシュに恒久保存し、同名アプリを再作成しても Error 表示が残る。
+      // 削除の後処理は onDelete 側(onApplicationDeleted)で完結しているため、
+      // 修正例: この onSuccess?.() を削除する。
       onSuccess?.();
     } catch (error) {
       console.error("Failed to delete application:", error);

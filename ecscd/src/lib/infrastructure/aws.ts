@@ -31,6 +31,12 @@ function normalizeRolloutStateReason(
   rolloutState: string | undefined,
   reason: string | undefined
 ) {
+  // FIXME(review): FAILED 以外で reason を空文字に潰すため、main が透過していた
+  // IN_PROGRESS の理由(例: サーキットブレーカーの "rolling back to deploymentId X")が
+  // UI に届かず、domain/application.ts の Deploying 時の rolloutStateReason
+  // フォールバックが死にコード化する。ロールバック進行中の検知手段も失われる。
+  // 修正例: 状態に依らず透過する
+  //   return reason?.trim() || "";
   if (rolloutState !== "FAILED") {
     return "";
   }
@@ -63,6 +69,12 @@ function toEcsRolloutState(status: string | undefined): EcsRolloutState {
     return status;
   }
 
+  // FIXME(review): rolloutState を持たない CODE_DEPLOY / EXTERNAL デプロイメント
+  // コントローラのサービスでは undefined がここで "FAILED" になり、
+  // getApplicationStatus がヘッドライン状態として恒久的に "Failed"
+  // ("The last deployment failed.") を表示する。
+  // 修正例: ドメイン側を rolloutState?: EcsRolloutState にして undefined を透過し、
+  // IN_PROGRESS / FAILED 判定をスキップさせる(sync 由来の状態にフォールバック)。
   return "FAILED";
 }
 

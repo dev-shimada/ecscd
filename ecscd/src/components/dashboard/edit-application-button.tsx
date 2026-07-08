@@ -48,6 +48,13 @@ export function DashboardEditApplicationButton({
     }
   };
 
+  // FIXME(review): main の application-card は Edit/Delete をアクティブデプロイ中
+  // disabled={isLoading || hasActiveDeployment} で無効化していたが、その代替が無く、
+  // ロールアウト進行中にアプリ設定の削除・変更ができてしまう(進行中デプロイの
+  // 監視・ロールバックが UI から不可能になる)。
+  // 修正例: hasActiveDeployment を props で受け取り
+  //   <Button disabled={hasActiveDeployment} ...>
+  // とし、EditApplicationDialog の Delete ボタンにも渡して無効化する。
   return (
     <>
       <Button

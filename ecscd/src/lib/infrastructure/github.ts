@@ -9,9 +9,12 @@ import { toTaskDefinitionSpec } from "./task-definition-normalizer";
 export class GitHub implements IGithub {
   private octokit: Octokit;
 
-  constructor(token: string) {
+  // baseUrl は GitHub API エンドポイントの差し替え用 (ローカル検証用スタブや
+  // GitHub Enterprise Server など)。未指定なら api.github.com。
+  constructor(token: string, baseUrl?: string) {
     this.octokit = new Octokit({
       auth: token,
+      ...(baseUrl ? { baseUrl } : {}),
     });
   }
 

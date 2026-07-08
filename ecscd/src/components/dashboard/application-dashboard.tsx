@@ -198,6 +198,12 @@ export function ApplicationDashboard({
           error instanceof Error
             ? error.message
             : "Failed to load latest application state.";
+        // FIXME(review): 失敗結果を entry.data として恒久キャッシュすると、
+        // loadApplication 冒頭の `existing?.data && !force` により、一時的な
+        // ネットワーク失敗や削除→再作成(404)後もセッション中ずっと Error 表示になる
+        // (router.refresh() はこのモジュールキャッシュに触れない)。
+        // 修正例: エラーは entry.data ではなく entry.error に保持し、
+        // loadApplication で entry.error があれば再試行を許可する。
         entry.data = createApplicationErrorState(config, reason);
       } finally {
         entry.promise = undefined;
@@ -224,6 +230,13 @@ export function ApplicationDashboard({
     }
   }, [loadApplication, nameFilteredApplications, selectedApplicationConfig]);
 
+  // FIXME(review): ポーリングは「選択中アプリが Deploying のとき」しか動かない。
+  // main は IN_PROGRESS のアプリがあれば全アプリを 5 秒間隔で再取得していた。
+  // アプリ A を Sync してアプリ B や / へ移動すると、A のキャッシュは IN_PROGRESS の
+  // スナップショットのまま更新されず(force なしの loadApplication は no-op)、
+  // ロールアウト完了後もサイドバーの A は無期限に "Deploying" 表示になる。
+  // 修正例: 選択中かどうかに関わらず、キャッシュ上 "Deploying" の全アプリを
+  // force 再取得の対象にする。
   useEffect(() => {
     if (
       !selectedApplicationConfig ||
