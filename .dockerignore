@@ -1,0 +1,16 @@
+# ビルドコンテキストからローカル生成物を除外する。
+# 特に ecscd/.next はホストの古いビルド (削除済みルートを参照する型検証ファイル) を
+# 含むことがあり、COPY されると next build の型チェックが壊れる。
+.git
+docs
+tools
+compose.yaml
+**/node_modules
+ecscd/.next
+ecscd/coverage
+ecscd/ecscd.db
+ecscd/tsconfig.tsbuildinfo
+# 統合テストは実行イメージに不要 (devDependencies 前提のため型チェックも通らない)
+ecscd/tests
+ecscd/jest.config.js
+ecscd/jest.integration.config.js

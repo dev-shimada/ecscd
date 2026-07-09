@@ -9,9 +9,10 @@ import { toTaskDefinitionSpec } from "./task-definition-normalizer";
 export class GitHub implements IGithub {
   private octokit: Octokit;
 
-  constructor(token: string) {
+  constructor(token: string, baseUrl?: string) {
     this.octokit = new Octokit({
       auth: token,
+      ...(baseUrl ? { baseUrl } : {}),
     });
   }
 

@@ -72,6 +72,18 @@ npm run dev
 
 アプリケーションは `http://localhost:3000` でアクセスできます。
 
+### ローカル動作確認 / 統合テスト (MiniStack)
+
+実 AWS アカウントなしで動作確認・自動テストを行える構成があります。ローカル環境を汚さず
+すべてコンテナで完結し、実際の ECS のような非同期デプロイ遷移・ロールバックも試せます。
+
+```bash
+docker compose up -d --build
+open http://localhost:3000
+```
+
+詳細は [docs/local-verification.md](docs/local-verification.md) を参照してください。
+
 ## アーキテクチャ
 
 ```

@@ -1,0 +1,22 @@
+{
+  "family": "ecscd-demo",
+  "networkMode": "bridge",
+  "requiresCompatibilities": ["EC2"],
+  "taskRoleArn": "",
+  "executionRoleArn": "",
+  "cpu": "256",
+  "memory": "512",
+  "pidMode": "",
+  "ipcMode": "",
+  "containerDefinitions": [
+    {
+      "name": "app",
+      "image": "busybox:latest",
+      "command": ["sleep", "3600"],
+      "cpu": 0,
+      "memory": 64,
+      "essential": true,
+      "environment": [{ "name": "DEPLOYED_FROM", "value": "git" }]
+    }
+  ]
+}
