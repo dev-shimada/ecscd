@@ -1,7 +1,7 @@
 import { Deployment } from "../deployment";
 import { IAws } from "../interface/aws";
 import { IGithub } from "../interface/github";
-import { ApplicationDomain } from "../../domain/application";
+import { ApplicationDomain, ServiceDomain } from "../../domain/application";
 import { TaskDefinitionSpec } from "../../domain/task-definition";
 import { compareTaskDefinitions } from "../../domain/task-definition-diff";
 
@@ -439,7 +439,7 @@ describe("Deployment", () => {
         status: "Success",
         taskDefinition: targetTaskDefinition,
       });
-      mockAws.describeServices.mockResolvedValue(mockService as any);
+      mockAws.describeServices.mockResolvedValue(mockService as unknown as ServiceDomain);
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDefinition);
 
       // Execute diff
@@ -1100,7 +1100,7 @@ describe("Deployment", () => {
         status: "Success",
         taskDefinition: targetTaskDefinition,
       });
-      mockAws.describeServices.mockResolvedValue(mockService as any);
+      mockAws.describeServices.mockResolvedValue(mockService as unknown as ServiceDomain);
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDefinition);
 
       // Execute diff
