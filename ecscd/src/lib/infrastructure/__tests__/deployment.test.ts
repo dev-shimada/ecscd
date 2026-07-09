@@ -429,9 +429,13 @@ describe("Deployment", () => {
       };
 
       // Mock the service with current task definition
-      const mockService = {
+      const mockService: ServiceDomain = {
+        status: "ACTIVE",
+        desiredCount: 1,
+        runningCount: 1,
         taskDefinition:
           "arn:aws:ecs:us-east-1:123456789012:task-definition/current-family:1",
+        deployments: [],
       };
 
       // Setup mocks
@@ -439,7 +443,7 @@ describe("Deployment", () => {
         status: "Success",
         taskDefinition: targetTaskDefinition,
       });
-      mockAws.describeServices.mockResolvedValue(mockService as unknown as ServiceDomain);
+      mockAws.describeServices.mockResolvedValue(mockService);
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDefinition);
 
       // Execute diff
@@ -1090,9 +1094,13 @@ describe("Deployment", () => {
       };
 
       // Mock the service with current task definition
-      const mockService = {
+      const mockService: ServiceDomain = {
+        status: "ACTIVE",
+        desiredCount: 1,
+        runningCount: 1,
         taskDefinition:
           "arn:aws:ecs:us-east-1:123456789012:task-definition/web-app:1",
+        deployments: [],
       };
 
       // Setup mocks
@@ -1100,7 +1108,7 @@ describe("Deployment", () => {
         status: "Success",
         taskDefinition: targetTaskDefinition,
       });
-      mockAws.describeServices.mockResolvedValue(mockService as unknown as ServiceDomain);
+      mockAws.describeServices.mockResolvedValue(mockService);
       mockAws.describeTaskDefinition.mockResolvedValue(currentTaskDefinition);
 
       // Execute diff

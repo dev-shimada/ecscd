@@ -5,6 +5,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 defaults:
   run:
     working-directory: ecscd
@@ -13,7 +16,7 @@ jobs:
   lint-typecheck-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v6
         with:
