@@ -2,9 +2,6 @@ import {
   ECSClient,
   DescribeServicesCommand,
   ECSClientConfig,
-} from "@aws-sdk/client-ecs";
-import { ApplicationDomain } from "../domain/application";
-import {
   RegisterTaskDefinitionCommand,
   RegisterTaskDefinitionCommandInput,
   DescribeTaskDefinitionCommand,
@@ -12,7 +9,16 @@ import {
   ListServiceDeploymentsCommand,
   StopServiceDeploymentCommand,
 } from "@aws-sdk/client-ecs";
+import {
+  ApplicationDomain,
+  EcsDeploymentStatus,
+  EcsRolloutState,
+  EcsServiceStatus,
+  ServiceDomain,
+} from "../domain/application";
+import { TaskDefinitionSpec } from "../domain/task-definition";
 import { IAws } from "./interface/aws";
+import { toTaskDefinitionSpec } from "./task-definition-normalizer";
 
 import {
   STSClient,
@@ -20,6 +26,51 @@ import {
   Credentials,
   STSClientConfig,
 } from "@aws-sdk/client-sts";
+
+function normalizeRolloutStateReason(
+  rolloutState: string | undefined,
+  reason: string | undefined
+) {
+  if (rolloutState !== "FAILED") {
+    return "";
+  }
+
+  return reason?.trim() || "";
+}
+
+function toEcsServiceStatus(status: string | undefined): EcsServiceStatus {
+  if (status === "ACTIVE" || status === "DRAINING" || status === "INACTIVE") {
+    return status;
+  }
+
+  return "INACTIVE";
+}
+
+function toEcsDeploymentStatus(status: string | undefined): EcsDeploymentStatus {
+  if (status === "PRIMARY" || status === "ACTIVE" || status === "INACTIVE") {
+    return status;
+  }
+
+  return "INACTIVE";
+}
+
+function toEcsRolloutState(status: string | undefined): EcsRolloutState {
+  if (
+    status === "COMPLETED" ||
+    status === "FAILED" ||
+    status === "IN_PROGRESS"
+  ) {
+    return status;
+  }
+
+  return "FAILED";
+}
+
+function toRegisterTaskDefinitionInput(
+  spec: TaskDefinitionSpec,
+): RegisterTaskDefinitionCommandInput {
+  return spec as RegisterTaskDefinitionCommandInput;
+}
 
 export class AWS implements IAws {
   private async getCredentials(
@@ -51,7 +102,7 @@ export class AWS implements IAws {
     return response.Credentials;
   }
 
-  async createECSClient(
+  private async createEcsClient(
     awsConfig: ApplicationDomain["awsConfig"]
   ): Promise<ECSClient> {
     const { region, roleArn, externalId } = awsConfig;
@@ -73,27 +124,30 @@ export class AWS implements IAws {
   }
 
   async describeServices(
-    client: ECSClient,
+    awsConfig: ApplicationDomain["awsConfig"],
     ecsConfig: ApplicationDomain["ecsConfig"]
-  ): Promise<ApplicationDomain["service"]> {
-    const input = {
+  ): Promise<ServiceDomain | undefined> {
+    const client = await this.createEcsClient(awsConfig);
+    const command = new DescribeServicesCommand({
       cluster: ecsConfig.cluster,
       services: [ecsConfig.service],
-    };
-    const command = new DescribeServicesCommand(input);
+    });
     const response = await client.send(command);
     if (response.failures && response.failures.length > 0) {
       return undefined;
     }
-    const service: ApplicationDomain["service"] = {
-      status: response.services?.[0]?.status || "INACTIVE",
+    const service: ServiceDomain = {
+      status: toEcsServiceStatus(response.services?.[0]?.status),
       desiredCount: response.services?.[0]?.desiredCount || 0,
       runningCount: response.services?.[0]?.runningCount || 0,
       taskDefinition: response.services?.[0]?.taskDefinition || "",
       deployments: (response.services?.[0]?.deployments || []).map((d) => ({
-        status: d.status || "INACTIVE",
-        rolloutState: d.rolloutState || "FAILED",
-        rolloutStateReason: d.rolloutStateReason || "",
+        status: toEcsDeploymentStatus(d.status),
+        rolloutState: toEcsRolloutState(d.rolloutState),
+        rolloutStateReason: normalizeRolloutStateReason(
+          d.rolloutState,
+          d.rolloutStateReason
+        ),
         createdAt: d.createdAt || new Date(),
         updatedAt: d.updatedAt || new Date(),
       })),
@@ -102,9 +156,10 @@ export class AWS implements IAws {
   }
 
   async describeTaskDefinition(
-    client: ECSClient,
+    awsConfig: ApplicationDomain["awsConfig"],
     taskDefinitionArn: string
-  ): Promise<RegisterTaskDefinitionCommandInput | undefined> {
+  ): Promise<TaskDefinitionSpec | undefined> {
+    const client = await this.createEcsClient(awsConfig);
     const command = new DescribeTaskDefinitionCommand({
       taskDefinition: taskDefinitionArn,
     });
@@ -112,38 +167,38 @@ export class AWS implements IAws {
     if (!response.taskDefinition) {
       return undefined;
     }
-    return response.taskDefinition as RegisterTaskDefinitionCommandInput;
+    return toTaskDefinitionSpec(
+      response.taskDefinition as unknown as Record<string, unknown>,
+    );
   }
 
   async registerTaskDefinition(
-    client: ECSClient,
-    taskDef: RegisterTaskDefinitionCommandInput
+    awsConfig: ApplicationDomain["awsConfig"],
+    taskDef: TaskDefinitionSpec
   ): Promise<string> {
+    const client = await this.createEcsClient(awsConfig);
+    const taskDefInput = toRegisterTaskDefinitionInput(taskDef);
     // Remove tags if empty to avoid "Tags can not be empty" error
-    const taskDefInput = { ...taskDef };
-    if (taskDefInput.tags && taskDefInput.tags.length === 0) {
-      delete taskDefInput.tags;
+    const cleanedInput: RegisterTaskDefinitionCommandInput = { ...taskDefInput };
+    if (cleanedInput.tags && cleanedInput.tags.length === 0) {
+      delete cleanedInput.tags;
     }
 
-    // Clean up containerDefinitions to remove empty or invalid arrays
-    if (taskDefInput.containerDefinitions) {
-      taskDefInput.containerDefinitions = taskDefInput.containerDefinitions.map(
+    // AWS API は空配列を渡すと拒否するので、シリアライズ時だけ空配列を取り除く。
+    // ユーザーが宣言した desired state の意味を変える変更 (例: 無効要素の黙示 filter) は
+    // ここで行わない。
+    if (cleanedInput.containerDefinitions) {
+      cleanedInput.containerDefinitions = cleanedInput.containerDefinitions.map(
         (container) => {
           const cleanedContainer = { ...container };
 
-          // Remove secrets if empty or contains invalid entries
-          if (cleanedContainer.secrets) {
-            const validSecrets = cleanedContainer.secrets.filter(
-              (secret) => secret?.name && secret.name.trim() !== ""
-            );
-            if (validSecrets.length === 0) {
-              delete cleanedContainer.secrets;
-            } else {
-              cleanedContainer.secrets = validSecrets;
-            }
+          if (
+            cleanedContainer.secrets &&
+            cleanedContainer.secrets.length === 0
+          ) {
+            delete cleanedContainer.secrets;
           }
 
-          // Remove environment if empty
           if (
             cleanedContainer.environment &&
             cleanedContainer.environment.length === 0
@@ -151,7 +206,6 @@ export class AWS implements IAws {
             delete cleanedContainer.environment;
           }
 
-          // Remove mountPoints if empty
           if (
             cleanedContainer.mountPoints &&
             cleanedContainer.mountPoints.length === 0
@@ -159,7 +213,6 @@ export class AWS implements IAws {
             delete cleanedContainer.mountPoints;
           }
 
-          // Remove volumesFrom if empty
           if (
             cleanedContainer.volumesFrom &&
             cleanedContainer.volumesFrom.length === 0
@@ -173,7 +226,7 @@ export class AWS implements IAws {
     }
 
     const response = await client.send(
-      new RegisterTaskDefinitionCommand(taskDefInput)
+      new RegisterTaskDefinitionCommand(cleanedInput)
     );
     if (
       !response.taskDefinition ||
@@ -185,10 +238,11 @@ export class AWS implements IAws {
   }
 
   async updateService(
-    client: ECSClient,
+    awsConfig: ApplicationDomain["awsConfig"],
     ecsConfig: ApplicationDomain["ecsConfig"],
     taskDefinitionArn: string
   ): Promise<void> {
+    const client = await this.createEcsClient(awsConfig);
     const command = new UpdateServiceCommand({
       cluster: ecsConfig.cluster,
       service: ecsConfig.service,
@@ -202,9 +256,10 @@ export class AWS implements IAws {
   }
 
   async stopServiceDeployment(
-    client: ECSClient,
+    awsConfig: ApplicationDomain["awsConfig"],
     ecsConfig: ApplicationDomain["ecsConfig"]
   ): Promise<void> {
+    const client = await this.createEcsClient(awsConfig);
     const listCommand = new ListServiceDeploymentsCommand({
       cluster: ecsConfig.cluster,
       service: ecsConfig.service,

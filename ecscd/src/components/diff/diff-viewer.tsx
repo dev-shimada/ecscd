@@ -1,0 +1,225 @@
+'use client';
+
+import { Button } from '@/components/ui/button';
+import {
+  ApplicationDomain,
+  getApplicationDiffSummary,
+  getApplicationDiffs,
+  getApplicationStatus,
+} from '@/lib/domain/application';
+import { ChevronDown, ChevronRight, Edit3, Minus, Play, Plus } from 'lucide-react';
+import { useState } from 'react';
+
+interface DiffViewerProps {
+  application: ApplicationDomain;
+  onSync?: () => void;
+  isLoading?: boolean;
+}
+
+export function DiffViewer({
+  application,
+  onSync,
+  isLoading,
+}: DiffViewerProps) {
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const applicationStatus = getApplicationStatus(application);
+  const diffs = getApplicationDiffs(application);
+  const summary = getApplicationDiffSummary(application);
+  const error =
+    applicationStatus.status === "Error"
+      ? applicationStatus.reason
+      : undefined;
+
+  const toggleExpanded = (path: string) => {
+    const newExpanded = new Set(expandedItems);
+    if (newExpanded.has(path)) {
+      newExpanded.delete(path);
+    } else {
+      newExpanded.add(path);
+    }
+    setExpandedItems(newExpanded);
+  };
+
+  const getDiffIcon = (type: 'Added' | 'Removed' | 'Modified') => {
+    switch (type) {
+      case 'Added':
+        return <Plus className="h-4 w-4 shrink-0 diff-added-text" />;
+      case 'Removed':
+        return <Minus className="h-4 w-4 shrink-0 diff-removed-text" />;
+      case 'Modified':
+        return <Edit3 className="h-4 w-4 shrink-0 diff-modified-text" />;
+    }
+  };
+
+  const getDiffColor = (type: 'Added' | 'Removed' | 'Modified') => {
+    switch (type) {
+      case 'Added':
+        return 'diff-added';
+      case 'Removed':
+        return 'diff-removed';
+      case 'Modified':
+        return 'diff-modified';
+    }
+  };
+
+  const getDiffValueClass = (type: 'Added' | 'Removed' | 'Modified') => {
+    switch (type) {
+      case 'Added':
+        return 'diff-added-border';
+      case 'Removed':
+        return 'diff-removed-border';
+      case 'Modified':
+        return 'diff-modified-border';
+    }
+  };
+
+  const getDiffTextClass = (type: 'Added' | 'Removed' | 'Modified') => {
+    switch (type) {
+      case 'Added':
+        return 'diff-added-text';
+      case 'Removed':
+        return 'diff-removed-text';
+      case 'Modified':
+        return 'diff-modified-text';
+    }
+  };
+
+  const formatValue = (value: unknown): string => {
+    if (value === null) return 'null';
+    if (value === undefined) return 'undefined';
+    if (typeof value === 'object') {
+      return JSON.stringify(value, null, 2);
+    }
+    return String(value);
+  };
+
+  if (error) {
+    return (
+      <section className="w-full">
+        <h2 className="text-lg font-semibold text-foreground">Configuration Diff</h2>
+        <div className="mt-3">
+          <p className="text-red-500 mb-2">{error}</p>
+          <p className="text-muted-foreground text-sm">
+            Please check your application configuration and try again.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!diffs || diffs.length === 0) {
+    const status = applicationStatus.status;
+    const statusTextClass =
+      status === 'Failed'
+        ? 'text-red-500'
+        : 'text-muted-foreground';
+
+    return (
+      <section className="w-full">
+        <h2 className="text-lg font-semibold text-foreground">Configuration Diff</h2>
+        <div className="mt-3">
+          {status === 'Loading' ? (
+            <p className="text-muted-foreground">
+              Loading configuration diff...
+            </p>
+          ) : status === 'Deploying' ? (
+            <p className={statusTextClass}>
+              Deployment is currently in progress.
+            </p>
+          ) : status === 'Failed' ? (
+            <p className={statusTextClass}>
+              Last deployment failed.
+            </p>
+          ) : (
+            <p className="text-muted-foreground">
+              The current task definition matches the target configuration in the repository.
+            </p>
+          )}
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="w-full">
+      <div>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-foreground">Configuration Diff</h2>
+          {onSync && (
+            <Button
+              onClick={onSync}
+              disabled={isLoading}
+              className="flex items-center gap-2"
+            >
+              <Play className={`h-4 w-4 shrink-0 ${isLoading ? 'animate-spin' : ''}`} />
+              {isLoading ? 'Deploying...' : 'Sync Changes'}
+            </Button>
+          )}
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">{summary}</p>
+      </div>
+
+      <div className="mt-4 space-y-4">
+        {diffs?.map((diff, index) => (
+          <div key={index} className={`border rounded-lg p-4 ${getDiffColor(diff.type)}`}>
+            <div
+              className="flex items-center gap-2 cursor-pointer min-w-0"
+              onClick={() => toggleExpanded(`${index}-${diff.path}`)}
+            >
+              {expandedItems.has(`${index}-${diff.path}`) ? (
+                <ChevronDown className="h-4 w-4 shrink-0" />
+              ) : (
+                <ChevronRight className="h-4 w-4 shrink-0" />
+              )}
+              {getDiffIcon(diff.type)}
+              <span className="font-medium min-w-0 break-all">{diff.path}</span>
+            </div>
+
+            {expandedItems.has(`${index}-${diff.path}`) && (
+              <div className="mt-4 ml-6 space-y-3">
+                {diff.type === 'Removed' && diff.current !== undefined && (
+                  <div>
+                    <div className={`text-sm font-medium mb-1 ${getDiffTextClass(diff.type)}`}>Current (will be removed):</div>
+                    <pre className={`text-xs text-foreground p-3 rounded border overflow-x-auto ${getDiffValueClass(diff.type)}`}>
+                      {formatValue(diff.current)}
+                    </pre>
+                  </div>
+                )}
+
+                {diff.type === 'Added' && diff.target !== undefined && (
+                  <div>
+                    <div className={`text-sm font-medium mb-1 ${getDiffTextClass(diff.type)}`}>New (will be added):</div>
+                    <pre className={`text-xs text-foreground p-3 rounded border overflow-x-auto ${getDiffValueClass(diff.type)}`}>
+                      {formatValue(diff.target)}
+                    </pre>
+                  </div>
+                )}
+
+                {diff.type === 'Modified' && (
+                  <>
+                    {diff.current !== undefined && (
+                      <div>
+                        <div className={`text-sm font-medium mb-1 ${getDiffTextClass(diff.type)}`}>Current:</div>
+                        <pre className={`text-xs text-foreground p-3 rounded border overflow-x-auto ${getDiffValueClass(diff.type)}`}>
+                          {formatValue(diff.current)}
+                        </pre>
+                      </div>
+                    )}
+                    {diff.target !== undefined && (
+                      <div>
+                        <div className={`text-sm font-medium mb-1 ${getDiffTextClass(diff.type)}`}>Target:</div>
+                        <pre className={`text-xs text-foreground p-3 rounded border overflow-x-auto ${getDiffValueClass(diff.type)}`}>
+                          {formatValue(diff.target)}
+                        </pre>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}

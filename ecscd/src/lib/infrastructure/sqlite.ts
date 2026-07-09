@@ -1,10 +1,9 @@
-import sqlite3 from "sqlite3";
-import { IDatabase } from "./interface/database";
-import { Database } from "sqlite3";
-import { ApplicationDomain } from "../domain/application";
-import { FilterDomain } from "../domain/filter";
 import * as fs from "fs";
 import * as path from "path";
+import sqlite3, { Database } from "sqlite3";
+import { ApplicationDomain } from "../domain/application";
+import { FilterDomain } from "../domain/filter";
+import { IDatabase } from "./interface/database";
 
 interface ApplicationsModel {
   name: string;
@@ -62,25 +61,28 @@ export class SQLite implements IDatabase {
           (err: Error | null) => {
             if (err) {
               reject(err);
+              return;
             }
-          }
-        );
-        this.db.run(
-          `
-            CREATE TABLE IF NOT EXISTS filters (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                pattern TEXT NOT NULL,
-                created_at DATETIME NOT NULL,
-                updated_at DATETIME NOT NULL
-            )`,
-          (err: Error | null) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve();
-            }
-          }
+
+            this.db.run(
+              `
+                CREATE TABLE IF NOT EXISTS filters (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    pattern TEXT NOT NULL,
+                    created_at DATETIME NOT NULL,
+                    updated_at DATETIME NOT NULL
+                )`,
+              (filterErr: Error | null) => {
+                if (filterErr) {
+                  reject(filterErr);
+                  return;
+                }
+
+                resolve();
+              },
+            );
+          },
         );
       });
     });
@@ -94,10 +96,10 @@ export class SQLite implements IDatabase {
             return reject(err);
           }
           const applications: ApplicationDomain[] = await Promise.all(
-            rows.map((row) => this.mapRowToApplication(row))
+            rows.map((row) => this.mapRowToApplication(row)),
           );
           resolve(applications);
-        }
+        },
       );
     });
   }
@@ -111,7 +113,7 @@ export class SQLite implements IDatabase {
             return reject(err);
           }
           resolve(rows.map((row) => row.name));
-        }
+        },
       );
     });
   }
@@ -150,7 +152,7 @@ export class SQLite implements IDatabase {
             return reject(err);
           }
           resolve();
-        }
+        },
       );
     });
   }
@@ -183,7 +185,7 @@ export class SQLite implements IDatabase {
             return reject(err);
           }
           resolve();
-        }
+        },
       );
     });
   }
@@ -197,16 +199,15 @@ export class SQLite implements IDatabase {
             return reject(err);
           }
           resolve();
-        }
+        },
       );
     });
   }
   private async mapRowToApplication(
-    row: ApplicationsModel
+    row: ApplicationsModel,
   ): Promise<ApplicationDomain> {
     return {
       name: row.name,
-      sync: { status: "InSync" },
       gitConfig: {
         repo: row.git_repo,
         branch: row.git_branch,
@@ -235,10 +236,10 @@ export class SQLite implements IDatabase {
             return reject(err);
           }
           const filters: FilterDomain[] = rows.map((row) =>
-            this.mapRowToFilter(row)
+            this.mapRowToFilter(row),
           );
           resolve(filters);
-        }
+        },
       );
     });
   }
@@ -256,7 +257,7 @@ export class SQLite implements IDatabase {
             return resolve(null);
           }
           resolve(this.mapRowToFilter(row));
-        }
+        },
       );
     });
   }
@@ -277,7 +278,7 @@ export class SQLite implements IDatabase {
             return reject(err);
           }
           resolve();
-        }
+        },
       );
     });
   }
@@ -292,7 +293,7 @@ export class SQLite implements IDatabase {
             return reject(err);
           }
           resolve();
-        }
+        },
       );
     });
   }

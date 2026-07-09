@@ -1,9 +1,8 @@
-import { ApplicationDomain, DiffDomain } from "../domain/application";
+import { ApplicationDomain } from "../domain/application";
 import { DeploymentRepository } from "../repository/deployment";
 export interface IDeploymentUsecase {
   syncService(application: ApplicationDomain): Promise<void>;
   rollback(application: ApplicationDomain): Promise<void>;
-  diff(application: ApplicationDomain): Promise<DiffDomain[]>;
 }
 
 export class DeploymentUsecase {
@@ -18,9 +17,5 @@ export class DeploymentUsecase {
 
   async rollback(application: ApplicationDomain): Promise<void> {
     await this.deploymentRepository.rollback(application);
-  }
-
-  async diff(application: ApplicationDomain): Promise<DiffDomain[]> {
-    return await this.deploymentRepository.diff(application);
   }
 }

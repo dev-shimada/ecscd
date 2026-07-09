@@ -22,6 +22,7 @@ interface EditApplicationDialogProps {
   onOpenChange: (open: boolean) => void;
   application: ApplicationDomain | null;
   onSuccess?: () => void;
+  onDelete?: (applicationName: string) => Promise<void>;
 }
 
 interface ApplicationFormData {
@@ -37,7 +38,7 @@ interface ApplicationFormData {
   sessionName?: string;
 }
 
-export function EditApplicationDialog({ open, onOpenChange, application, onSuccess }: EditApplicationDialogProps) {
+export function EditApplicationDialog({ open, onOpenChange, application, onSuccess, onDelete }: EditApplicationDialogProps) {
   const [formData, setFormData] = useState<ApplicationFormData>({
     name: '',
     clusterName: '',
@@ -51,6 +52,7 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
     sessionName: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [errors, setErrors] = useState<Partial<ApplicationFormData>>({});
 
   // Populate form when application changes
@@ -161,9 +163,37 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
   };
 
   const handleClose = () => {
-    if (!isSubmitting) {
+    if (!isSubmitting && !isDeleting) {
       onOpenChange(false);
       setErrors({});
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!application || !onDelete || isSubmitting || isDeleting) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${application.name}"? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      await onDelete(application.name);
+      onOpenChange(false);
+      onSuccess?.();
+    } catch (error) {
+      console.error("Failed to delete application:", error);
+      setErrors({
+        name:
+          error instanceof Error
+            ? error.message
+            : "Failed to delete application",
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -185,9 +215,9 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
               id="name"
               value={formData.name}
               disabled={true}
-              className="bg-gray-100"
+              className="bg-muted"
             />
-            <p className="text-sm text-gray-500">Application name cannot be changed</p>
+            <p className="text-sm text-muted-foreground">Application name cannot be changed</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -201,7 +231,7 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
                 disabled={isSubmitting}
               />
               {errors.clusterName && (
-                <p className="text-sm text-red-600">{errors.clusterName}</p>
+                <p className="text-sm text-red-500">{errors.clusterName}</p>
               )}
             </div>
 
@@ -215,7 +245,7 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
                 disabled={isSubmitting}
               />
               {errors.serviceName && (
-                <p className="text-sm text-red-600">{errors.serviceName}</p>
+                <p className="text-sm text-red-500">{errors.serviceName}</p>
               )}
             </div>
 
@@ -229,7 +259,7 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
                 disabled={isSubmitting}
               />
               {errors.region && (
-                <p className="text-sm text-red-600">{errors.region}</p>
+                <p className="text-sm text-red-500">{errors.region}</p>
               )}
             </div>
           </div>
@@ -244,7 +274,7 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
               disabled={isSubmitting}
             />
             {errors.repository && (
-              <p className="text-sm text-red-600">{errors.repository}</p>
+              <p className="text-sm text-red-500">{errors.repository}</p>
             )}
           </div>
 
@@ -259,7 +289,7 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
                 disabled={isSubmitting}
               />
               {errors.branch && (
-                <p className="text-sm text-red-600">{errors.branch}</p>
+                <p className="text-sm text-red-500">{errors.branch}</p>
               )}
             </div>
 
@@ -273,7 +303,7 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
                 disabled={isSubmitting}
               />
               {errors.taskDefinitionPath && (
-                <p className="text-sm text-red-600">{errors.taskDefinitionPath}</p>
+                <p className="text-sm text-red-500">{errors.taskDefinitionPath}</p>
               )}
             </div>
 
@@ -287,7 +317,7 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
                 disabled={isSubmitting}
               />
               {errors.roleArn && (
-                <p className="text-sm text-red-600">{errors.roleArn}</p>
+                <p className="text-sm text-red-500">{errors.roleArn}</p>
               )}
             </div>
 
@@ -301,33 +331,54 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
                 disabled={true}
               />
               {errors.externalId && (
-                <p className="text-sm text-red-600">{errors.externalId}</p>
+                <p className="text-sm text-red-500">{errors.externalId}</p>
               )}
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Updating...
-                </>
-              ) : (
-                <>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Update Application
-                </>
-              )}
-            </Button>
+          <div className="flex items-center justify-between gap-3 pt-4">
+            {application && onDelete ? (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isSubmitting || isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete"
+                )}
+              </Button>
+            ) : (
+              <div />
+            )}
+            <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                disabled={isSubmitting || isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting || isDeleting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Update Application
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>

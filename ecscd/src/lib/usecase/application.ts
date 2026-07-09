@@ -1,47 +1,36 @@
-import { ApplicationDomain } from "../domain/application";
+import {
+  ApplicationDomain,
+  ObservedApplicationDomain,
+} from "../domain/application";
 import { ApplicationRepository } from "../repository/application";
-import { DeploymentRepository } from "../repository/deployment";
+import { ApplicationObserver } from "../repository/application-observer";
 
 export interface IApplicationUsecase {
   getApplications(): Promise<ApplicationDomain[]>;
   getApplicationNames(): Promise<string[]>;
   getApplication(name: string): Promise<ApplicationDomain | null>;
-  getService(
-    application: ApplicationDomain
-  ): Promise<ApplicationDomain["service"]>;
+  observeApplication(
+    application: ApplicationDomain,
+  ): Promise<ObservedApplicationDomain>;
   createApplication(application: ApplicationDomain): Promise<void>;
   updateApplication(application: ApplicationDomain): Promise<void>;
+  deleteApplication(name: string): Promise<void>;
 }
 
 export class ApplicationUsecase implements IApplicationUsecase {
   constructor(
     private applicationRepository: ApplicationRepository,
-    private deploymentRepository: DeploymentRepository
+    private applicationObserver: ApplicationObserver,
   ) {}
 
-  async getApplications(): Promise<ApplicationDomain[]> {
-    const applications = await this.applicationRepository.getApplications();
+  async observeApplication(
+    application: ApplicationDomain,
+  ): Promise<ObservedApplicationDomain> {
+    return this.applicationObserver.observe(application);
+  }
 
-    // 並列でdiff（同期状態）を取得
-    // 既にErrorステータスのアプリはスキップ
-    await Promise.all(
-      applications.map(async (app) => {
-        if (app.sync.status === "Error") {
-          return;
-        }
-        try {
-          const deployments = await this.deploymentRepository.diff(app);
-          if (deployments.length > 0) {
-            app.sync.status = "OutOfSync";
-          } else {
-            app.sync.status = "InSync";
-          }
-        } catch {
-          app.sync.status = "Error";
-        }
-      })
-    );
-    return applications;
+  async getApplications(): Promise<ApplicationDomain[]> {
+    return this.applicationRepository.getApplications();
   }
 
   async getApplicationNames(): Promise<string[]> {
@@ -49,26 +38,7 @@ export class ApplicationUsecase implements IApplicationUsecase {
   }
 
   async getApplication(name: string): Promise<ApplicationDomain | null> {
-    const application = await this.applicationRepository.getApplication(name);
-    if (!application) {
-      return null;
-    }
-
-    // diff（同期状態）を取得
-    if (application.sync.status !== "Error") {
-      try {
-        const deployments = await this.deploymentRepository.diff(application);
-        if (deployments.length > 0) {
-          application.sync.status = "OutOfSync";
-        } else {
-          application.sync.status = "InSync";
-        }
-      } catch {
-        application.sync.status = "Error";
-      }
-    }
-
-    return application;
+    return this.applicationRepository.getApplication(name);
   }
 
   async createApplication(application: ApplicationDomain): Promise<void> {
@@ -79,10 +49,5 @@ export class ApplicationUsecase implements IApplicationUsecase {
   }
   async deleteApplication(name: string): Promise<void> {
     await this.applicationRepository.deleteApplication(name);
-  }
-  async getService(
-    application: ApplicationDomain
-  ): Promise<ApplicationDomain["service"]> {
-    return this.applicationRepository.getService(application);
   }
 }

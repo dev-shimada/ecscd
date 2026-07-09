@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FilterDomain } from "@/lib/domain/filter";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +19,7 @@ interface SaveFilterDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pattern: string;
-  onSuccess?: () => void;
+  onSuccess?: (filter: FilterDomain) => void;
 }
 
 export function SaveFilterDialog({
@@ -53,9 +54,11 @@ export function SaveFilterDialog({
         throw new Error("Failed to save filter");
       }
 
+      const data = (await response.json()) as { filter: FilterDomain };
+
       setName("");
       onOpenChange(false);
-      onSuccess?.();
+      onSuccess?.(data.filter);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save filter");
     } finally {
@@ -92,12 +95,12 @@ export function SaveFilterDialog({
               placeholder="e.g., Production Apps"
               disabled={isSubmitting}
             />
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-red-500">{error}</p>}
           </div>
 
           <div className="space-y-2">
             <Label>Filter Pattern</Label>
-            <div className="px-3 py-2 bg-gray-50 rounded-md text-sm text-gray-600">
+            <div className="px-3 py-2 bg-muted rounded-md text-sm text-muted-foreground">
               {pattern}
             </div>
           </div>

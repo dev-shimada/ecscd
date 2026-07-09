@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { createPortal } from "react-dom"
 import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -32,6 +33,12 @@ interface SheetDescriptionProps extends React.HTMLAttributes<HTMLParagraphElemen
 }
 
 const Sheet = ({ open, onOpenChange, children }: SheetProps) => {
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -50,18 +57,19 @@ const Sheet = ({ open, onOpenChange, children }: SheetProps) => {
     }
   }, [open, onOpenChange])
 
-  if (!open) return null
+  if (!open || !mounted) return null
 
-  return (
+  return createPortal(
     <SheetContext.Provider value={{ onOpenChange }}>
-      <div className="fixed inset-0 z-50">
+      <div className="fixed inset-0 z-[200]">
         <div
-          className="fixed inset-0 bg-black/50"
+          className="fixed inset-0 bg-black/60"
           onClick={() => onOpenChange(false)}
         />
         {children}
       </div>
-    </SheetContext.Provider>
+    </SheetContext.Provider>,
+    document.body
   )
 }
 
@@ -70,7 +78,7 @@ const SheetContent = React.forwardRef<HTMLDivElement, SheetContentProps>(
     <div
       ref={ref}
       className={cn(
-        "fixed z-50 bg-white shadow-lg transition-transform duration-300 ease-in-out",
+        "fixed z-[210] bg-card text-card-foreground shadow-lg transition-transform duration-300 ease-in-out",
         side === "right" && "right-0 top-0 h-full w-full sm:w-[600px] lg:w-[800px]",
         side === "left" && "left-0 top-0 h-full w-full sm:w-[600px] lg:w-[800px]",
         "overflow-y-auto",
@@ -107,7 +115,7 @@ const SheetDescription = React.forwardRef<HTMLParagraphElement, SheetDescription
   ({ className, ...props }, ref) => (
     <p
       ref={ref}
-      className={cn("text-sm text-gray-600", className)}
+      className={cn("text-sm text-muted-foreground", className)}
       {...props}
     />
   )
@@ -131,7 +139,7 @@ const SheetClose = React.forwardRef<
     <button
       ref={ref}
       className={cn(
-        "absolute right-4 top-4 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:pointer-events-none",
+        "absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none",
         className
       )}
       onClick={handleClick}
