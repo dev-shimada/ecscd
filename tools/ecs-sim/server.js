@@ -35,7 +35,18 @@ function parseWeights(spec) {
   const weights = {};
   for (const part of spec.split(",")) {
     const [key, value] = part.split(":");
-    if (key && value) weights[key.trim()] = Number(value);
+    const num = Number(value);
+    if (key && Number.isFinite(num) && num > 0) {
+      weights[key.trim()] = num;
+    }
+  }
+  // 不正な指定 (空文字・全滅など) だと pickWeighted が空の entries を掴んで落ちるので、
+  // ここで検証して安全なデフォルト (success 固定) にフォールバックする。
+  if (Object.keys(weights).length === 0) {
+    console.error(
+      `invalid ECS_SIM_OUTCOME_WEIGHTS ("${spec}"); falling back to success-only`,
+    );
+    return { success: 1 };
   }
   return weights;
 }
@@ -497,7 +508,7 @@ function handleControlRequest(req, res, url, body) {
   if (req.method === "POST" && url.pathname === "/_sim/next-deployment") {
     const { cluster, service, outcome, durationMs } = body || {};
     if (!cluster || !service || !["success", "hang", "failed"].includes(outcome)) {
-      return sendJson(res, 400, {
+      return sendControlJson(res, 400, {
         error: "cluster, service and outcome ('success'|'hang'|'failed') are required",
       });
     }
@@ -505,7 +516,7 @@ function handleControlRequest(req, res, url, body) {
       outcome,
       durationMs: durationMs ? Number(durationMs) : undefined,
     });
-    return sendJson(res, 200, { ok: true });
+    return sendControlJson(res, 200, { ok: true });
   }
 
   if (req.method === "GET" && url.pathname === "/_sim/state") {
@@ -514,16 +525,27 @@ function handleControlRequest(req, res, url, body) {
     for (const [key, state] of services) {
       dump[key] = buildServiceOutput(state, now);
     }
-    return sendJson(res, 200, { services: dump });
+    return sendControlJson(res, 200, { services: dump });
   }
 
-  return sendJson(res, 404, { error: "not found" });
+  return sendControlJson(res, 404, { error: "not found" });
 }
 
-function sendJson(res, status, body) {
+// AWS JSON 1.1 プロトコル (ECS API) のレスポンス用。
+function sendAwsJson(res, status, body) {
+  sendJson(res, status, body, "application/x-amz-json-1.1");
+}
+
+// /_sim/* 制御用エンドポイント (非 AWS プロトコル) のレスポンス用。
+// AWS プロトコルと同じ Content-Type を使うとツール/デバッグ時に紛らわしいため分ける。
+function sendControlJson(res, status, body) {
+  sendJson(res, status, body, "application/json; charset=utf-8");
+}
+
+function sendJson(res, status, body, contentType) {
   const payload = JSON.stringify(body);
   res.writeHead(status, {
-    "Content-Type": "application/x-amz-json-1.1",
+    "Content-Type": contentType,
     "Content-Length": Buffer.byteLength(payload),
   });
   res.end(payload);
@@ -552,7 +574,7 @@ const server = http.createServer((req, res) => {
     console.log(`ECS ${action}`);
     const handler = actions[action];
     if (!handler) {
-      return sendJson(res, 400, {
+      return sendAwsJson(res, 400, {
         __type: "UnknownOperationException",
         message: `Unsupported action: ${action}`,
       });
@@ -561,16 +583,16 @@ const server = http.createServer((req, res) => {
     try {
       const input = raw ? JSON.parse(raw) : {};
       const output = handler(input);
-      return sendJson(res, 200, output);
+      return sendAwsJson(res, 200, output);
     } catch (error) {
       if (error instanceof ApiError) {
-        return sendJson(res, error.status, {
+        return sendAwsJson(res, error.status, {
           __type: error.type,
           message: error.message,
         });
       }
       console.error(error);
-      return sendJson(res, 500, {
+      return sendAwsJson(res, 500, {
         __type: "InternalFailure",
         message: error instanceof Error ? error.message : "Unknown error",
       });

@@ -8,7 +8,9 @@ const fs = require("fs");
 const path = require("path");
 
 const port = Number(process.env.PORT || 8080);
-const dataDir = path.resolve(process.env.DATA_DIR || path.join(__dirname, "data"));
+const dataDir = fs.realpathSync(
+  path.resolve(process.env.DATA_DIR || path.join(__dirname, "data")),
+);
 
 function send(res, status, body) {
   const payload = JSON.stringify(body);
@@ -43,6 +45,12 @@ const server = http.createServer((req, res) => {
       return send(res, 404, { message: "Not Found" });
     }
     if (!fs.existsSync(resolved) || !fs.statSync(resolved).isFile()) {
+      return send(res, 404, { message: "Not Found" });
+    }
+    // シンボリックリンクで DATA_DIR の外を指していないか、実パスで再確認する
+    // (上の startsWith チェックは字面上のパスだけなのでリンクをすり抜けられる)。
+    const realResolved = fs.realpathSync(resolved);
+    if (!realResolved.startsWith(dataDir + path.sep) && realResolved !== dataDir) {
       return send(res, 404, { message: "Not Found" });
     }
     const raw = fs.readFileSync(resolved);

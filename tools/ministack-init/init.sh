@@ -59,7 +59,7 @@ if ! aws --endpoint-url "$ECS_EP" ecs describe-task-definition --task-definition
   # DescribeTaskDefinition が補完するサーバ側デフォルト (cpu/memory 等) まで明示し、
   # github-stub 側との差分が「environment の有無」だけになるようにする
   aws --endpoint-url "$ECS_EP" ecs register-task-definition --cli-input-json '{
-    "family": "ecscd-demo",
+    "family": "'"$FAMILY"'",
     "networkMode": "bridge",
     "requiresCompatibilities": ["EC2"],
     "taskRoleArn": "",
