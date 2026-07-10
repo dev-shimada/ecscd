@@ -247,9 +247,18 @@ function buildServiceOutput(state, now) {
   const deployments = rollouts.map((rollout, idx) => {
     const view = deriveView(rollout, now);
     let status;
-    if (idx === 0) status = "PRIMARY";
-    else if (idx === 1 && primaryView.phase !== "COMPLETED") status = "ACTIVE";
-    else status = "INACTIVE";
+    if (rollout.stoppedAt) {
+      // ロールバックで置き換えられたデプロイは常に INACTIVE (集計対象外)。
+      // stoppedAt が付いた時点で新しい rollout が rollouts[0] を占めるため、
+      // idx による判定より優先する。
+      status = "INACTIVE";
+    } else if (idx === 0) {
+      status = "PRIMARY";
+    } else if (idx === 1 && primaryView.phase !== "COMPLETED") {
+      status = "ACTIVE";
+    } else {
+      status = "INACTIVE";
+    }
     const serving = status !== "INACTIVE";
 
     return {
