@@ -50,6 +50,18 @@ else
   echo "created table ${TABLE}"
 fi
 
+# create-table は非同期なので、put-item を投げる前に ACTIVE になるまで待つ
+i=0
+until [ "$(aws --endpoint-url "$EP" dynamodb describe-table --table-name "$TABLE" \
+  --query 'Table.TableStatus' --output text 2>/dev/null)" = "ACTIVE" ]; do
+  i=$((i + 1))
+  if [ "$i" -gt 30 ]; then
+    echo "table ${TABLE} did not become ACTIVE in time" >&2
+    exit 1
+  fi
+  sleep 1
+done
+
 # --- ECS (ecs-sim) --------------------------------------------------------
 aws --endpoint-url "$ECS_EP" ecs create-cluster --cluster-name "$CLUSTER" >/dev/null
 echo "cluster ${CLUSTER} is ready"

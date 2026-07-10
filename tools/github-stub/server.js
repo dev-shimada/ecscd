@@ -53,7 +53,8 @@ const server = http.createServer((req, res) => {
     if (!realResolved.startsWith(dataDir + path.sep) && realResolved !== dataDir) {
       return send(res, 404, { message: "Not Found" });
     }
-    const raw = fs.readFileSync(resolved);
+    // TOCTOU を避けるため、検証したのと同じ実パス (realResolved) から読む
+    const raw = fs.readFileSync(realResolved);
     return send(res, 200, {
       type: "file",
       name: path.basename(rel),

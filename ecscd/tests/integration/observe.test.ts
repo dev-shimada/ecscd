@@ -94,7 +94,7 @@ describe("observe & sync end-to-end (ministack + in-process GitHub stub)", () =>
 
     const initialArn = await aws.registerTaskDefinition(
       application.awsConfig,
-      taskDefinitionJson() as never
+      taskDefinitionJson()
     );
     await createClusterAndService(rawEcsClient(), cluster, service, initialArn);
   });

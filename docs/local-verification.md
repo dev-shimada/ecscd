@@ -60,8 +60,9 @@ curl http://localhost:4600/_sim/state
 
 ```bash
 docker compose up -d --build
-open http://localhost:3000
 ```
+
+ブラウザで http://localhost:3000 を開いてください。
 
 初期状態では `demo-app` が **OutOfSync** で表示されます。
 これは Git 側(github-stub)のタスク定義にだけ環境変数 `DEPLOYED_FROM=git` が入っているためです。
