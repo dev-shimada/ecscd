@@ -38,6 +38,7 @@ function StatusReasonPopover({
   const isVisible = isOpen || isHovered;
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration-safe "mounted" flag, intentionally one-shot
     setIsMounted(true);
   }, []);
 
@@ -58,6 +59,7 @@ function StatusReasonPopover({
 
   useEffect(() => {
     if (!isVisible || !triggerRef.current) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- resets position readiness when hidden
       setIsPositionReady(false);
       return;
     }

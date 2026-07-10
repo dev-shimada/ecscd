@@ -21,6 +21,9 @@ export function DashboardSidebarPane({
     }
 
     listElement.scrollTop = sidebarScrollTop;
+    // Re-syncs isListScrolled with the cached sidebarScrollTop (module-level, survives remounts)
+    // in case it changed after the initial useState call.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsListScrolled(sidebarScrollTop > 0);
   }, []);
 

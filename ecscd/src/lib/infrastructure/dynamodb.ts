@@ -48,9 +48,12 @@ export class DynamoDB implements IDatabase {
 
   async getApplications(): Promise<ApplicationDomain[]> {
     try {
+      // item_type 属性が無いアイテムは item_type 導入前に書き込まれたアプリケーション行
+      // なので、フィルタなしと同じ扱いにする (filter アイテムは item_type="filter" を
+      // 必ず持つため、属性なし = 旧アプリ行)。
       const command = new ScanCommand({
         TableName: this.tableName,
-        FilterExpression: "item_type = :item_type",
+        FilterExpression: "attribute_not_exists(item_type) OR item_type = :item_type",
         ExpressionAttributeValues: {
           ":item_type": "application",
         },
@@ -78,7 +81,7 @@ export class DynamoDB implements IDatabase {
     try {
       const command = new ScanCommand({
         TableName: this.tableName,
-        FilterExpression: "item_type = :item_type",
+        FilterExpression: "attribute_not_exists(item_type) OR item_type = :item_type",
         ExpressionAttributeValues: {
           ":item_type": "application",
         },
