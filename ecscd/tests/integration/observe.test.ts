@@ -46,7 +46,7 @@ describe("observe & sync end-to-end (ministack + in-process GitHub stub)", () =>
 
   // スタブが返す「Git 上の望ましいタスク定義」。テスト中に差し替える。
   let gitTaskDefinition = taskDefinitionJson();
-  let stubServer: http.Server;
+  let stubServer: http.Server | undefined;
 
   const aws = new AWS();
   let observer: DefaultApplicationObserver;
@@ -62,7 +62,7 @@ describe("observe & sync end-to-end (ministack + in-process GitHub stub)", () =>
     await waitForMinistack();
     await waitForEcsSim();
 
-    stubServer = http.createServer((req, res) => {
+    const server = http.createServer((req, res) => {
       const url = new URL(req.url || "/", "http://localhost");
       const json = (status: number, body: unknown) => {
         res.writeHead(status, { "Content-Type": "application/json" });
@@ -82,8 +82,9 @@ describe("observe & sync end-to-end (ministack + in-process GitHub stub)", () =>
       }
       json(404, { message: "Not Found" });
     });
-    await new Promise<void>((resolve) => stubServer.listen(0, resolve));
-    const port = (stubServer.address() as AddressInfo).port;
+    await new Promise<void>((resolve) => server.listen(0, resolve));
+    stubServer = server;
+    const port = (server.address() as AddressInfo).port;
 
     const github = new GitHub("dummy-token", `http://127.0.0.1:${port}`);
     deployment = new Deployment(aws, github);
@@ -100,8 +101,13 @@ describe("observe & sync end-to-end (ministack + in-process GitHub stub)", () =>
   });
 
   afterAll(async () => {
+    // beforeAll が途中で失敗すると stubServer が未初期化のままここに来るので、
+    // その場合は close を呼ばず (元の失敗原因を隠さないよう) 何もしない。
+    if (!stubServer) {
+      return;
+    }
     await new Promise<void>((resolve, reject) =>
-      stubServer.close((err) => (err ? reject(err) : resolve()))
+      stubServer!.close((err) => (err ? reject(err) : resolve()))
     );
   });
 

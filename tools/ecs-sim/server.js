@@ -512,9 +512,20 @@ function handleControlRequest(req, res, url, body) {
         error: "cluster, service and outcome ('success'|'hang'|'failed') are required",
       });
     }
+    // durationMs は truthy 判定だと 0 を指定できないうえ NaN/負数がすり抜けるので、
+    // 与えられた場合は正の有限数であることを検証する。
+    let parsedDurationMs;
+    if (durationMs !== undefined && durationMs !== null) {
+      parsedDurationMs = Number(durationMs);
+      if (!Number.isFinite(parsedDurationMs) || parsedDurationMs <= 0) {
+        return sendControlJson(res, 400, {
+          error: "durationMs must be a positive finite number",
+        });
+      }
+    }
     forcedNext.set(serviceKey(cluster, service), {
       outcome,
-      durationMs: durationMs ? Number(durationMs) : undefined,
+      durationMs: parsedDurationMs,
     });
     return sendControlJson(res, 200, { ok: true });
   }
