@@ -27,14 +27,7 @@ import {
   STSClientConfig,
 } from "@aws-sdk/client-sts";
 
-function normalizeRolloutStateReason(
-  rolloutState: string | undefined,
-  reason: string | undefined
-) {
-  if (rolloutState !== "FAILED") {
-    return "";
-  }
-
+function normalizeRolloutStateReason(reason: string | undefined) {
   return reason?.trim() || "";
 }
 
@@ -54,7 +47,9 @@ function toEcsDeploymentStatus(status: string | undefined): EcsDeploymentStatus 
   return "INACTIVE";
 }
 
-function toEcsRolloutState(status: string | undefined): EcsRolloutState {
+function toEcsRolloutState(
+  status: string | undefined,
+): EcsRolloutState | undefined {
   if (
     status === "COMPLETED" ||
     status === "FAILED" ||
@@ -63,7 +58,11 @@ function toEcsRolloutState(status: string | undefined): EcsRolloutState {
     return status;
   }
 
-  return "FAILED";
+  // rolloutState を返さない CODE_DEPLOY / EXTERNAL デプロイメントコントローラの
+  // サービスでは undefined を透過する。ここで "FAILED" 扱いにすると、
+  // getApplicationStatus が恒久的に "Failed" を表示してしまうため、
+  // IN_PROGRESS / FAILED 判定をスキップさせて sync 由来の状態にフォールバックさせる。
+  return undefined;
 }
 
 function toRegisterTaskDefinitionInput(
@@ -144,10 +143,7 @@ export class AWS implements IAws {
       deployments: (response.services?.[0]?.deployments || []).map((d) => ({
         status: toEcsDeploymentStatus(d.status),
         rolloutState: toEcsRolloutState(d.rolloutState),
-        rolloutStateReason: normalizeRolloutStateReason(
-          d.rolloutState,
-          d.rolloutStateReason
-        ),
+        rolloutStateReason: normalizeRolloutStateReason(d.rolloutStateReason),
         createdAt: d.createdAt || new Date(),
         updatedAt: d.updatedAt || new Date(),
       })),

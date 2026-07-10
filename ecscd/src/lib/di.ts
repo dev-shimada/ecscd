@@ -41,5 +41,5 @@ const observer = new DefaultApplicationObserver(
 const fr = new Filter(db);
 
 export const au: IApplicationUsecase = new ApplicationUsecase(ar, observer);
-export const du = new DeploymentUsecase(dr);
+export const du = new DeploymentUsecase(dr, ar);
 export const fu = new FilterUsecase(fr);

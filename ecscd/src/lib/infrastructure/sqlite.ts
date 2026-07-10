@@ -17,6 +17,7 @@ interface ApplicationsModel {
   aws_external_id: string;
   created_at: string;
   updated_at: string;
+  last_synced_at: string | null;
 }
 
 interface FiltersModel {
@@ -40,7 +41,10 @@ export class SQLite implements IDatabase {
     this.initializeDatabase();
   }
   private async initializeDatabase(): Promise<void> {
-    // Initialize SQLite database connection and create tables if they don't exist
+    // Initialize SQLite database connection and create tables if they don't exist.
+    // 両方の CREATE を serialize() 内で同期的に enqueue することで、コンストラクタが
+    // initializeDatabase() を await しなくても、以降にキューへ入る他のクエリ (SELECT 等)
+    // より必ず先に実行される。
     return new Promise((resolve, reject) => {
       this.db.serialize(() => {
         this.db.run(
@@ -56,32 +60,41 @@ export class SQLite implements IDatabase {
                 aws_role_arn TEXT,
                 aws_external_id TEXT NOT NULL,
                 created_at DATETIME NOT NULL,
-                updated_at DATETIME NOT NULL
+                updated_at DATETIME NOT NULL,
+                last_synced_at DATETIME
             )`,
           (err: Error | null) => {
             if (err) {
               reject(err);
+            }
+          },
+        );
+
+        // last_synced_at は既存 DB に後から追加したカラムなので、旧テーブルには
+        // ALTER TABLE で補う。既に存在する場合のエラー (duplicate column name) は無視する。
+        this.db.run(
+          `ALTER TABLE applications ADD COLUMN last_synced_at DATETIME`,
+          () => {
+            // 追加済みなら SQLITE_ERROR (duplicate column name) になるだけなので無視する
+          },
+        );
+
+        this.db.run(
+          `
+            CREATE TABLE IF NOT EXISTS filters (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                pattern TEXT NOT NULL,
+                created_at DATETIME NOT NULL,
+                updated_at DATETIME NOT NULL
+            )`,
+          (filterErr: Error | null) => {
+            if (filterErr) {
+              reject(filterErr);
               return;
             }
 
-            this.db.run(
-              `
-                CREATE TABLE IF NOT EXISTS filters (
-                    id TEXT PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    pattern TEXT NOT NULL,
-                    created_at DATETIME NOT NULL,
-                    updated_at DATETIME NOT NULL
-                )`,
-              (filterErr: Error | null) => {
-                if (filterErr) {
-                  reject(filterErr);
-                  return;
-                }
-
-                resolve();
-              },
-            );
+            resolve();
           },
         );
       });
@@ -224,7 +237,23 @@ export class SQLite implements IDatabase {
       },
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
+      lastSyncedAt: row.last_synced_at ? new Date(row.last_synced_at) : undefined,
     };
+  }
+
+  async updateLastSyncedAt(name: string, syncedAt: Date): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        `UPDATE applications SET last_synced_at = ? WHERE name = ?`,
+        [syncedAt.toISOString(), name],
+        (err: Error | null) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve();
+        },
+      );
+    });
   }
 
   async getFilters(): Promise<FilterDomain[]> {

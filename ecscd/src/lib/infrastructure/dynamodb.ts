@@ -24,6 +24,7 @@ interface ApplicationsModel {
   aws_external_id: string;
   created_at: string;
   updated_at: string;
+  last_synced_at?: string;
 }
 
 interface FiltersModel {
@@ -48,9 +49,12 @@ export class DynamoDB implements IDatabase {
 
   async getApplications(): Promise<ApplicationDomain[]> {
     try {
+      // item_type 属性が無い既存アイテムは item_type 導入前 (main) に書き込まれた
+      // アプリケーション行なので、フィルタなしと同じ扱いにする
+      // (filter アイテムは item_type="filter" を必ず持つため、属性なし = 旧アプリ行)。
       const command = new ScanCommand({
         TableName: this.tableName,
-        FilterExpression: "item_type = :item_type",
+        FilterExpression: "attribute_not_exists(item_type) OR item_type = :item_type",
         ExpressionAttributeValues: {
           ":item_type": "application",
         },
@@ -78,7 +82,7 @@ export class DynamoDB implements IDatabase {
     try {
       const command = new ScanCommand({
         TableName: this.tableName,
-        FilterExpression: "item_type = :item_type",
+        FilterExpression: "attribute_not_exists(item_type) OR item_type = :item_type",
         ExpressionAttributeValues: {
           ":item_type": "application",
         },
@@ -236,7 +240,37 @@ export class DynamoDB implements IDatabase {
       },
       createdAt: new Date(item.created_at),
       updatedAt: new Date(item.updated_at),
+      lastSyncedAt: item.last_synced_at ? new Date(item.last_synced_at) : undefined,
     };
+  }
+
+  async updateLastSyncedAt(name: string, syncedAt: Date): Promise<void> {
+    try {
+      const command = new UpdateCommand({
+        TableName: this.tableName,
+        Key: {
+          name,
+        },
+        UpdateExpression: "SET last_synced_at = :last_synced_at",
+        ExpressionAttributeValues: {
+          ":last_synced_at": syncedAt.toISOString(),
+        },
+        ConditionExpression: "attribute_exists(#name)",
+        ExpressionAttributeNames: {
+          "#name": "name",
+        },
+      });
+
+      await this.client.send(command);
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.name === "ConditionalCheckFailedException"
+      ) {
+        throw new Error(`Application with name '${name}' does not exist`);
+      }
+      throw new Error(`Failed to update last synced at: ${error}`);
+    }
   }
 
   async getFilters(): Promise<FilterDomain[]> {

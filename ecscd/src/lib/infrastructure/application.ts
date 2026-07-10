@@ -30,4 +30,7 @@ export class Application implements ApplicationRepository {
   async deleteApplication(name: string): Promise<void> {
     await this.db.deleteApplication(name);
   }
+  async updateLastSyncedAt(name: string, syncedAt: Date): Promise<void> {
+    await this.db.updateLastSyncedAt(name, syncedAt);
+  }
 }
