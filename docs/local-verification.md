@@ -93,8 +93,8 @@ docker compose --profile test run --rm integration-test
 ### ホストから実行(開発時の反復向け)
 
 ```bash
-docker compose up -d ministack          # エミュレータだけ起動
-cd ecscd && npm run test:integration    # localhost:4566 に接続
+docker compose up -d ministack ecs-sim  # エミュレータだけ起動
+cd ecscd && npm run test:integration    # localhost:4566 (DynamoDB/STS) / localhost:4600 (ECS) に接続
 ```
 
 ### テスト内容

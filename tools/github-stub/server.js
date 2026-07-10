@@ -39,7 +39,13 @@ const server = http.createServer((req, res) => {
   // getContent: DATA_DIR 配下のファイルを base64 で返す
   const contents = url.pathname.match(/^\/repos\/[^/]+\/[^/]+\/contents\/(.+)$/);
   if (contents) {
-    const rel = decodeURIComponent(contents[1]);
+    let rel;
+    try {
+      rel = decodeURIComponent(contents[1]);
+    } catch {
+      // 不正な % エンコーディングは URIError を投げてプロセスが落ちるので、400 にする
+      return send(res, 400, { message: "Bad Request" });
+    }
     const resolved = path.resolve(dataDir, rel);
     if (!resolved.startsWith(dataDir + path.sep) && resolved !== dataDir) {
       return send(res, 404, { message: "Not Found" });

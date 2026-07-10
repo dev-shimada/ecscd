@@ -1,6 +1,7 @@
 /**
- * ministack (ローカル AWS エミュレータ) に対して実際に API を発行する統合テスト用設定。
- * 事前に `docker compose up -d ministack` (または compose --profile test) が必要。
+ * ministack (DynamoDB/STS) と ecs-sim (ECS) に対して実際に API を発行する
+ * 統合テスト用設定。
+ * 事前に `docker compose up -d ministack ecs-sim` (または compose --profile test) が必要。
  * 実行: npm run test:integration
  * @type {import('jest').Config}
  */

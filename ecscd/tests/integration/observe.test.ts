@@ -1,6 +1,7 @@
 /**
  * observe → sync のエンドツーエンド統合テスト。
- * ECS 側は ministack、GitHub 側はテストプロセス内に立てたスタブ HTTP サーバを使い、
+ * ECS 側は ecs-sim (DynamoDB/STS は ministack)、GitHub 側はテストプロセス内に
+ * 立てたスタブ HTTP サーバを使い、
  * GitHub(baseUrl) / Deployment / AwsServiceStateProvider / DefaultApplicationObserver を
  * 本物のワイヤリングで通す:
  *   Git とタスク定義が一致       -> InSync
@@ -40,7 +41,7 @@ function taskDefinitionJson(extraEnv?: { name: string; value: string }) {
   };
 }
 
-describe("observe & sync end-to-end (ministack + in-process GitHub stub)", () => {
+describe("observe & sync end-to-end (ecs-sim/ministack + in-process GitHub stub)", () => {
   const cluster = uniqueName("cluster");
   const service = uniqueName("service");
 

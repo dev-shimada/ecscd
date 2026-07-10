@@ -1,5 +1,5 @@
 /**
- * AWS (ECS) インフラ実装を ministack の ECS API に対して検証する統合テスト。
+ * AWS (ECS) インフラ実装を ecs-sim の ECS API に対して検証する統合テスト。
  * registerTaskDefinition → describeTaskDefinition の正規化 (AWS 付与フィールドの除去)、
  * describeServices / updateService の一連の流れを本物の API 呼び出しで確認する。
  */
@@ -18,7 +18,7 @@ import {
 
 const awsConfig = { region: REGION, roleArn: "", externalId: "integration-test" };
 
-describe("AWS(ECS) repository (ministack)", () => {
+describe("AWS(ECS) repository (ecs-sim)", () => {
   const aws = new AWS();
   const family = uniqueName("td");
   const cluster = uniqueName("cluster");
