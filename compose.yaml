@@ -1,0 +1,130 @@
+# ローカル動作確認・自動テスト用スタック。
+# ministack (AWS エミュレータ) / ecs-sim / github-stub / ecscd をすべてコンテナで
+# 起動し、ローカル環境には何もインストールしない。
+#
+#   動作確認:  docker compose up -d --build
+#              → http://localhost:3000 (demo-app が OutOfSync で表示される)
+#   自動テスト: docker compose --profile test run --rm integration-test
+#   後片付け:  docker compose --profile test down -v
+name: ecscd-local
+
+networks:
+  default:
+    name: ecscd-local
+
+services:
+  # AWS エミュレータ (DynamoDB / STS)。ポート 4566。
+  ministack:
+    image: ministackorg/ministack:latest
+    ports:
+      # ホスト側ポートは MINISTACK_PORT で変更可能 (他プロジェクトと衝突する場合)
+      - "${MINISTACK_PORT:-4566}:4566"
+    environment:
+      DOCKER_NETWORK: ecscd-local
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  # ECS シミュレータ。MiniStack の ECS は UpdateService が同期的に COMPLETED を
+  # 返し ListServiceDeployments も未実装のため、実際の ECS のような非同期の
+  # ロールアウト遷移・ロールバックを試せない。このサーバがそのギャップを埋める
+  # (tools/ecs-sim/server.js 参照。依存パッケージなし)。
+  ecs-sim:
+    image: node:24-slim
+    command: ["node", "/sim/server.js"]
+    ports:
+      # ホスト側ポートは ECS_SIM_PORT で変更可能 (他プロジェクトと衝突する場合)
+      - "${ECS_SIM_PORT:-4600}:8081"
+    environment:
+      PORT: "8081"
+      AWS_REGION: us-east-1
+      # ロールアウト所要時間 (ms) と結果分布。数秒〜数十秒でランダムに
+      # success/hang(スタックしたまま進まない=ロールバック演習用)/failed に遷移する。
+      ECS_SIM_ROLLOUT_MIN_MS: "8000"
+      ECS_SIM_ROLLOUT_MAX_MS: "25000"
+      ECS_SIM_ROLLBACK_DURATION_MS: "4000"
+      ECS_SIM_OUTCOME_WEIGHTS: "success:0.7,hang:0.2,failed:0.1"
+    volumes:
+      - ./tools/ecs-sim:/sim:ro
+
+  # GitHub REST API のスタブ。tools/github-stub/data/ 配下のファイルを
+  # /repos/{owner}/{repo}/contents/{path} として返す (依存パッケージなし)。
+  github-stub:
+    image: node:24-slim
+    command: ["node", "/stub/server.js"]
+    environment:
+      PORT: "8080"
+      DATA_DIR: /stub/data
+    volumes:
+      - ./tools/github-stub:/stub:ro
+
+  # ministack (DynamoDB) / ecs-sim (ECS) にデモ用リソースを投入するワンショット
+  # ジョブ。冪等。
+  ministack-init:
+    image: amazon/aws-cli:latest
+    entrypoint: ["/bin/sh", "/init/init.sh"]
+    environment:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ENDPOINT_URL: http://ministack:4566
+      AWS_ENDPOINT_URL_ECS: http://ecs-sim:8081
+    volumes:
+      - ./tools/ministack-init:/init:ro
+    depends_on:
+      - ministack
+      - ecs-sim
+
+  # ecscd 本体。AWS SDK v3 は AWS_ENDPOINT_URL[_<SERVICE>] を標準サポートしている
+  # ため、コード変更なしで ministack (DynamoDB/STS) と ecs-sim (ECS) を向く。
+  # GitHub API はスタブへ向ける。
+  ecscd:
+    build: .
+    ports:
+      # ホスト側ポートは ECSCD_PORT で変更可能 (他プロジェクトと衝突する場合)
+      - "${ECSCD_PORT:-3000}:3000"
+    environment:
+      DATABASE_TYPE: dynamodb
+      DYNAMODB_TABLE_NAME: ECSCD
+      AWS_REGION: us-east-1
+      AWS_ENDPOINT_URL: http://ministack:4566
+      AWS_ENDPOINT_URL_ECS: http://ecs-sim:8081
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      GITHUB_TOKEN: local-dummy-token
+      GITHUB_API_URL: http://github-stub:8080
+    depends_on:
+      ministack-init:
+        condition: service_completed_successfully
+      github-stub:
+        condition: service_started
+
+  # 統合テストランナー (docker compose --profile test run --rm integration-test)。
+  # ソースはバインドマウントするが node_modules は名前付きボリュームに隔離し、
+  # ホスト側の node_modules (macOS 用ネイティブバイナリ) を汚さない。
+  integration-test:
+    profiles: ["test"]
+    image: node:24-slim
+    working_dir: /app
+    command:
+      [
+        "sh",
+        "-c",
+        "npm ci --ignore-scripts --no-audit --no-fund && npm run test:integration",
+      ]
+    environment:
+      AWS_ENDPOINT_URL: http://ministack:4566
+      AWS_ENDPOINT_URL_ECS: http://ecs-sim:8081
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_REGION: us-east-1
+    volumes:
+      - ./ecscd:/app
+      - integration-node-modules:/app/node_modules
+    depends_on:
+      ministack-init:
+        condition: service_completed_successfully
+      ecs-sim:
+        condition: service_started
+
+volumes:
+  integration-node-modules:
