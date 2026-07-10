@@ -17,12 +17,36 @@ const REGION = process.env.AWS_REGION || "us-east-1";
 const ACCOUNT_ID = "000000000000";
 const HISTORY_LIMIT = 5;
 
+// 環境変数を正の有限数 (ミリ秒) として読む。不正な値 (非数値・0以下) の場合は
+// NaN がロールアウトの進捗計算に混入して即時完了などを起こすため、
+// 警告を出して安全なデフォルトにフォールバックする。
+function parsePositiveMs(envVarName, defaultValue) {
+  const raw = process.env[envVarName];
+  if (raw === undefined) return defaultValue;
+  const num = Number(raw);
+  if (!Number.isFinite(num) || num <= 0) {
+    console.error(
+      `invalid ${envVarName} ("${raw}"); falling back to ${defaultValue}`,
+    );
+    return defaultValue;
+  }
+  return num;
+}
+
 // ロールアウトの所要時間・結果分布。すべて環境変数で調整可能。
-const ROLLOUT_MIN_MS = Number(process.env.ECS_SIM_ROLLOUT_MIN_MS || 8_000);
-const ROLLOUT_MAX_MS = Number(process.env.ECS_SIM_ROLLOUT_MAX_MS || 25_000);
-const ROLLBACK_DURATION_MS = Number(
-  process.env.ECS_SIM_ROLLBACK_DURATION_MS || 4_000,
+const ROLLOUT_MIN_MS = parsePositiveMs("ECS_SIM_ROLLOUT_MIN_MS", 8_000);
+let ROLLOUT_MAX_MS = parsePositiveMs("ECS_SIM_ROLLOUT_MAX_MS", 25_000);
+const ROLLBACK_DURATION_MS = parsePositiveMs(
+  "ECS_SIM_ROLLBACK_DURATION_MS",
+  4_000,
 );
+
+if (ROLLOUT_MAX_MS < ROLLOUT_MIN_MS) {
+  console.error(
+    `ECS_SIM_ROLLOUT_MAX_MS (${ROLLOUT_MAX_MS}) < ECS_SIM_ROLLOUT_MIN_MS (${ROLLOUT_MIN_MS}); clamping max to min`,
+  );
+  ROLLOUT_MAX_MS = ROLLOUT_MIN_MS;
+}
 // hang (スタック) 状態はこの割合までしか進捗しない = 永遠に IN_PROGRESS のまま
 const HANG_STALL_RATIO = 0.4;
 // 通常デプロイの結果分布 (success / hang / failed)。hang はロールバック演習用、
