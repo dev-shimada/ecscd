@@ -44,6 +44,7 @@ export interface ApplicationDomain {
   awsConfig: AwsAccessProfile;
   createdAt: Date;
   updatedAt: Date;
+  lastSyncedAt?: Date;
 }
 
 export interface ObservedApplicationDomain extends ApplicationDomain {
@@ -134,7 +135,7 @@ export interface ServiceDomain {
     status: EcsDeploymentStatus;
     createdAt: Date;
     updatedAt: Date;
-    rolloutState: EcsRolloutState;
+    rolloutState?: EcsRolloutState;
     rolloutStateReason: string;
   }[];
 }
@@ -192,6 +193,28 @@ export function getApplicationStatus(
 
   const service = application.service.value;
 
+  // デプロイ中 (IN_PROGRESS) かどうかは GitHub 側の一時エラー (レートリミット等) より
+  // 優先して判定する。そうしないと、デプロイ中に sync/diff の取得が 1 回失敗しただけで
+  // "Deploying" → "Error" に反転し、UI の Deploying 限定ポーリング
+  // (application-dashboard.tsx の polling effect) が恒久的に止まってしまう。
+  const currentDeployment = getApplicationCurrentDeployment(application);
+
+  if (currentDeployment?.rolloutState === "IN_PROGRESS") {
+    return {
+      status: "Deploying",
+      reason:
+        currentDeployment.rolloutStateReason || "Deployment is in progress.",
+    };
+  }
+
+  if (currentDeployment?.rolloutState === "FAILED") {
+    return {
+      status: "Failed",
+      reason:
+        currentDeployment.rolloutStateReason || "The last deployment failed.",
+    };
+  }
+
   if (application.sync.status === "Error") {
     return {
       status: "Error",
@@ -215,24 +238,6 @@ export function getApplicationStatus(
     return {
       status: "Error",
       reason: `ECS service is ${service.status}. ecscd requires an ACTIVE service.`,
-    };
-  }
-
-  const currentDeployment = getApplicationCurrentDeployment(application);
-
-  if (currentDeployment?.rolloutState === "IN_PROGRESS") {
-    return {
-      status: "Deploying",
-      reason:
-        currentDeployment.rolloutStateReason || "Deployment is in progress.",
-    };
-  }
-
-  if (currentDeployment?.rolloutState === "FAILED") {
-    return {
-      status: "Failed",
-      reason:
-        currentDeployment.rolloutStateReason || "The last deployment failed.",
     };
   }
 

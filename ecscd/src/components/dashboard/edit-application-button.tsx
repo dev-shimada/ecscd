@@ -9,10 +9,12 @@ import { ApplicationDomain } from "@/lib/domain/application";
 
 export function DashboardEditApplicationButton({
   application,
+  hasActiveDeployment,
   onApplicationChanged,
   onApplicationDeleted,
 }: {
   application: ApplicationDomain;
+  hasActiveDeployment: boolean;
   onApplicationChanged: (name: string) => void;
   onApplicationDeleted: (name: string) => void;
 }) {
@@ -53,6 +55,7 @@ export function DashboardEditApplicationButton({
       <Button
         variant="ghost"
         size="icon"
+        disabled={hasActiveDeployment}
         onClick={(event) => {
           event.stopPropagation();
           setIsOpen(true);
@@ -65,6 +68,7 @@ export function DashboardEditApplicationButton({
         open={isOpen}
         onOpenChange={setIsOpen}
         application={application}
+        hasActiveDeployment={hasActiveDeployment}
         onSuccess={() => onApplicationChanged(application.name)}
         onDelete={handleDelete}
       />

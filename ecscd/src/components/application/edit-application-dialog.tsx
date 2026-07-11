@@ -21,6 +21,7 @@ interface EditApplicationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   application: ApplicationDomain | null;
+  hasActiveDeployment?: boolean;
   onSuccess?: () => void;
   onDelete?: (applicationName: string) => Promise<void>;
 }
@@ -38,7 +39,7 @@ interface ApplicationFormData {
   sessionName?: string;
 }
 
-export function EditApplicationDialog({ open, onOpenChange, application, onSuccess, onDelete }: EditApplicationDialogProps) {
+export function EditApplicationDialog({ open, onOpenChange, application, hasActiveDeployment = false, onSuccess, onDelete }: EditApplicationDialogProps) {
   const [formData, setFormData] = useState<ApplicationFormData>({
     name: '',
     clusterName: '',
@@ -183,7 +184,6 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
     try {
       await onDelete(application.name);
       onOpenChange(false);
-      onSuccess?.();
     } catch (error) {
       console.error("Failed to delete application:", error);
       setErrors({
@@ -342,7 +342,12 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
                 type="button"
                 variant="destructive"
                 onClick={handleDelete}
-                disabled={isSubmitting || isDeleting}
+                disabled={isSubmitting || isDeleting || hasActiveDeployment}
+                title={
+                  hasActiveDeployment
+                    ? "Cannot delete while a deployment is in progress"
+                    : undefined
+                }
               >
                 {isDeleting ? (
                   <>
@@ -365,7 +370,15 @@ export function EditApplicationDialog({ open, onOpenChange, application, onSucce
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting || isDeleting}>
+              <Button
+                type="submit"
+                disabled={isSubmitting || isDeleting || hasActiveDeployment}
+                title={
+                  hasActiveDeployment
+                    ? "Cannot update while a deployment is in progress"
+                    : undefined
+                }
+              >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />

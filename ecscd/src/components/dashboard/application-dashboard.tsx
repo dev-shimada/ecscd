@@ -44,6 +44,7 @@ type ApplicationDashboardProps = {
 
 type CacheEntry = {
   data?: ObservedApplicationDomain;
+  error?: string;
   promise?: Promise<void>;
 };
 
@@ -84,11 +85,16 @@ function getCachedApplication(
   config: ApplicationDomain,
 ): ObservedApplicationDomain | null {
   const entry = applicationCache.get(config.name);
-  if (!entry?.data) {
-    return null;
+  if (entry?.data) {
+    return entry.data;
+  }
+  // entry.error はキャッシュに恒久保存しない一時的な失敗なので、表示のためだけに
+  // その場で Error 状態へ変換する (次の loadApplication では再試行される)。
+  if (entry?.error) {
+    return createApplicationErrorState(config, entry.error);
   }
 
-  return entry.data;
+  return null;
 }
 
 export function ApplicationDashboard({
@@ -193,12 +199,19 @@ export function ApplicationDashboard({
         }
 
         entry.data = (await response.json()) as ObservedApplicationDomain;
+        entry.error = undefined;
       } catch (error) {
         const reason =
           error instanceof Error
             ? error.message
             : "Failed to load latest application state.";
-        entry.data = createApplicationErrorState(config, reason);
+        // 失敗結果は entry.data ではなく entry.error に保持する。entry.data のままだと
+        // loadApplication 冒頭の `existing?.data && !force` に引っかかり、一時的な
+        // ネットワーク失敗や削除→再作成(404)後もセッション中ずっと Error 表示になる
+        // (router.refresh() はこのモジュールキャッシュに触れない)。entry.error にしておけば
+        // 次の loadApplication (force なし) が自然に再試行してくれる。
+        entry.data = undefined;
+        entry.error = reason;
       } finally {
         entry.promise = undefined;
         applicationCache.set(config.name, entry);
@@ -224,23 +237,46 @@ export function ApplicationDashboard({
     }
   }, [loadApplication, nameFilteredApplications, selectedApplicationConfig]);
 
+  // 選択中かどうかに関わらず、キャッシュ上 "Deploying" の全アプリを 5 秒間隔で
+  // force 再取得する。選択中アプリだけを対象にすると、アプリ A を Sync してから
+  // アプリ B や / へ移動した際に A のキャッシュが更新されなくなり、ロールアウト
+  // 完了後もサイドバーの A が無期限に "Deploying" 表示のままになってしまう。
+  const deployingApplicationNames = useMemo(
+    () =>
+      applications
+        .filter(
+          (application) =>
+            getApplicationStatus(getCachedApplication(application) || application)
+              .status === "Deploying"
+        )
+        .map((application) => application.name)
+        .sort()
+        .join(","),
+    // cacheVersion の変化でしか deploying 集合は変わらないため、cacheVersion を依存に含める
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [applications, cacheVersion]
+  );
+
   useEffect(() => {
-    if (
-      !selectedApplicationConfig ||
-      displayApplicationStatus !== "Deploying"
-    ) {
+    if (!deployingApplicationNames) {
       return;
     }
 
-    loadApplication(selectedApplicationConfig, { force: true });
+    const deployingNameSet = new Set(deployingApplicationNames.split(","));
+    const deployingApplications = applications.filter((application) =>
+      deployingNameSet.has(application.name)
+    );
+
     const intervalId = window.setInterval(() => {
-      loadApplication(selectedApplicationConfig, { force: true });
+      for (const application of deployingApplications) {
+        loadApplication(application, { force: true });
+      }
     }, DEPLOYMENT_POLLING_INTERVAL_MS);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [displayApplicationStatus, loadApplication, selectedApplicationConfig]);
+  }, [applications, deployingApplicationNames, loadApplication]);
 
   const handleApplicationChanged = useCallback(
     (name: string) => {
@@ -310,6 +346,8 @@ export function ApplicationDashboard({
                   );
                   const cachedApplication = getCachedApplication(application);
                   const displayApplication = cachedApplication || application;
+                  const hasActiveDeployment =
+                    getApplicationStatus(displayApplication).status === "Deploying";
 
                   return (
                     <div
@@ -333,6 +371,7 @@ export function ApplicationDashboard({
                       </Link>
                       <DashboardEditApplicationButton
                         application={application}
+                        hasActiveDeployment={hasActiveDeployment}
                         onApplicationChanged={handleApplicationChanged}
                         onApplicationDeleted={handleApplicationDeleted}
                       />

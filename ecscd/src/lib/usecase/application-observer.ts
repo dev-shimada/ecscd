@@ -53,10 +53,9 @@ export class DefaultApplicationObserver implements ApplicationObserver {
       return serviceObservedApplication;
     }
 
-    const lastSyncedAt =
-      serviceObservedApplication.sync.status === "Success"
-        ? serviceObservedApplication.sync.value?.lastSyncedAt
-        : undefined;
+    // 最終 Sync 時刻は DB に永続化された値をそのまま使う (sync 実行時に
+    // DeploymentUsecase.syncService が更新する。usecase/deployment.ts 参照)。
+    const lastSyncedAt = application.lastSyncedAt;
 
     try {
       const taskDefinitions =
