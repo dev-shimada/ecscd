@@ -1,5 +1,16 @@
 # ecscd
 
+<p align="center">
+  <a href="https://github.com/dev-shimada/ecscd/actions/workflows/ci.yaml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/dev-shimada/ecscd/ci.yaml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=CI"></a>
+  <a href="https://github.com/dev-shimada/ecscd/blob/main/LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/dev-shimada/ecscd?style=flat-square"></a>
+  <a href="https://github.com/dev-shimada/ecscd/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/dev-shimada/ecscd?style=flat-square&logo=github&logoColor=white"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/dev-shimada/ecscd/blob/main/ecscd/package.json"><img alt="Next.js" src="https://img.shields.io/github/package-json/dependency-version/dev-shimada/ecscd/next?filename=ecscd%2Fpackage.json&style=flat-square&logo=nextdotjs&logoColor=white&label=Next.js"></a>
+  <a href="https://github.com/dev-shimada/ecscd/blob/main/ecscd/package.json"><img alt="TypeScript" src="https://img.shields.io/github/package-json/dependency-version/dev-shimada/ecscd/typescript?filename=ecscd%2Fpackage.json&style=flat-square&logo=typescript&logoColor=white&label=TypeScript"></a>
+</p>
+
 ECS Continuous Deployment - GitOps ベースの Amazon ECS デプロイメント管理ツール
 
 ## 概要
