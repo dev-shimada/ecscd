@@ -29,7 +29,7 @@ services:
   # ロールアウト遷移・ロールバックを試せない。このサーバがそのギャップを埋める
   # (tools/ecs-sim/server.js 参照。依存パッケージなし)。
   ecs-sim:
-    image: node:24-slim
+    image: node:25-slim
     command: ["node", "/sim/server.js"]
     ports:
       # ホスト側ポートは ECS_SIM_PORT で変更可能 (他プロジェクトと衝突する場合)
@@ -49,7 +49,7 @@ services:
   # GitHub REST API のスタブ。tools/github-stub/data/ 配下のファイルを
   # /repos/{owner}/{repo}/contents/{path} として返す (依存パッケージなし)。
   github-stub:
-    image: node:24-slim
+    image: node:25-slim
     command: ["node", "/stub/server.js"]
     environment:
       PORT: "8080"
@@ -103,7 +103,7 @@ services:
   # ホスト側の node_modules (macOS 用ネイティブバイナリ) を汚さない。
   integration-test:
     profiles: ["test"]
-    image: node:24-slim
+    image: node:25-slim
     working_dir: /app
     command:
       [
