@@ -19,10 +19,19 @@ export class DeploymentUsecase {
 
   async syncService(application: ApplicationDomain): Promise<void> {
     await this.deploymentRepository.syncService(application);
-    await this.applicationRepository.updateLastSyncedAt(
-      application.name,
-      new Date(),
-    );
+    // デプロイは既に開始済みなので、最終 Sync 時刻の永続化に失敗しても Sync 自体は
+    // 失敗扱いにしない (呼び出し元に例外を返すと、実際には進行中のデプロイが失敗に見える)。
+    try {
+      await this.applicationRepository.updateLastSyncedAt(
+        application.name,
+        new Date(),
+      );
+    } catch (error) {
+      console.error(
+        `Failed to update last synced at for '${application.name}':`,
+        error,
+      );
+    }
   }
 
   async rollback(application: ApplicationDomain): Promise<void> {
