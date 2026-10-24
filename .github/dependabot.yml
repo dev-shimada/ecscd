@@ -9,3 +9,20 @@ updates:
     directory: "/ecscd" # Location of package manifests
     schedule:
       interval: "weekly"
+
+  - package-ecosystem: "github-actions"
+    directory: "/" # .github/workflows 配下を検知する
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "docker"
+    directories:
+      - "/" # Dockerfile
+      - "/.devcontainer" # .devcontainer/Dockerfile
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "docker-compose"
+    directory: "/" # compose.yaml
+    schedule:
+      interval: "weekly"
