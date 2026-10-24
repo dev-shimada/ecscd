@@ -1,4 +1,4 @@
-FROM node:24.12.0-trixie-slim AS vscode
+FROM node:26.12.1-trixie-slim AS vscode
 
 ENV LESSCHARSET utf-8
 

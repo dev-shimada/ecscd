@@ -1,11 +1,11 @@
 # Build stage
-FROM node:24-slim AS builder
+FROM node:26-slim AS builder
 
 WORKDIR /app
 
 # Copy package files
 COPY ecscd/package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 
 # Copy source code
 COPY ecscd/ .
@@ -14,7 +14,7 @@ COPY ecscd/ .
 RUN npm run build
 
 # Production stage
-FROM gcr.io/distroless/nodejs24-debian12:latest
+FROM gcr.io/distroless/nodejs26-debian13:latest
 
 WORKDIR /app
 

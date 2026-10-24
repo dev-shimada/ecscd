@@ -35,7 +35,7 @@ interface ApplicationFormData {
 }
 
 export function NewApplicationDialog({ open, onOpenChange, onSuccess }: NewApplicationDialogProps) {
-  const [formData, setFormData] = useState<ApplicationFormData>({
+  const [formData, setFormData] = useState<ApplicationFormData>(() => ({
     name: '',
     clusterName: '',
     serviceName: '',
@@ -46,7 +46,7 @@ export function NewApplicationDialog({ open, onOpenChange, onSuccess }: NewAppli
     externalId: Math.random().toString(36).substring(2, 15),
     region: APPLICATION_DEFAULT_REGION,
     sessionName: '',
-  });
+  }));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<ApplicationFormData>>({});
 

@@ -31,6 +31,7 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Portal 用に hydration 後にマウント済みにする
     setMounted(true)
   }, [])
 

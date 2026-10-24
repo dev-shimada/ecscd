@@ -25,6 +25,7 @@ export function DashboardSyncActions({
 
   useEffect(() => {
     if (hasActiveDeployment) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- デプロイ開始を検知したら要求済みフラグを戻す
       setRequestedDeployment(false);
     }
   }, [hasActiveDeployment]);
