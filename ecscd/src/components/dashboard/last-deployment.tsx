@@ -7,7 +7,7 @@ import {
 import { formatRelativeTime } from "@/components/dashboard/format";
 import { ExternalLink, RefreshCw } from "lucide-react";
 
-function formatDeploymentState(state: string) {
+function formatDeploymentState(state: string | undefined) {
   switch (state) {
     case "IN_PROGRESS":
       return "In Progress";
@@ -16,11 +16,11 @@ function formatDeploymentState(state: string) {
     case "FAILED":
       return "Failed";
     default:
-      return state;
+      return state || "Unknown";
   }
 }
 
-function getDeploymentStateClass(state: string) {
+function getDeploymentStateClass(state: string | undefined) {
   switch (state) {
     case "IN_PROGRESS":
       return "text-yellow-600 dark:text-yellow-400";

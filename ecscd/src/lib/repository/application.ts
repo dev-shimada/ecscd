@@ -7,4 +7,5 @@ export interface ApplicationRepository {
   createApplication(application: ApplicationDomain): Promise<void>;
   updateApplication(application: ApplicationDomain): Promise<void>;
   deleteApplication(name: string): Promise<void>;
+  updateLastSyncedAt(name: string, syncedAt: Date): Promise<void>;
 }
