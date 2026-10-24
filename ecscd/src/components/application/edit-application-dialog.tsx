@@ -40,7 +40,7 @@ interface ApplicationFormData {
 }
 
 export function EditApplicationDialog({ open, onOpenChange, application, hasActiveDeployment = false, onSuccess, onDelete }: EditApplicationDialogProps) {
-  const [formData, setFormData] = useState<ApplicationFormData>({
+  const [formData, setFormData] = useState<ApplicationFormData>(() => ({
     name: '',
     clusterName: '',
     serviceName: '',
@@ -51,7 +51,7 @@ export function EditApplicationDialog({ open, onOpenChange, application, hasActi
     externalId: Math.random().toString(36).substring(2, 15),
     region: APPLICATION_DEFAULT_REGION,
     sessionName: '',
-  });
+  }));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errors, setErrors] = useState<Partial<ApplicationFormData>>({});
@@ -59,6 +59,7 @@ export function EditApplicationDialog({ open, onOpenChange, application, hasActi
   // Populate form when application changes
   useEffect(() => {
     if (application) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- application prop の変更をフォームへ同期する
       setFormData({
         name: application.name,
         clusterName: application.ecsConfig.cluster,

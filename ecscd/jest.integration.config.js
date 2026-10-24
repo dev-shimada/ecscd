@@ -22,11 +22,14 @@ const config = {
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,
         allowJs: true,
+        // TypeScript 6 は types の自動読み込みをやめ、rootDir も明示が必要
+        rootDir: __dirname,
+        types: ['node', 'jest'],
       },
     }],
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(@octokit|universal-user-agent|before-after-hook|fast-content-type-parse|universal-github-app-jwt)/)',
+    'node_modules/(?!(@octokit|universal-user-agent|before-after-hook|fast-content-type-parse|universal-github-app-jwt|content-type)/)',
   ],
 };
 

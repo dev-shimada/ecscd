@@ -125,6 +125,9 @@ export function ApplicationDashboard({
   );
   const normalizedFilter = filterPattern.trim().toLowerCase();
 
+  // モジュールキャッシュ (getCachedApplication) に依存する後続の useMemo があり、React Compiler は
+  // この手動メモ化を保持できないため、ここは手動メモ化のまま運用する
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const nameFilteredApplications = useMemo(() => {
     if (!normalizedFilter) {
       return applications;
@@ -133,9 +136,12 @@ export function ApplicationDashboard({
     return applications.filter((application) =>
       application.name.toLowerCase().includes(normalizedFilter)
     );
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
   }, [applications, normalizedFilter]);
 
   const statusOptions = useMemo(() => {
+    // getCachedApplication はモジュールキャッシュを読むため、更新は cacheVersion で再計算させる
+    void cacheVersion;
     const total = nameFilteredApplications.length;
     const counts = new Map<ApplicationStatus, number>();
 
@@ -153,6 +159,7 @@ export function ApplicationDashboard({
   }, [cacheVersion, nameFilteredApplications]);
 
   const visibleApplications = useMemo(() => {
+    void cacheVersion; // statusOptions と同様、キャッシュ更新時の再計算トリガー
     if (selectedStatuses.length === 0) {
       return nameFilteredApplications;
     }
