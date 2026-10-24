@@ -71,14 +71,17 @@ export function FilterSelector({
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- URL 由来の props を内部 state へ同期する
     setCurrentFilter(initialFilter);
   }, [initialFilter]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- URL 由来の props を内部 state へ同期する
     setFilters(initialFilters);
   }, [initialFilters]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- URL 由来の props を内部 state へ同期する
     setSelectedStatuses(initialSelectedStatuses);
   }, [initialSelectedStatuses]);
 

@@ -59,7 +59,6 @@ function StatusReasonPopover({
 
   useEffect(() => {
     if (!isVisible || !triggerRef.current) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- resets position readiness when hidden
       setIsPositionReady(false);
       return;
     }

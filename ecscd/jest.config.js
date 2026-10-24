@@ -15,6 +15,9 @@ const config = {
       tsconfig: {
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,
+        // TypeScript 6 は types の自動読み込みをやめ、rootDir も明示が必要
+        rootDir: __dirname,
+        types: ['node', 'jest'],
       },
     }],
   },
